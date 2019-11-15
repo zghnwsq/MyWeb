@@ -1,0 +1,8 @@
+StringUtils
+1.判断min max长度是否符合要求
+len_check(in : str, max: int, min: int)
+2.是否符合正则
+reg_check(in: str, reg: str)
+
+
+

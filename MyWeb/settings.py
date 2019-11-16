@@ -25,12 +25,13 @@ SECRET_KEY = 'h%nbdt8e$0iyz_x-&us*@jhr&qqggiy2txbf4*vx)5*-$_2h!='
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', ]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'login.apps.LoginConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -120,5 +121,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "layui"),
+    # os.path.join(BASE_DIR, "layui/font"),
+    # os.path.join(BASE_DIR, "layui/imges/face"),
+    # os.path.join(BASE_DIR, "layui/css/modules/laydate/default"),
+    # os.path.join(BASE_DIR, "layui/css/modules/layer/default"),
+]
 
+LOGIN_REDIRECT_URL = '/index/'
 LOGIN_URL = '/login/'

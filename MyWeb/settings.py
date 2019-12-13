@@ -55,7 +55,7 @@ ROOT_URLCONF = 'MyWeb.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,7 +123,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "layui"),
-    # os.path.join(BASE_DIR, "layui/font"),
+    os.path.join(BASE_DIR, "MyWeb/statics"),
     # os.path.join(BASE_DIR, "layui/imges/face"),
     # os.path.join(BASE_DIR, "layui/css/modules/laydate/default"),
     # os.path.join(BASE_DIR, "layui/css/modules/layer/default"),

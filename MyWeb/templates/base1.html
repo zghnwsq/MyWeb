@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Homepage</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href=" {% static 'css/layui.css' %}">
+    {% block statics %}
+    {% endblock %}
+    <style type="text/css">
+        .layui-nav {
+            border-radius: 0;
+        }
+    </style>
+</head>
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        <!--head nav-->
+        <div class="layui-header">
+            <div class="layui-logo">My Web System</div>
+            <!-- header-nav -->
+            <ul class="layui-nav layui-layout-left">  
+                {% block head_nav %}
+                {% endblock %}
+            </ul>
+            <ul class="layui-nav layui-layout-right">
+                <li class="layui-nav-item">
+                  <a href="javascript:;">
+                    {{ user_name }} - {{ user_group }}
+                  </a>
+                  <dl class="layui-nav-child">
+                    <dd><a href="">个人中心</a></dd>
+                    <dd><a href="">注销</a></dd>
+                  </dl>
+                </li>
+                <li class="layui-nav-item"><a href=""> </a></li>
+            </ul>
+        </div>
+
+        <!--left-nav-tree-->
+        <div class="layui-side layui-bg-cyan">
+            <div class="layui-side-scroll">
+              <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+              <ul class="layui-nav layui-nav-tree layui-bg-cyan"  lay-filter="test">
+                <li class="layui-nav-item layui-nav-itemed">
+                  <a class="" href="javascript:;">所有商品</a>
+                  <dl class="layui-nav-child">
+                    <dd><a href="javascript:;">列表一</a></dd>
+                    <dd><a href="javascript:;">列表二</a></dd>
+                    <dd><a href="javascript:;">列表三</a></dd>
+                    <dd><a href="">超链接</a></dd>
+                  </dl>
+                </li>
+                <li class="layui-nav-item">
+                  <a href="javascript:;">解决方案</a>
+                  <dl class="layui-nav-child">
+                    <dd><a href="javascript:;">列表一</a></dd>
+                    <dd><a href="javascript:;">列表二</a></dd>
+                    <dd><a href="">超链接</a></dd>
+                  </dl>
+                </li>
+                <li class="layui-nav-item"><a href="">云市场</a></li>
+                <li class="layui-nav-item"><a href="">发布商品</a></li>
+                  {% block nav_side %}
+                  {% endblock %}
+              </ul>
+            </div>
+        </div>
+
+        <!-- body -->
+        <div class="layui-body">
+        {% block content %}
+        {% endblock %}
+        </div>
+
+        <div class="layui-footer">
+        <!-- footer -->
+        © ted.wang
+        </div>
+
+    </div>
+    {% load static %}
+    <script src="{% static 'layui.all.js' %} " ></script>
+    <script>
+        !function(){
+            var layer = layui.layer;
+            var $ = layui.jquery;
+            var element = layui.element;
+        }();
+
+    </script>
+</body>
+</html>

@@ -1,8 +1,16 @@
-StringUtils
+﻿StringUtils
 1.判断min max长度是否符合要求
 len_check(in : str, max: int, min: int)
 2.是否符合正则
 reg_check(in: str, reg: str)
+
+
+如果你已经有已知的数据库及表格。
+运行下面代码可以自动生成models模型文件
+python manage.py inspectdb > your_app_name/models.py
+
+
+
 
 
 

@@ -7,7 +7,7 @@ reg_check(in: str, reg: str)
 
 如果你已经有已知的数据库及表格。
 运行下面代码可以自动生成models模型文件
-python manage.py inspectdb > your_app_name/models.py
+python manage.py inspectdb [table [table ...]> your_app_name/models.py
 
 
 

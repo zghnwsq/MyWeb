@@ -15,18 +15,18 @@
 <!--                    <dd><a href="">超链接</a></dd>-->
 <!--                  </dl>-->
 <!--                </li>-->
-                { % for first_level in menus % }
-                <li class="layui-nav-item layui-nav-itemed">
+                {% for first_level in menus %}
+                <li class="layui-nav-item">
                     <a class="" href="{{first_level.url}}">{{first_level.text}}</a>
-                    { % if {{first_level.childs}} % }
+                    {% if first_level.childs %}
                     <dl class="layui-nav-child">
-                        { % for child in first_level.childs % }
+                        {% for child in first_level.childs %}
                         <dd><a href="{{child.url}}">{{child.text}}</a>
-                        { % endfor % }
+                        {% endfor %}
                     </dl>
-                    { % endif % }
+                    {% endif %}
                 </li>
-                { % endfor % }
+                {% endfor %}
             </ul>
         </div>
     </div>

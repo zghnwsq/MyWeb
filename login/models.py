@@ -16,13 +16,16 @@ class Menu(models.Model):
     parent = models.IntegerField(blank=True, null=True)
     order = models.IntegerField(blank=True, null=True)
 
+    def __str__(self):
+        return self.text
+
     class Meta:
         db_table = 'menu'
 
 
 class UserMenu(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    user = models.ForeignKey(User, related_name='user', to_field='username', blank=True, null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE)
     menu = models.ForeignKey(Menu, blank=True, null=True, on_delete=models.CASCADE)  # This field type is a guess.
 
     class Meta:

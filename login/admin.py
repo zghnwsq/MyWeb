@@ -9,13 +9,12 @@ class MenuAdmin(admin.ModelAdmin):
 
 
 class UserMenuAdmin(admin.ModelAdmin):
-    # list_display = ('user', 'menu')
+    list_display = ('user', 'menu')
     fieldsets = [
-        ('user', {'fields': ['user']}),
-        (None, {'fields': ['menu']}),
+        ('user_menu', {'fields': ['user', 'menu']}),
     ]
 
 
 admin.site.register(Menu, MenuAdmin)
-# admin.site.register(UserMenu, UserMenuAdmin)
+admin.site.register(UserMenu, UserMenuAdmin)
 

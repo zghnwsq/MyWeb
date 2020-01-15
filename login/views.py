@@ -47,28 +47,16 @@ class LoginV(LoginView):
 
 class IndexV(LoginRequiredMixin, generic.ListView):
     template_name = 'login/index.html'
-    context_object_name = 'menu_list'
+    context_object_name = 'menu_list'  # 要改名
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        user = User.objects.get(username=context['user_name'])
-        all_menu = UserMenu.objects.filter(user=user).values('menu')
-        first_level = Menu.objects.filter(id__in=all_menu, parent__isnull=True).order_by('order')
-        u_menu = []
-        for m1 in first_level:
-            menu_items = {'url': m1.url, 'text': m1.text}
-            second_level = Menu.objects.filter(id__in=all_menu, parent=m1.id).order_by('order')
-            childs = []
-            for m2 in second_level:
-                childs.append({'url': m2.url, 'text': m2.text})
-            menu_items['childs'] = childs
-            u_menu.append(menu_items)
-        context['menus'] = u_menu
+        context = get_menu(context)
         return context
 
     def get_queryset(self, **kwargs):
-        # todo menu
+        # todo index page
         pass
 
 

@@ -1,36 +1,27 @@
 ﻿{% extends "base1.html" %}
-{% block nav_side %}
-    <div class="layui-side layui-bg-cyan">
-        <div class="layui-side-scroll">
-            <ul class="layui-nav layui-nav-tree layui-bg-cyan"  lay-filter="test">
-                <li class="layui-nav-item">
-                    <a href="javascript:;">默认展开</a>
-                </li>
-<!--                <li class="layui-nav-item layui-nav-itemed">-->
-<!--                  <a class="" href="javascript:;">所有商品</a>-->
-<!--                  <dl class="layui-nav-child">-->
-<!--                    <dd><a href="javascript:;">列表一</a></dd>-->
-<!--                    <dd><a href="javascript:;">列表二</a></dd>-->
-<!--                    <dd><a href="javascript:;">列表三</a></dd>-->
-<!--                    <dd><a href="">超链接</a></dd>-->
-<!--                  </dl>-->
+<!--{% block nav_side %}-->
+<!--    <div class="layui-side layui-bg-cyan">-->
+<!--        <div class="layui-side-scroll">-->
+<!--            <ul class="layui-nav layui-nav-tree layui-bg-cyan"  lay-filter="test">-->
+<!--                <li class="layui-nav-item">-->
+<!--                    <a href="javascript:;">默认展开</a>-->
 <!--                </li>-->
-                {% for first_level in menus %}
-                <li class="layui-nav-item">
-                    <a class="" href="{{first_level.url}}">{{first_level.text}}</a>
-                    {% if first_level.childs %}
-                    <dl class="layui-nav-child">
-                        {% for child in first_level.childs %}
-                        <dd><a href="{{child.url}}">{{child.text}}</a>
-                        {% endfor %}
-                    </dl>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-{% endblock %}
+<!--                {% for first_level in menus %}-->
+<!--                <li class="layui-nav-item">-->
+<!--                    <a class="" href="{{first_level.url}}">{{first_level.text}}</a>-->
+<!--                    {% if first_level.childs %}-->
+<!--                    <dl class="layui-nav-child">-->
+<!--                        {% for child in first_level.childs %}-->
+<!--                        <dd><a href="{{child.url}}">{{child.text}}</a>-->
+<!--                        {% endfor %}-->
+<!--                    </dl>-->
+<!--                    {% endif %}-->
+<!--                </li>-->
+<!--                {% endfor %}-->
+<!--            </ul>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--{% endblock %}-->
 {% block content %}
     <div>登录成功</div>
 {% endblock %}

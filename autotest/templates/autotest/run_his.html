@@ -1,0 +1,31 @@
+{% extends "base1.html" %}
+
+{% block content %}
+<table id="run_his" lay-filter="run_his"></table>
+{% endblock %}
+
+{% load static %}
+{% block script %}
+<script>
+    !function(){
+        var table = layui.table;
+
+        table.render({
+            elem: '#run_his'
+            ,height: 312
+            ,url: '/demo/table/user/' //数据接口
+            ,page: true //开启分页
+            ,cols: [[ //表头
+                {field: 'group', title: 'TestGroup', width:80, sort: true, fixed: 'left'}
+                ,{field: 'suite', title: 'TestSuit', width:80,  sort: true}
+                ,{field: 'case', title: 'TestCase', width:80, sort: true}
+                ,{field: 'title', title: 'Title', width:177}
+                ,{field: 'tester', title: 'Tester', width: 80}
+                ,{field: 'result', title: 'Result', width: 80}
+                ,{field: 'time', title: 'Time', width: 80}
+                ,{field: 'report', title: 'Report', width: 80}
+            ]]
+        });
+    }();
+</script>
+{% endblock %}

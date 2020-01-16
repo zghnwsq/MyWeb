@@ -1,31 +1,36 @@
 {% extends "base1.html" %}
 
 {% block content %}
-<table id="run_his" lay-filter="run_his"></table>
+    <table id="run_his" lay-filter="run_his"></table>
 {% endblock %}
 
 {% load static %}
 {% block script %}
-<script>
-    !function(){
-        var table = layui.table;
+    <script>
+        !function () {
+            var table = layui.table;
 
-        table.render({
-            elem: '#run_his'
-            ,height: 312
-            ,url: '/demo/table/user/' //数据接口
-            ,page: true //开启分页
-            ,cols: [[ //表头
-                {field: 'group', title: 'TestGroup', width:80, sort: true, fixed: 'left'}
-                ,{field: 'suite', title: 'TestSuit', width:80,  sort: true}
-                ,{field: 'case', title: 'TestCase', width:80, sort: true}
-                ,{field: 'title', title: 'Title', width:177}
-                ,{field: 'tester', title: 'Tester', width: 80}
-                ,{field: 'result', title: 'Result', width: 80}
-                ,{field: 'time', title: 'Time', width: 80}
-                ,{field: 'report', title: 'Report', width: 80}
-            ]]
-        });
-    }();
-</script>
+            var run_his = table.render({
+                elem: '#run_his'
+                , height: 'full'
+                , url: '/autotest/run_his/get/' //数据接口
+                , page: true //开启分页
+                , even: true //奇偶行背景
+                , cols: [[ //表头
+                    {field: 'group', title: 'TestGroup', sort: true, fixed: 'left', align: 'center'}
+                    , {field: 'suite', title: 'TestSuit', sort: true, align: 'center'}
+                    , {field: 'case', title: 'TestCase', sort: true, align: 'center'}
+                    , {field: 'title', title: 'Title', align: 'center'}
+                    , {field: 'tester', title: 'Tester', align: 'center'}
+                    , {field: 'result', title: 'Result', align: 'center'}
+                    , {field: 'create_time', title: 'Time', align: 'center'}
+                    , {
+                        field: 'report', title: 'Report', align: 'center', templet: function (d) {
+                            return '<a target="_blank" href="' + d.report + '">报告</a>'
+                        }
+                    }
+                ]]
+            });
+        }();
+    </script>
 {% endblock %}

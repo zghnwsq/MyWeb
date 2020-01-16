@@ -57,3 +57,9 @@ def get_run_his(request):
     # format json
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
 
+
+@login_required
+def get_report(request):
+    file_path = request.GET['path']
+    return render(request, 'autotest/report.html', {'path': file_path})
+

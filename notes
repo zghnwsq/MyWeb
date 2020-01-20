@@ -9,7 +9,11 @@ reg_check(in: str, reg: str)
 运行下面代码可以自动生成models模型文件
 python manage.py inspectdb [table [table ...]> your_app_name/models.py
 
+# 查看迁移范围
+python manage.py makemigrations --dry-run autotest
 
+# 指定迁移数据库
+--database=autotest
 
 
 

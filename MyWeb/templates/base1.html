@@ -14,78 +14,91 @@
     </style>
 </head>
 <body class="layui-layout-body">
-    <div class="layui-layout layui-layout-admin">
-        <!--head nav-->
-        <div class="layui-header">
-            <div class="layui-logo">My Web System</div>
-            <!-- header-nav -->
-            <ul class="layui-nav layui-layout-left">  
-                {% block head_nav %}
-                {% endblock %}
-            </ul>
-            <ul class="layui-nav layui-layout-right">
-                <li class="layui-nav-item">
-                  <a href="javascript:;">
+<div class="layui-layout layui-layout-admin">
+    <!--head nav-->
+    <div class="layui-header">
+        <div class="layui-logo">My Web System</div>
+        <!-- header-nav -->
+        <ul class="layui-nav layui-layout-left">
+            {% block head_nav %}
+            {% endblock %}
+        </ul>
+        <ul class="layui-nav layui-layout-right">
+            <li class="layui-nav-item">
+                <a href="javascript:;">
                     {{ user_name }} - {{ user_group }}
-                  </a>
-                  <dl class="layui-nav-child">
+                </a>
+                <dl class="layui-nav-child">
                     <dd><a href="">个人中心</a></dd>
-                    <dd><a href="">注销</a></dd>
-                  </dl>
-                </li>
-                <li class="layui-nav-item"><a href=""> </a></li>
-            </ul>
-        </div>
+                    <dd><a href="{% url 'login:logout' %}">注销</a></dd>
+                </dl>
+            </li>
+            <li class="layui-nav-item"><a href=""> </a></li>
+        </ul>
+    </div>
 
-        <!--left-nav-tree-->
-        {% if menus %}
+    <!--left-nav-tree-->
+    {% if menus %}
         <div class="layui-side layui-bg-cyan">
             <div class="layui-side-scroll">
-                <ul class="layui-nav layui-nav-tree layui-bg-cyan"  lay-filter="test">
-                    <li class="layui-nav-item">
-                        <a href="javascript:;">默认展开</a>
-                    </li>
+                <ul class="layui-nav layui-nav-tree layui-bg-cyan" lay-shrink="all" lay-filter="test">
                     {% for first_level in menus %}
-                    <li class="layui-nav-item">
-                        <a class="" href="{{first_level.url}}">{{first_level.text}}</a>
-                        {% if first_level.childs %}
-                        <dl class="layui-nav-child">
-                            {% for child in first_level.childs %}
-                            <dd><a href="{{child.url}}">{{child.text}}</a>
-                            {% endfor %}
-                        </dl>
-                        {% endif %}
-                    </li>
+                        <li class="layui-nav-item">
+                            <a class="{{ first_level.text }}" href="{{ first_level.url }}">{{ first_level.text }}</a>
+                            {% if first_level.childs %}
+                                <dl class="layui-nav-child">
+                                    {% for child in first_level.childs %}
+                                        <dd><a href="{{ child.url }}">{{ child.text }}</a>
+                                    {% endfor %}
+                                </dl>
+                            {% endif %}
+                        </li>
                     {% endfor %}
                 </ul>
             </div>
         </div>
-        {% endif %}
+    {% endif %}
 
 
-        <!-- body -->
-        <div class="layui-body">
+    <!-- body -->
+    <div class="layui-body">
         {% block content %}
         {% endblock %}
-        </div>
+    </div>
 
-        <div class="layui-footer">
+    <div class="layui-footer">
         <!-- footer -->
         © ted.wang
-        </div>
-
     </div>
-    {% load static %}
-    <script src="{% static 'layui.all.js' %} " ></script>
-    <script>
-        !function(){
-            var layer = layui.layer;
-            var $ = layui.jquery;
-            var element = layui.element;
-        }();
-    </script>
-    {% load static %}
-    {% block script %}
-    {% endblock %}
+
+</div>
+{% load static %}
+<script src="{% static 'layui.all.js' %} "></script>
+<script>
+    !function () {
+        var layer = layui.layer;
+        var $ = layui.jquery;
+        var element = layui.element;
+        $(".layui-side li.layui-nav-item a").on('click', function () {
+            var expand = $(this).attr('class');
+            if (layui.sessionData('expand').expand == 'none') {
+                {#console.log('expand');#}
+                layui.sessionData('expand', {key: 'expand', value: expand});
+            } else {
+                {#console.log('remove');#}
+                layui.sessionData('expand', {key: 'expand', value: 'none'});
+            }
+        });
+
+        var exp = layui.sessionData('expand').expand;
+        if (exp.toString() != '' && exp != null) {
+            $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
+        }
+
+    }();
+</script>
+{% load static %}
+{% block script %}
+{% endblock %}
 </body>
 </html>

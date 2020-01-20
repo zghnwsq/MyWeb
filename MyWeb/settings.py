@@ -56,7 +56,7 @@ ROOT_URLCONF = 'MyWeb.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates'), os.path.join('D:/PythonProject/zbh/Report')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -141,3 +141,6 @@ STATICFILES_DIRS = [
 
 LOGIN_REDIRECT_URL = '/index/'
 LOGIN_URL = '/login/'
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE=60*30

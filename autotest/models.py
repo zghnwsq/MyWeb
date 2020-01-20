@@ -35,3 +35,10 @@ class ResDict(models.Model):
     class Meta:
         db_table = 'res_dict'
 
+
+class SuiteCount(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    group = models.CharField(max_length=32, null=True)
+    suite = models.CharField(max_length=32, null=True)
+    count = models.IntegerField(null=True)
+

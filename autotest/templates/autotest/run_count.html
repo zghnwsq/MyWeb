@@ -2,7 +2,7 @@
 
 {% block content %}
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
-        <legend>执行历史</legend>
+        <legend>执行统计</legend>
     </fieldset>
     <div class="layui-form layui-form-pane" lay-filter="search">
         <div class="layui-form-item">
@@ -32,39 +32,23 @@
                         </select>
                     </div>
 
-                    <label class="layui-form-label">Case：</label>
+                    <label class="layui-form-label">From：</label>
                     <div class="layui-input-inline">
-                        <input class="layui-input" name="testcase" id="testcase" autocomplete="off">
+                        <input type="text" class="layui-input" name="from" id="from" placeholder="请选择" autocomplete="off">
                     </div>
+
+                    <label class="layui-form-label">To：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="to" id="to" placeholder="请选择" autocomplete="off">
+                    </div>
+
                 </div>
 
-                <div class="layui-inline">
-
-                    <label class="layui-form-label">Tester：</label>
-                    <div class="layui-input-inline">
-                        <select name="tester" id="tester">
-                            <option value=""></option>
-                            {% if options.tester %}
-                                {% for tst in options.tester %}
-                                    <option value="{{ tst.tester }}">{{ tst.tester }}</option>
-                                {% endfor %}
-                            {% endif %}
-                        </select>
+                <div class="layui-row layui-input-block">
+                    <div class="layui-col-md3 layui-col-md-offset9">
+                        <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
+                        <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
                     </div>
-
-                    <label class="layui-form-label">Result：</label>
-                    <div class="layui-input-inline">
-                        <select name="result" id="result">
-                            <option value=""></option>
-                            <option value="0">通过</option>
-                            <option value="1">失败</option>
-                            <option value="2">错误</option>
-                            <option value="3">跳过</option>
-                        </select>
-                    </div>
-
-                    <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
-                    <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
                 </div>
 
             </div>
@@ -79,24 +63,55 @@
         !function () {
             var table = layui.table;
             var form = layui.form;
+            var laydate = layui.laydate;
             var $ = layui.$;
             var expand = layui.sessionData('expand').expand;
-            var tester = $('#tester').val();
             var group = $('#group').val();
             var suite = $('#suite').val();
-            var testcase = $('#testcase').val();
-            var result = $('#result').val();
+            var beg = '';
+            var end = '';
+
+            laydate.render({
+                elem: '#from'
+                , max: 0
+                , done: function (value, date, endDate) {
+                    console.log(value); //得到日期生成的值，如：2017-08-18
+                    beg = value;
+                    if(end!='' && beg!=''){
+                        var end_date = new Date(end).getDate();
+                        var beg_date = new Date(beg).getDate();
+                        if (beg_date>end_date){
+                            layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000})
+                        }
+                    }
+                }
+            });
+
+            laydate.render({
+                elem: '#to'
+                , max: 0
+                , done: function (value, date, endDate) {
+                    console.log(value); //得到日期生成的值，如：2017-08-18
+                    end = value;
+                    if(end!='' && beg!=''){
+                        var end_date = new Date(end).getDate();
+                        var beg_date = new Date(beg).getDate();
+                        if (beg_date>end_date){
+                            layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000})
+                        }
+                    }
+                }
+            });
 
             var run_his = table.render({
                     elem: '#run_his'
                     , height: 'full'
-                    , url: '/autotest/run_his/get/' //数据接口
+                    , url: '/autotest/run_count/get/' //数据接口
                     , where: {
-                        tester: tester,
                         group: group,
                         suite: suite,
-                        testcase: testcase,
-                        result: result,
+                        from: beg,
+                        to: end,
                         expand: expand
                     }
                     , page: {
@@ -105,30 +120,12 @@
                     } //开启分页
                     , even: true //奇偶行背景
                     , cols: [[ //表头
-                        {field: 'group', title: 'TestGroup', minWidth: 100, sort: true, fixed: 'left', align: 'center'}
-                        , {field: 'suite', title: 'TestSuit', minWidth: 100, sort: true, align: 'center'}
-                        , {field: 'case', title: 'TestCase', minWidth: 245, sort: true, align: 'center'}
-                        , {field: 'title', title: 'Title', minWidth: 245, align: 'center'}
-                        , {field: 'tester', title: 'Tester', minWidth: 90, align: 'center'}
-                        , {
-                            field: 'result', title: 'Result', minWidth: 90, sort: true, align: 'center', templet: function (d) {
-                                if (d.result.toString() == '通过') {
-                                    return '<span style="color: green">' + d.result + '</span>'
-                                } else if (d.result.toString() == '失败') {
-                                    return '<span style="color: red">' + d.result + '</span>'
-                                } else if (d.result.toString() == '错误') {
-                                    return '<span style="color: brown">' + d.result + '</span>'
-                                } else {
-                                    return d.result
-                                }
-                            }
-                        }
-                        , {field: 'create_time', title: 'Time', minWidth: 170, align: 'center'}
-                        , {
-                            field: 'report', title: 'Report', align: 'center', templet: function (d) {
-                                return '<a target="_blank" href="report\\?path=' + d.report + '">查看报告</a>'
-                            }
-                        }
+                        {field: 'group', title: 'TestGroup', sort: true, fixed: 'left', align: 'center'}
+                        , {field: 'suite', title: 'TestSuit', sort: true, align: 'center'}
+                        , {field: 'total', title: 'Total', sort: true, align: 'center', totalRow: true}
+                        , {field: 'run', title: 'Run', align: 'center', totalRow: true}
+                        , {field: 'pass', title: 'Pass', align: 'center', totalRow: true}
+                        , {field: 'pass_ratio', title: 'Pass Ratio', align: 'center'}
                     ]]
                     , done: function (res, curr, count) {
                         var exp = res.expand;
@@ -142,11 +139,8 @@
 
             var active = {
                 reload: function () {
-                    var tester = $('#tester').val();
                     var group = $('#group').val();
                     var suite = $('#suite').val();
-                    var testcase = $('#testcase').val();
-                    var result = $('#result').val();
                     var expand = layui.sessionData('expand').expand;
                     {#console.log(group);#}
                     run_his.reload({
@@ -154,11 +148,10 @@
                             curr: 1 //重新从第 1 页开始
                         }
                         , where: {
-                            tester: tester,
                             group: group,
                             suite: suite,
-                            testcase: testcase,
-                            result: result,
+                            beg: beg,
+                            end: end,
                             expand: expand
                         }
                         , done: function (res, curr, count) {
@@ -180,9 +173,8 @@
                 form.val('search', {
                     "group": 1
                     ,"suite": 1
-                    ,"testcase": ""
-                    ,"tester": 1
-                    ,"result": -1
+                    ,"from": ""
+                    ,"to": ""
                 })
 
             });

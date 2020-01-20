@@ -5,7 +5,7 @@ from login.models import Menu, UserMenu
 
 
 class MenuAdmin(admin.ModelAdmin):
-    list_display = ('text', 'url', 'parent', 'order')
+    list_display = ('id', 'text', 'url', 'parent', 'order')
 
 
 class UserMenuAdmin(admin.ModelAdmin):

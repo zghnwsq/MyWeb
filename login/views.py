@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
@@ -5,11 +6,14 @@ from django.contrib.auth.views import LoginView
 from django.views import generic
 from login.models import UserMenu, Menu
 from .form import LoginForm
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.models import Group, User
 from Utils.Personal import *
+from django.utils import timezone
+from django.contrib.sessions.models import Session
+
 
 # Create your views here.
 
@@ -26,6 +30,7 @@ class LoginV(LoginView):
             upassword = request.POST['password']
             user = authenticate(request, username=uname, password=upassword)
             if user is not None:
+                clear_logged_session(user)
                 if user.is_active:
                     login(request, user)
                     user_name = user.username
@@ -60,5 +65,7 @@ class IndexV(LoginRequiredMixin, generic.ListView):
         pass
 
 
-
-
+@login_required
+def logout_v(request):
+    logout(request)
+    return HttpResponseRedirect(reverse('login:login'))

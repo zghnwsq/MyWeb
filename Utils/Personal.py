@@ -1,3 +1,6 @@
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+
 from login.models import UserMenu, Menu
 from django.contrib.auth.models import Group, User
 
@@ -25,3 +28,15 @@ def get_menu(context):
         u_menu.append(menu_items)
     context['menus'] = u_menu
     return context
+
+
+def clear_logged_session(user):
+    valid_session_obj_list = Session.objects.filter(expire_date__gt=timezone.now())
+    logged_user_list = []
+    for session_obj in valid_session_obj_list:
+        user_id = session_obj.get_decoded().get("_auth_user_id")
+        logged_user_list.append({'id': user_id, 'session_obj': session_obj})
+    # this_user = User.objects.get(username=user.username)
+    for logged_user in logged_user_list:
+        if str(user.id) == logged_user['id']:
+            logged_user['session_obj'].delete()

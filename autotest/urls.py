@@ -7,6 +7,6 @@ urlpatterns = [
     path('run_his/get/', views.get_run_his, name='get_his'),
     path('run_his/report/', views.get_report, name='report'),
     path('run_count/', views.RunCountV.as_view(), name='run_count'),
-    path('run_count/get', views.get_run_count, name='get_count'),
+    path('run_count/get/', views.get_run_count, name='get_count'),
 ]
 

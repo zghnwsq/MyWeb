@@ -75,7 +75,7 @@
                 elem: '#from'
                 , max: 0
                 , done: function (value, date, endDate) {
-                    console.log(value); //得到日期生成的值，如：2017-08-18
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
                     beg = value;
                     if(end!='' && beg!=''){
                         var end_date = new Date(end).getDate();
@@ -91,7 +91,7 @@
                 elem: '#to'
                 , max: 0
                 , done: function (value, date, endDate) {
-                    console.log(value); //得到日期生成的值，如：2017-08-18
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
                     end = value;
                     if(end!='' && beg!=''){
                         var end_date = new Date(end).getDate();
@@ -110,8 +110,8 @@
                     , where: {
                         group: group,
                         suite: suite,
-                        from: beg,
-                        to: end,
+                        beg: beg,
+                        end: end,
                         expand: expand
                     }
                     , page: {
@@ -123,7 +123,8 @@
                         {field: 'group', title: 'TestGroup', sort: true, fixed: 'left', align: 'center'}
                         , {field: 'suite', title: 'TestSuit', sort: true, align: 'center'}
                         , {field: 'total', title: 'Total', sort: true, align: 'center', totalRow: true}
-                        , {field: 'run', title: 'Run', align: 'center', totalRow: true}
+                        , {field: 'executed', title: 'Executed', align: 'center', totalRow: true}
+                        , {field: 'executed_ratio', title: 'Executed Ratio', align: 'center'}
                         , {field: 'pass', title: 'Pass', align: 'center', totalRow: true}
                         , {field: 'pass_ratio', title: 'Pass Ratio', align: 'center'}
                     ]]
@@ -175,8 +176,9 @@
                     ,"suite": 1
                     ,"from": ""
                     ,"to": ""
-                })
-
+                });
+                beg = '';
+                end = '';
             });
 
 

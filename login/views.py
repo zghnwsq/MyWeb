@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
@@ -52,12 +54,13 @@ class LoginV(LoginView):
 
 class IndexV(LoginRequiredMixin, generic.ListView):
     template_name = 'login/index.html'
-    context_object_name = 'menu_list'  # 要改名
+    context_object_name = 'index'  # 要改名
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
+        context['time'] = datetime.datetime.now().strftime('%Y-%m-%d %A')
         return context
 
     def get_queryset(self, **kwargs):

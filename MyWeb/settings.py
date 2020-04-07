@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import time
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +26,7 @@ SECRET_KEY = 'h%nbdt8e$0iyz_x-&us*@jhr&qqggiy2txbf4*vx)5*-$_2h!='
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', ]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.*']
 
 
 # Application definition
@@ -80,14 +81,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    'autotest': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'autotest.sqlite'),
-    },
     # 'autotest': {
     #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
-    # }
+    #     'NAME': os.path.join(BASE_DIR, 'autotest.sqlite'),
+    # },
+    'autotest': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
+    }
 }
 
 DATABASE_ROUTERS = []
@@ -143,4 +144,55 @@ LOGIN_REDIRECT_URL = '/index/'
 LOGIN_URL = '/login/'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_COOKIE_AGE=60*30
+SESSION_COOKIE_AGE = 60*30
+
+today = time.strftime("%Y%m%d", time.localtime())
+log_file = os.path.join(BASE_DIR, 'log', today, today+'.log')
+if not os.path.exists(os.path.join(BASE_DIR, 'log', today)):
+    os.mkdir(os.path.join(BASE_DIR, 'log', today))
+if not os.path.exists(log_file):
+    f = open(log_file, 'w')
+    f.write('')
+    f.close()
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            'format': '{asctime} {filename:s} {module} {funcName:s} {levelname} {message}',
+            'style': '{',
+        },
+        'detail': {
+            'format': '{asctime} {process:d} {thread:d} {pathname:s} {module} {funcName:s} {levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'formatter': 'default',
+            'filename': log_file,
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'formatter': 'default',
+            'propagate': True,
+        },
+        # 'django.request': {
+        #     'handlers': ['file'],
+        #     'level': 'INFO',
+        #     'formatter': 'default',
+        #     'propagate': True,
+        # },
+        # 'django.server': {
+        #     'handlers': ['file'],
+        #     'level': 'INFO',
+        #     'formatter': 'default',
+        #     'propagate': True,
+        # },
+    },
+}

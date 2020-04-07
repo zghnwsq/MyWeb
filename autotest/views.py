@@ -133,7 +133,6 @@ def get_run_count(request):
     expand = ''
     if 'expand' in request.GET:
         expand = request.GET['expand']
-    # todo return data
     run_his = RunHis.objects.using('autotest').all()
     suite_total = SuiteCount.objects.all().order_by('group', 'suite')
     if request.GET['group']:
@@ -146,10 +145,10 @@ def get_run_count(request):
         suite_total = suite_total.filter(suite=suite)
     if request.GET['beg']:
         beg = request.GET['beg'].strip().split('-')
-        run_his = run_his.filter(create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=pytz.timezone(settings.TIME_ZONE)))
+        run_his = run_his.filter(create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
     if request.GET['end']:
         end = request.GET['end'].strip().split('-')
-        run_his = run_his.filter(create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59, tzinfo=pytz.timezone(settings.TIME_ZONE)))
+        run_his = run_his.filter(create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59, tzinfo=utc))  # pytz.timezone(settings.TIME_ZONE)
     run_his = run_his.values('group', 'suite', 'case', res=Min('result'))
     suite_list = [line for line in suite_total]
     count = len(suite_list)

@@ -15,6 +15,7 @@ from django.contrib.auth.models import Group, User
 from Utils.Personal import *
 from django.utils import timezone
 from django.contrib.sessions.models import Session
+import logging
 
 
 # Create your views here.
@@ -23,6 +24,7 @@ from django.contrib.sessions.models import Session
 class LoginV(LoginView):
     redirect_field_name = 'next'
     template_name = 'login/login.html'
+    logger = logging.getLogger('django')
 
     def post(self, request, *args, **kwargs):
         form = LoginForm(request.POST)
@@ -42,6 +44,7 @@ class LoginV(LoginView):
                         user_group = ''
                     request.session['user_name'] = user_name
                     request.session['user_group'] = user_group
+                    self.logger.info('%s login' % user_name)
                     if redirect:
                         return HttpResponseRedirect(redirect)
                     else:

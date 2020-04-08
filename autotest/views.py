@@ -4,7 +4,8 @@ from django.utils.timezone import *
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Min
+from django.db.models import Min, Count, CharField
+from django.db.models.functions import Trunc, TruncDate, Cast
 from django.shortcuts import render
 from django.views import generic
 from MyWeb import settings
@@ -12,6 +13,7 @@ from Utils.Personal import get_personal, get_menu
 from Utils.Paginator import *
 from .models import *
 from django.http import JsonResponse
+import pytz
 
 
 class RunHisV(LoginRequiredMixin, generic.ListView):
@@ -72,7 +74,7 @@ def get_run_his(request):
         result = ResDict.objects.using('autotest').filter(result=line['result'])[0] or 'null'
         line['result'] = result.desc
         line['create_time'] = line['create_time'].strftime("%Y-%m-%d %H:%M:%S")
-    data_list = [data for data in run_his]
+    # data_list = [data for data in run_his]
     # # 利用django分页划分数据
     # paginator = Paginator(data_list, int(limit))
     # try:
@@ -83,7 +85,8 @@ def get_run_his(request):
     #     pg = paginator.page(paginator.num_pages)
     # # Page obj转回list
     # data_list = [data for data in pg]
-    data_list = paginator(data_list, int(page), int(limit))
+    data_list = paginator(run_his, int(page), int(limit))
+    # data_list = paginator(data_list, int(page), int(limit))
     # return json
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
 
@@ -156,7 +159,7 @@ def get_run_count(request):
     for line in suite_list:
         run = len(run_his.filter(group=line.group, suite=line.suite).values('case').distinct())
         executed_ratio = '%.1f%%' % (run/line.count*100)
-        pass_count = len(run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct())
+        pass_count = int(run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct().count())
         if run > 0 and pass_count <= run:
             pass_ratio = '%.1f%%' % (pass_count/run*100)
         elif pass_count > run:
@@ -175,5 +178,36 @@ def get_run_count(request):
     data_list = paginator(data_table, int(page), int(limit))
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
 
+
+class RunHisChartV(LoginRequiredMixin, generic.ListView):
+    template_name = 'autotest/run_his_chart.html'
+    context_object_name = 'data'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context = get_personal(self.request, context)
+        context = get_menu(context)
+        return context
+
+    def get_queryset(self, **kwargs):
+        # todo run his chart page
+        run_his = RunHis.objects.using('autotest').values('group').annotate(
+            time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))  # tzinfo=pytz.timezone('US/Pacific')
+        # print(run_his)
+        names = run_his.values('group').distinct()
+        # print(names)
+        series = []
+        for name in names:
+            list_of_group = run_his.filter(group=name['group'])
+            # print(list_of_group)
+            datas = []
+            for data_of_group in list_of_group:
+                datas.append([data_of_group['time'], data_of_group['count']])
+            series.append({'name': name['group'], 'data': datas})
+        # print(series)
+        context = {
+            'series': series
+        }
+        return context
 
 

@@ -81,7 +81,7 @@
         var element = layui.element;
         $(".layui-side li.layui-nav-item a").on('click', function () {
             var expand = $(this).attr('class');
-            if (layui.sessionData('expand').expand == 'none') {
+            if (layui.sessionData('expand').expand === 'none') {
                 {#console.log('expand');#}
                 layui.sessionData('expand', {key: 'expand', value: expand});
             } else {
@@ -91,7 +91,7 @@
         });
 
         var exp = layui.sessionData('expand').expand;
-        if (exp.toString() != '' && exp != null) {
+        if (exp != null && exp.toString() !== '') {
             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
         }
 

@@ -118,8 +118,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # LANGUAGE_CODE = 'en-us'
 LANGUAGE_CODE = 'zh-hans'
 
-# TIME_ZONE = 'UTC'
-TIME_ZONE = 'Asia/Shanghai'
+TIME_ZONE = 'UTC'
+# TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -135,6 +135,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "layui"),
     os.path.join(BASE_DIR, "MyWeb/statics"),
+    os.path.join(BASE_DIR, "MyWeb/statics/hightcharts"),
     # os.path.join(BASE_DIR, "layui/imges/face"),
     # os.path.join(BASE_DIR, "layui/css/modules/laydate/default"),
     # os.path.join(BASE_DIR, "layui/css/modules/layer/default"),

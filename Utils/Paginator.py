@@ -9,6 +9,8 @@ def paginator(data, page: int, limit: int):
         pg = pagi.page(1)
     except EmptyPage:
         pg = pagi.page(pagi.num_pages)
+    # print(pg.object_list)
     # Page obj转回list
-    data_list = [data for data in pg]
-    return data_list
+    # data_list = [data for data in pg]
+    # return data_list
+    return pg.object_list

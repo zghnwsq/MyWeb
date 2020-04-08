@@ -1,0 +1,110 @@
+{% extends "base1.html" %}
+
+{% block content %}
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>自动化执行情况</legend>
+    </fieldset>
+    <div id="chart"></div>
+{% endblock %}
+{% load static %}
+{% block script %}
+    <script src="{% static 'highcharts.js' %}"></script>
+    <script src="{% static 'exporting.js' %}"></script>
+    <script src="{% static 'offline-exporting.js' %}"></script>
+    <script src="{% static 'highcharts-zh_CN.js' %}"></script>
+    <script>
+        !function () {
+            var $ = layui.$;
+            var expand = layui.sessionData('expand').expand;
+            var seri = [
+                {% if data %}
+                    {% for se in data.series %}
+                        {
+                            'name': '{{ se.name }}',
+                            'data': [
+                                {% for points in se.data %}
+                                    [
+                                    {% for point in points %}
+                                        '{{ point }}',
+                                    {% endfor %}
+                                    ],
+                                {% endfor %}
+                            ]
+                        },
+                    {% endfor %}
+                {% endif %}
+            ];
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+            var chart = Highcharts.chart('chart', {
+                chart: {
+                    type: 'spline'
+                },
+                title: {
+                    text: '自动化执行情况'
+                },
+                subtitle: {
+                    text: ''
+                },
+                credits: {
+                    enabled: false // 禁用版权信息
+                },
+                xAxis: {
+                    type: 'datetime',
+                    title: {
+                        text: null
+                    },
+                    dateTimeLabelFormats: {
+                        week: '%Y-%m-%d'
+                    }
+                },
+                colors: ['#6CF', '#39F', '#06C', '#036', '#000'],
+                yAxis: {
+                    title: {
+                        text: '执行次数'
+                    },
+                    min: 0
+                },
+                tooltip: {
+                    headerFormat: '<b>用例组: {series.name}</b><br>',
+                    pointFormat: '{point.x:%Y/%m/%d}: {point.y} 次'
+                },
+                plotOptions: {
+                    spline: {
+                        marker: {
+                            enabled: true
+                        },
+                        dataLabels: {
+                            enabled: false,
+                            formatter: function () {
+                                return this.x + "   " + this.y;
+                            },
+                            format: "{x:%Y/%m/%d}:      {y}"
+                        }
+                    }
+                },
+                series: []
+            });
+              {#console.log(seri);#}
+            for (var i in seri) {
+                {#console.log(seri[i]);#}
+                var points = [];
+                var item = seri[i];
+                for (var j in item['data']) {
+                    var it = item['data'][j];
+                    var split_time = it[0].split('-');
+                    {#console.log(split_time);#}
+                    {#var time = Date.UTC(parseInt(split_time[0]), parseInt(split_time[1])-1, parseInt(split_time[2]));#}
+                    {#console.log(new Date(it[0]||' 00:00:00 CCT'));#}
+                    var time = new Date(it[0]||' 00:00:00 CCT').getTime();
+                    var count = parseInt(it[1]);
+                    points.push([time, count]);
+                }
+                chart.addSeries({'name': item.name, 'data': points});
+            }
+        }();
+    </script>
+{% endblock %}

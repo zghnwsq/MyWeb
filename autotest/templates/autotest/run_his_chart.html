@@ -4,6 +4,45 @@
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>自动化执行情况</legend>
     </fieldset>
+    <div class="layui-form layui-form-pane" lay-filter="search">
+    {% csrf_token %}
+        <div class="layui-form-item">
+            <div class="search">
+                <div class="layui-inline">
+                    <label class="layui-form-label ">Group：</label>
+                    <div class="layui-input-inline">
+                        <select name="group" id="group">
+                            <option value=""></option>
+                            {% if data.group %}
+                                {% for grp in data.group %}
+                                    <option value="{{ grp.group }}">{{ grp.group }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <label class="layui-form-label">From：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="from" id="from" placeholder="请选择" autocomplete="off">
+                    </div>
+
+                    <label class="layui-form-label">To：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="to" id="to" placeholder="请选择" autocomplete="off">
+                    </div>
+
+                </div>
+
+                <div class="layui-row layui-input-block">
+                    <div class="layui-col-md3 layui-col-md-offset9">
+                        <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
+                        <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
     <div id="chart"></div>
 {% endblock %}
 {% load static %}
@@ -15,7 +54,45 @@
     <script>
         !function () {
             var $ = layui.$;
+            var laydate = layui.laydate;
+            var form = layui.form;
             var expand = layui.sessionData('expand').expand;
+            var beg = '';
+            var end = '';
+            var group = '';
+
+            laydate.render({
+                elem: '#from'
+                , max: 0
+                , done: function (value, date, endDate) {
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
+                    beg = value;
+                    if (end != '' && beg != '') {
+                        var end_date = new Date(end).getDate();
+                        var beg_date = new Date(beg).getDate();
+                        if (beg_date > end_date) {
+                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
+                        }
+                    }
+                }
+            });
+
+            laydate.render({
+                elem: '#to'
+                , max: 0
+                , done: function (value, date, endDate) {
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
+                    end = value;
+                    if (end != '' && beg != '') {
+                        var end_date = new Date(end).getDate();
+                        var beg_date = new Date(beg).getDate();
+                        if (beg_date > end_date) {
+                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
+                        }
+                    }
+                }
+            });
+
             var seri = [
                 {% if data %}
                     {% for se in data.series %}
@@ -95,7 +172,7 @@
                 var item = seri[i];
                 for (var j in item['data']) {
                     var it = item['data'][j];
-                    var split_time = it[0].split('-');
+                    {#var split_time = it[0].split('-');#}
                     {#console.log(split_time);#}
                     {#var time = Date.UTC(parseInt(split_time[0]), parseInt(split_time[1])-1, parseInt(split_time[2]));#}
                     {#console.log(new Date(it[0]||' 00:00:00 CCT'));#}
@@ -105,6 +182,54 @@
                 }
                 chart.addSeries({'name': item.name, 'data': points});
             }
+
+            $('#reset').on('click', function () {
+                form.val('search', {
+                    "group": 1
+                    , "from": ""
+                    , "to": ""
+                });
+                beg = '';
+                end = '';
+            });
+
+            $('#search').on('click', function () {
+                beg = $('#from').val();
+                end = $('#to').val();
+                group = $('#group').val();
+                $.ajax({
+                    url: '/autotest/run_his_chart/data',
+                    type: 'GET',
+                    data: {
+                        group: group,
+                        beg: beg,
+                        end: end,
+                    },
+                    success: function (data) {
+                        console.log(data.data);
+                        var old_series = chart.series;
+                        for(i=0;i<=old_series.length+1;i++){
+                            if(old_series.length>0){
+                                chart.series[0].remove();
+                            }
+                        }
+                        seri = data.data;
+                        for (var j in seri) {
+                            var points = [];
+                            var item = seri[j];
+                            for (var k in item['data']) {
+                                var it = item['data'][k];
+                                var time = new Date(it[0] || ' 00:00:00 CCT').getTime();
+                                var count = parseInt(it[1]);
+                                points.push([time, count]);
+                            }
+                            chart.addSeries({'name': item.name, 'data': points});
+                        }
+                        chart.redraw();
+                    }
+                });
+            });
+
         }();
     </script>
 {% endblock %}

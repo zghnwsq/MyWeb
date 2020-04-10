@@ -5,6 +5,7 @@
         <legend>执行统计</legend>
     </fieldset>
     <div class="layui-form layui-form-pane" lay-filter="search">
+    {% csrf_token %}
         <div class="layui-form-item">
             <div class="search">
                 <div class="layui-inline">
@@ -180,7 +181,6 @@
                 beg = '';
                 end = '';
             });
-
 
         }();
 

@@ -27,7 +27,6 @@ class RunHisV(LoginRequiredMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        # todo run history page
         group = RunHis.objects.using('autotest').values('group').distinct()
         suite = RunHis.objects.using('autotest').values('suite').distinct()
         tester = RunHis.objects.using('autotest').values('tester').distinct()
@@ -205,9 +204,37 @@ class RunHisChartV(LoginRequiredMixin, generic.ListView):
                 datas.append([data_of_group['time'], data_of_group['count']])
             series.append({'name': name['group'], 'data': datas})
         # print(series)
+        group = RunHis.objects.using('autotest').values('group').distinct()
         context = {
-            'series': series
+            'series': series,
+            'group': group
         }
         return context
 
 
+@login_required
+def get_run_his_chart_data(request):
+    run_his = RunHis.objects.using('autotest').all()
+    if request.GET['group']:
+        group = request.GET['group'].strip()
+        run_his = run_his.filter(group=group)
+    if request.GET['beg']:
+        beg = request.GET['beg'].strip().split('-')
+        run_his = run_his.filter(
+            create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
+    if request.GET['end']:
+        end = request.GET['end'].strip().split('-')
+        run_his = run_his.filter(
+            create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59, tzinfo=utc))
+    run_his = run_his.values('group').annotate(
+            time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
+    series = []
+    names = run_his.values('group').distinct()
+    for name in names:
+        list_of_group = run_his.filter(group=name['group'])
+        datas = []
+        for data_of_group in list_of_group:
+            datas.append([data_of_group['time'], data_of_group['count']])
+        series.append({'name': name['group'], 'data': datas})
+    # print(series)
+    return JsonResponse({'data': series})

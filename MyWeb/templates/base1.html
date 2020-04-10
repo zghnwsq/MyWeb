@@ -5,6 +5,7 @@
     <title>Homepage</title>
     {% load static %}
     <link rel="stylesheet" type="text/css" href=" {% static 'css/layui.css' %}">
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}"/>
     {% block statics %}
     {% endblock %}
     <style type="text/css">
@@ -43,7 +44,7 @@
             <div class="layui-side-scroll">
                 <ul class="layui-nav layui-nav-tree layui-bg-cyan" lay-shrink="all" lay-filter="test">
                     {% for first_level in menus %}
-                        <li class="layui-nav-item">
+                        <li class="layui-nav-item {% ifequal first_level.text '自动化测试' %}layui-nav-itemed{% endifequal %}">
                             <a class="{{ first_level.text }}" href="{{ first_level.url }}">{{ first_level.text }}</a>
                             {% if first_level.childs %}
                                 <dl class="layui-nav-child">

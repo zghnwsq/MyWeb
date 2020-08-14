@@ -15,6 +15,65 @@ python manage.py makemigrations --dry-run autotest
 # 指定迁移数据库
 --database=autotest
 
+# window apache+mod_wsgi 部署
+根据apache、python版本安装对应mod_wsgi
+################httpd.config#################
+# 加在末尾
+# mod_wsgi
+LoadFile "c:/python37/python37.dll"
+LoadModule wsgi_module "c:/python37/lib/site-packages/mod_wsgi/server/mod_wsgi.cp37-win_amd64.pyd"
+WSGIPythonHome "c:/python37"
 
+# Django wsgi config
 
+WSGIScriptAlias / C:/MyWeb/MyWeb/wsgi.py
+WSGIPythonHome c:/python37
+WSGIPythonPath C:/MyWeb
 
+<Directory C:/MyWeb/MyWeb>
+<Files wsgi.py>
+Require all granted
+</Files>
+</Directory>
+
+# Django static files
+# C:\MyWeb\MyWeb\STATIC_ROOT
+Alias /favicon.ico C:/MyWeb/MyWeb/STATIC_ROOT/favicon.ico
+
+Alias /static/ C:/MyWeb/MyWeb/STATIC_ROOT/
+
+<Directory C:/MyWeb/MyWeb/STATIC_ROOT>
+Require all granted
+</Directory>
+###########################################
+# 自动化用例执行
+# register_function
+id(pk auto), group, suite, function
+# execution
+id(pk auto), function(FK), method, range, comment, status
+# node
+id(pk auto), ip_port, tag
+
+# ExecutionV
+get_queryset: {
+    'executions': '',
+    'functions': '',
+    'nodes': ''
+}
+# 数据表格：
+搜索: group(下拉), suite(下拉), function(下拉)
+group(用例组,不可编辑), suite(用例集，不可编辑), function(test_class类, 不可编辑), method(测试方法, 不可编辑), range(数据范围,text可编辑), comment(备注,text可编辑), 
+node(执行节点, 下拉框), status(执行状态,不可编辑)
+# 数据行引入表单元素
+field属性： templet: '#selectTpl'
+对应script：
+<script type="text/html" id="selectTpl">
+  <select name="node" lay-verify="required">
+    {{#  layui.each(d.node, function(index, item){ }}
+        <option value={{item.id}}>{{item.ip_port}}-{{item.tag}}</option>
+     {{#  }); }}
+  </select>
+</script>
+
+# jquery设置多个css样式
+$(".layui-form-select").css({'margin-top': '-10px', 'margin-left': '-15px', 'margin-right': '-15px'});

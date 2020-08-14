@@ -42,3 +42,26 @@ class SuiteCount(models.Model):
     suite = models.CharField(max_length=32, null=True)
     count = models.IntegerField(null=True)
 
+
+class RegisterFunction(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    group = models.CharField(max_length=32, null=True)
+    suite = models.CharField(max_length=32, null=True)
+    function = models.CharField(max_length=64, null=True)
+
+
+class Execution(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    function = models.ForeignKey(RegisterFunction, blank=True, null=True, on_delete=models.CASCADE)
+    method = models.CharField(max_length=64)
+    ds_range = models.CharField(max_length=32)
+    comment = models.CharField(max_length=64)
+    status = models.CharField(max_length=16)
+
+
+class Node(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    ip_port = models.CharField(null=True, max_length=32)
+    tag = models.CharField(max_length=64)
+    status = models.CharField(max_length=16, default='on')
+

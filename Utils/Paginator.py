@@ -13,4 +13,4 @@ def paginator(data, page: int, limit: int):
     # Page obj转回list
     # data_list = [data for data in pg]
     # return data_list
-    return pg.object_list
+    return list(pg.object_list)

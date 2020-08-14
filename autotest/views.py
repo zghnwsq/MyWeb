@@ -4,16 +4,19 @@ from django.utils.timezone import *
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Min, Count, CharField
+from django.db.models import Min, Count, CharField, F
 from django.db.models.functions import Trunc, TruncDate, Cast
 from django.shortcuts import render
 from django.views import generic
-from MyWeb import settings
+# from MyWeb import settings
 from Utils.Personal import get_personal, get_menu
 from Utils.Paginator import *
 from .models import *
 from django.http import JsonResponse
-import pytz
+# from django.template.context_processors import csrf
+from .exec_test import *
+
+# import pytz
 
 
 class RunHisV(LoginRequiredMixin, generic.ListView):
@@ -52,7 +55,9 @@ def get_run_his(request):
     expand = ''
     if 'expand' in request.GET:
         expand = request.GET['expand']
-    run_his = RunHis.objects.using('autotest').all().order_by('-create_time').values('group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
+    run_his = RunHis.objects.using('autotest').all().order_by('-create_time').values('group', 'suite', 'case', 'title',
+                                                                                     'tester', 'result', 'report',
+                                                                                     'create_time')
     if 'tester' in request.GET and request.GET['tester']:
         tester = str(request.GET['tester']).strip()
         run_his = run_his.filter(tester=tester)
@@ -147,20 +152,23 @@ def get_run_count(request):
         suite_total = suite_total.filter(suite=suite)
     if request.GET['beg']:
         beg = request.GET['beg'].strip().split('-')
-        run_his = run_his.filter(create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
+        run_his = run_his.filter(
+            create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
     if request.GET['end']:
         end = request.GET['end'].strip().split('-')
-        run_his = run_his.filter(create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59, tzinfo=utc))  # pytz.timezone(settings.TIME_ZONE)
+        run_his = run_his.filter(create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59,
+                                                                    tzinfo=utc))  # pytz.timezone(settings.TIME_ZONE)
     run_his = run_his.values('group', 'suite', 'case', res=Min('result'))
     suite_list = [line for line in suite_total]
     count = len(suite_list)
     data_table = []
     for line in suite_list:
         run = len(run_his.filter(group=line.group, suite=line.suite).values('case').distinct())
-        executed_ratio = '%.1f%%' % (run/line.count*100)
-        pass_count = int(run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct().count())
+        executed_ratio = '%.1f%%' % (run / line.count * 100)
+        pass_count = int(
+            run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct().count())
         if run > 0 and pass_count <= run:
-            pass_ratio = '%.1f%%' % (pass_count/run*100)
+            pass_ratio = '%.1f%%' % (pass_count / run * 100)
         elif pass_count > run:
             pass_ratio = 'error'
         else:
@@ -191,7 +199,8 @@ class RunHisChartV(LoginRequiredMixin, generic.ListView):
     def get_queryset(self, **kwargs):
         # todo run his chart page
         run_his = RunHis.objects.using('autotest').values('group').annotate(
-            time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))  # tzinfo=pytz.timezone('US/Pacific')
+            time=Cast(TruncDate('create_time'), output_field=CharField()),
+            count=Count(1))  # tzinfo=pytz.timezone('US/Pacific')
         # print(run_his)
         names = run_his.values('group').distinct()
         # print(names)
@@ -227,7 +236,7 @@ def get_run_his_chart_data(request):
         run_his = run_his.filter(
             create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59, tzinfo=utc))
     run_his = run_his.values('group').annotate(
-            time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
+        time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
     series = []
     names = run_his.values('group').distinct()
     for name in names:
@@ -238,3 +247,96 @@ def get_run_his_chart_data(request):
         series.append({'name': name['group'], 'data': datas})
     # print(series)
     return JsonResponse({'data': series})
+
+
+class ExecutionV(LoginRequiredMixin, generic.ListView):
+    template_name = 'autotest/execution.html'
+    context_object_name = 'options'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context = get_personal(self.request, context)
+        context = get_menu(context)
+        return context
+
+    def get_queryset(self, **kwargs):
+        nodes = Node.objects.filter(status='on')
+        # functions = RegisterFunction.objects.all()
+        group = RegisterFunction.objects.values('group').distinct()
+        suite = RegisterFunction.objects.values('suite').distinct()
+        function = RegisterFunction.objects.values('function').distinct()
+        # executions = Execution.objects.all().values('function__group', 'function__suite', 'method', 'ds_range',
+        #                                             'function__function', 'comment', 'status')
+        # csrf
+        # csrf_token = csrf(self.request)
+        csrf_token = self.request.COOKIES.get('csrftoken')
+        context = {
+            'nodes': nodes,
+            'group': group,
+            'suite': suite,
+            'function': function,
+            'csrf_token': csrf_token,
+        }
+        return context
+
+
+@login_required()
+def get_jobs(request):
+    page = request.GET['page'] or '0'
+    limit = request.GET['limit'] or '30'
+    expand = ''
+    if 'expand' in request.GET:
+        expand = request.GET['expand']
+    jobs = Execution.objects.all().annotate(group=F('function__group'),
+                                            suite=F('function__suite'),
+                                            func=F('function__function'),
+                                            mthd=F('method')
+                                            ).values('group', 'suite',
+                                                     'mthd', 'ds_range',
+                                                     'func', 'comment',
+                                                     'status').order_by('group', 'suite')
+    # nodes = list(Node.objects.filter(status='on').values())
+    # print(jobs)
+    count = jobs.count()
+    if count > 0:
+        data_list = paginator(jobs, int(page), int(limit))
+        # for item in data_list:
+        #     item['node'] = nodes
+        # print(data_list)
+    else:
+        data_list = {}
+    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
+
+
+@login_required()
+def exec_job(request):
+    func = request.POST['func'].strip()
+    mthd = request.POST['mthd'].strip()
+    ds_range = request.POST['ds_range'].strip()
+    node = request.POST['node'].strip()
+    comment = request.POST['comment'].strip()
+    # 校验是否存在
+    func_count = len(RegisterFunction.objects.filter(function=func))
+    execution = Execution.objects.filter(method=mthd, ds_range=ds_range)
+    execution_count = len(execution)
+    get_node = Node.objects.filter(ip_port=node, status='on')
+    node_count = len(get_node)
+    if func_count > 0 and execution_count > 0 and node_count > 0:
+        # 占用节点
+        for row in get_node:
+            row.status = 'running'
+            row.save()
+        # 更新任务状态
+        for row in execution:
+            row.status = 'running'
+            row.save()
+        # 多线程异步执行
+        status = job_run(func, mthd, ds_range, node, comment, get_node, execution)
+        # 线程异常，更新任务状态
+        if 'Error' in status:
+            for row in execution:
+                row.status = status
+                row.save()
+    else:
+        return JsonResponse({"msg": "节点注册方法或任务不存在，或执行节点不可用!"})
+    return JsonResponse({"msg": "提交成功!"})

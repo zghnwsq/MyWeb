@@ -10,5 +10,8 @@ urlpatterns = [
     path('run_count/get/', views.get_run_count, name='get_count'),
     path('run_his_chart/', views.RunHisChartV.as_view(), name='run_his_chart'),
     path('run_his_chart/data/', views.get_run_his_chart_data, name='run_his_chart_data'),
+    path('execution/', views.ExecutionV.as_view(), name='execution'),
+    path('jobs/get/', views.get_jobs, name='get_jobs'),
+    path('job/exec/', views.exec_job, name='exec_job'),
 ]
 

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 'mod_wsgi.server',  # apache+mod_wsgi in windows
 ]
 
 MIDDLEWARE = [
@@ -57,7 +58,8 @@ ROOT_URLCONF = 'MyWeb.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates'), os.path.join('D:/PythonProject/zbh/Report')],
+        'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates'), os.path.join('D:/PythonProject/zbh/Report'),
+                 os.path.join('D:/PythonProject/EasySelenium/Report')],  # 加入报告路径，用于展示报告
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -85,9 +87,13 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': os.path.join(BASE_DIR, 'autotest.sqlite'),
     # },
+    # 'autotest': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
+    # }
     'autotest': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
+        'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
     }
 }
 

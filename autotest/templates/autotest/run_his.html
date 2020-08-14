@@ -163,7 +163,7 @@
                             expand: expand
                         }
                         , done: function (res, curr, count) {
-                            var exp = res.expand;
+                            let exp = res.expand;
                             if (exp != '' && exp != null) {
                                 $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                             }

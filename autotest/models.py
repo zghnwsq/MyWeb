@@ -54,9 +54,9 @@ class Execution(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     function = models.ForeignKey(RegisterFunction, blank=True, null=True, on_delete=models.CASCADE)
     method = models.CharField(max_length=64)
-    ds_range = models.CharField(max_length=32)
-    comment = models.CharField(max_length=64)
-    status = models.CharField(max_length=16)
+    ds_range = models.CharField(max_length=32, null=False)
+    comment = models.CharField(max_length=64, null=False)
+    status = models.CharField(max_length=16, null=False)
 
 
 class Node(models.Model):

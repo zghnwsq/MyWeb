@@ -1,0 +1,43 @@
+<div class="layui-form  layui-form-pane" lay-filter="new_job" style="padding: 20px 5em;">
+    {% csrf_token %}
+    <div class="new_job">
+        <div class="layui-form-item">
+            <label class="layui-form-label ">Function：</label>
+            <div class="layui-input-inline">
+                <select name="new_func" id="new_func" lay-verify="required">
+                    <option value="">---</option>
+                    {% if func %}
+                        {% for opt in func %}
+                            <option value="{{ opt.id }}">{{ opt.group }}-{{ opt.suite }}-{{ opt.function }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">Method：</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" name="new_method" id="new_method" autocomplete="off">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">DS-Range：</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" name="new_ds_range" id="new_ds_range" autocomplete="off">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">Comment：</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" name="new_comment" id="new_comment" autocomplete="off">
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    {#弹出层需要重新渲染#}
+    layui.use('form', function () {
+        let fm = layui.form;
+        fm.render();
+    });
+</script>

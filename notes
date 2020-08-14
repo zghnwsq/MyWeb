@@ -77,3 +77,10 @@ field属性： templet: '#selectTpl'
 
 # jquery设置多个css样式
 $(".layui-form-select").css({'margin-top': '-10px', 'margin-left': '-15px', 'margin-right': '-15px'});
+
+# 新建页面
+function* group-suite-function
+method*
+ds_range
+comment
+保存后重载父表格

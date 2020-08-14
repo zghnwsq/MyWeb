@@ -164,7 +164,7 @@
                         }
                         , done: function (res, curr, count) {
                             let exp = res.expand;
-                            if (exp != '' && exp != null) {
+                            if (exp !== '' && exp != null) {
                                 $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                             }
                         }

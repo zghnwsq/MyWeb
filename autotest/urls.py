@@ -13,5 +13,7 @@ urlpatterns = [
     path('execution/', views.ExecutionV.as_view(), name='execution'),
     path('jobs/get/', views.get_jobs, name='get_jobs'),
     path('job/exec/', views.exec_job, name='exec_job'),
+    path('job/new_layer/', views.new_job_html, name='new_job_html'),
+    path('job/save/', views.save_new_job, name='save_new_job'),
 ]
 

@@ -58,19 +58,19 @@ def get_run_his(request):
     run_his = RunHis.objects.using('autotest').all().order_by('-create_time').values('group', 'suite', 'case', 'title',
                                                                                      'tester', 'result', 'report',
                                                                                      'create_time')
-    if 'tester' in request.GET and request.GET['tester']:
+    if 'tester' in request.GET.keys() and request.GET['tester']:
         tester = str(request.GET['tester']).strip()
         run_his = run_his.filter(tester=tester)
-    if 'group' in request.GET and request.GET['group']:
+    if 'group' in request.GET.keys() and request.GET['group']:
         group = str(request.GET['group']).strip()
         run_his = run_his.filter(group=group)
-    if 'suite' in request.GET and request.GET['suite']:
+    if 'suite' in request.GET.keys() and request.GET['suite']:
         suite = str(request.GET['suite']).strip()
         run_his = run_his.filter(suite=suite)
-    if 'testcase' in request.GET and request.GET['testcase']:
+    if 'testcase' in request.GET.keys() and request.GET['testcase']:
         testcase = str(request.GET['testcase']).strip()
         run_his = run_his.filter(case=testcase)
-    if 'result' in request.GET and request.GET['result']:
+    if 'result' in request.GET.keys() and request.GET['result']:
         result = str(request.GET['result']).strip()
         run_his = run_his.filter(result=result)
     count = run_his.count()
@@ -294,15 +294,20 @@ def get_jobs(request):
                                             ).values('group', 'suite',
                                                      'mthd', 'ds_range',
                                                      'func', 'comment',
-                                                     'status').order_by('group', 'suite')
-    # nodes = list(Node.objects.filter(status='on').values())
-    # print(jobs)
+                                                     'status')
+    if 'group' in request.GET.keys() and request.GET['group']:
+        group = request.GET['group'].strip()
+        jobs = jobs.filter(function__group=group)
+    if 'suite' in request.GET.keys() and request.GET['suite']:
+        suite = request.GET['suite'].strip()
+        jobs = jobs.filter(function__suite=suite)
+    if 'func' in request.GET.keys() and request.GET['func']:
+        func = request.GET['func'].strip()
+        jobs = jobs.filter(function__function=func)
+    jobs = jobs.order_by('group', 'suite')
     count = jobs.count()
     if count > 0:
         data_list = paginator(jobs, int(page), int(limit))
-        # for item in data_list:
-        #     item['node'] = nodes
-        # print(data_list)
     else:
         data_list = {}
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
@@ -340,3 +345,40 @@ def exec_job(request):
     else:
         return JsonResponse({"msg": "节点注册方法或任务不存在，或执行节点不可用!"})
     return JsonResponse({"msg": "提交成功!"})
+
+
+@login_required()
+def new_job_html(request):
+    """
+        新建任务的弹出层html
+    """
+    func = RegisterFunction.objects.distinct().order_by('group', 'suite', 'function')
+    print(func)
+    return render(request, 'autotest/new_job.html', {'func': func})
+
+
+@login_required()
+def save_new_job(request):
+    """
+        保存新建任务
+    """
+    func = request.POST['func'].strip()
+    mthd = request.POST['mthd'].strip()
+    ds_range = request.POST['ds_range'].strip()
+    comment = request.POST['comment'].strip()
+    if not func or not mthd:
+        return JsonResponse({"msg": "节点注册方法和测试方法不能为空!"})
+    exec_count = len(Execution.objects.filter(function=func, method=mthd))
+    get_func = RegisterFunction.objects.filter(id=func)
+    if len(get_func) == 1 and exec_count == 0:
+        new = Execution(method=mthd, ds_range=ds_range, comment=comment, function=get_func[0])
+        new.save()
+        return JsonResponse({"msg": "保存成功!"})
+    elif len(get_func) != 1:
+        return JsonResponse({"msg": "节点注册方法不存在!"})
+    elif exec_count > 0:
+        return JsonResponse({"msg": "测试任务重复!"})
+    else:
+        return JsonResponse({"msg": "未知错误!"})
+
+

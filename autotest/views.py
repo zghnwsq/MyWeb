@@ -164,7 +164,12 @@ def get_run_count(request):
     data_table = []
     for line in suite_list:
         run = len(run_his.filter(group=line.group, suite=line.suite).values('case').distinct())
-        executed_ratio = '%.1f%%' % (run / line.count * 100)
+        if line.count != 0:
+            executed_ratio = '%.1f%%' % (run / line.count * 100)
+            if run > line.count:
+                executed_ratio = '100.0%'
+        else:
+            executed_ratio = 'error'
         pass_count = int(
             run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct().count())
         if run > 0 and pass_count <= run:
@@ -310,6 +315,13 @@ def get_jobs(request):
         data_list = paginator(jobs, int(page), int(limit))
     else:
         data_list = {}
+    for data in data_list:
+        nodes = list(RegisterFunction.objects.filter(function=data['func']).values('node').distinct())
+        for node in nodes:
+            tag = Node.objects.filter(ip_port=node['node']).values('tag')[:1]
+            # print(tag[0])
+            node['tag'] = tag[0]['tag']
+        data['nodes'] = nodes
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
 
 

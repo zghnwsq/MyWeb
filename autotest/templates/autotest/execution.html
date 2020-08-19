@@ -68,18 +68,19 @@
 {% endblock %}
 {% load static %}
 {% block script %}
-{#    <script type="text/html" id="selectNode">#}
-{#        <select name="node" lay-filter="node" id="node" required lay-verify="required">#}
-{#            <option value="none">---</option>#}
-{#            {% if options.nodes %}#}
-{#                {% for opt in options.nodes %}#}
-{#                    <option value="{{ opt.ip_port }}">{{ opt.ip_port }}-{{ opt.tag }}</option>#}
-{#                {% endfor %}#}
-{#            {% endif %}#}
-{#        </select>#}
-{#    </script>#}
+    {#    <script type="text/html" id="selectNode">#}
+    {#        <select name="node" lay-filter="node" id="node" required lay-verify="required">#}
+    {#            <option value="none">---</option>#}
+    {#            {% if options.nodes %}#}
+    {#                {% for opt in options.nodes %}#}
+    {#                    <option value="{{ opt.ip_port }}">{{ opt.ip_port }}-{{ opt.tag }}</option>#}
+    {#                {% endfor %}#}
+    {#            {% endif %}#}
+    {#        </select>#}
+    {#    </script>#}
     <script type="text/html" id="operations">
         <a class="layui-btn layui-btn-xs" lay-event="exec">执行</a>
+        <a class="layui-btn layui-btn-xs" lay-event="del">删除</a>
     </script>
     <script>
         !function () {
@@ -129,7 +130,7 @@
                             }
                         }
                         , {field: 'status', title: 'Status', align: 'center'}
-                        , {field: '', title: 'Action', align: 'center', toolbar: '#operations', width: 80}
+                        , {field: '', title: 'Action', align: 'center', toolbar: '#operations', minWidth: 100}
                     ]]
                     , done: function (res, curr, count) {
                         {#设置select样式#}
@@ -181,7 +182,7 @@
             };
             {#搜索按钮触发#}
             $('#search').on('click', function () {
-                var type = $(this).data('type');
+                let type = $(this).data('type');
                 active[type] ? active[type].call(this) : '';
             });
             {#重置按钮触发#}
@@ -214,21 +215,46 @@
                     let node = $(locator).val();
                     const csrf = $("#csrf").val();
                     {#console.log(node);#}
-                    if (node === 'none' || ds_range.trim() === '') {
-                        layer.open({
-                            content: '<div style="padding: 20px 100px;">' + '数据源范围或执行节点不能为空!' + '</div>'
-                            , type: 1
-                            , title: '提示'
-                            , time: 5000
-                            , btn: '确定'
-                            , yes: function () {
-                                layer.closeAll();
-                            }
-                        });
-                    } else {
+                    if (layEvent === 'exec') {
+                        if (node === 'none' || ds_range.trim() === '') {
+                            layer.open({
+                                content: '<div style="padding: 20px 100px;">' + '数据源范围或执行节点不能为空!' + '</div>'
+                                , type: 1
+                                , title: '提示'
+                                , time: 5000
+                                , btn: '确定'
+                                , yes: function () {
+                                    layer.closeAll();
+                                }
+                            });
+                        } else {
+                            {#执行#}
+                            $.ajax({
+                                url: "/autotest/job/exec/"
+                                , type: "POST"
+                                , beforeSend: function (xhr) {
+                                    xhr.setRequestHeader("X-CSRFToken", csrf);
+                                }
+                                , data: {func: func, mthd: mthd, ds_range: ds_range, node: node, comment: comment}
+                                , success: function (data, textStatus) {
+                                    {#console.log(data);#}
+                                    layer.open({
+                                        content: '<div style="padding: 20px 100px;">' + data.msg + '</div>'
+                                        , type: 1
+                                        , title: '提示'
+                                        , time: 5000
+                                        , btn: '确定'
+                                        , yes: function () {
+                                            layer.closeAll();
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    } else if (layEvent === 'del') {
                         {#执行#}
                         $.ajax({
-                            url: "/autotest/job/exec/"
+                            url: "/autotest/job/del/"
                             , type: "POST"
                             , beforeSend: function (xhr) {
                                 xhr.setRequestHeader("X-CSRFToken", csrf);
@@ -246,6 +272,8 @@
                                         layer.closeAll();
                                     }
                                 });
+                                {# 表格重载 刷新结果 #}
+                                active['reload'].call(this);
                             }
                         });
                     }

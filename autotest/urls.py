@@ -15,5 +15,6 @@ urlpatterns = [
     path('job/exec/', views.exec_job, name='exec_job'),
     path('job/new_layer/', views.new_job_html, name='new_job_html'),
     path('job/save/', views.save_new_job, name='save_new_job'),
+    path('job/del/', views.del_job, name='del_job'),
 ]
 

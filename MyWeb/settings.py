@@ -83,18 +83,18 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    # 'autotest': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'autotest.sqlite'),
-    # },
+    'autotest': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    },
     # 'autotest': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
     # }
-    'autotest': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
-    }
+    # 'autotest': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
+    # }
 }
 
 DATABASE_ROUTERS = []

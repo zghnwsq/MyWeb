@@ -346,6 +346,8 @@ def exec_job(request):
         # 更新任务状态
         for row in execution:
             row.status = 'running'
+            row.ds_range = ds_range
+            row.comment = comment
             row.save()
         # 多线程异步执行
         status = job_run(func, mthd, ds_range, node, comment, get_node, execution)
@@ -355,7 +357,7 @@ def exec_job(request):
                 row.status = status
                 row.save()
     else:
-        return JsonResponse({"msg": "节点注册方法或任务不存在，或执行节点不可用!"})
+        return JsonResponse({"msg": "ERROR: 节点注册方法或任务不存在，或执行节点不可用!"})
     return JsonResponse({"msg": "提交成功!"})
 
 
@@ -364,7 +366,8 @@ def new_job_html(request):
     """
         新建任务的弹出层html
     """
-    func = RegisterFunction.objects.distinct().order_by('group', 'suite', 'function')
+    func = RegisterFunction.objects.distinct().values('group', 'suite', 'function').order_by('group', 'suite',
+                                                                                             'function').distinct()
     print(func)
     return render(request, 'autotest/new_job.html', {'func': func})
 
@@ -379,7 +382,7 @@ def save_new_job(request):
     ds_range = request.POST['ds_range'].strip()
     comment = request.POST['comment'].strip()
     if not func or not mthd:
-        return JsonResponse({"msg": "节点注册方法和测试方法不能为空!"})
+        return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
     exec_count = len(Execution.objects.filter(function=func, method=mthd))
     get_func = RegisterFunction.objects.filter(id=func)
     if len(get_func) == 1 and exec_count == 0:
@@ -387,10 +390,24 @@ def save_new_job(request):
         new.save()
         return JsonResponse({"msg": "保存成功!"})
     elif len(get_func) != 1:
-        return JsonResponse({"msg": "节点注册方法不存在!"})
+        return JsonResponse({"msg": "ERROR: 节点注册方法不存在!"})
     elif exec_count > 0:
-        return JsonResponse({"msg": "测试任务重复!"})
+        return JsonResponse({"msg": "ERROR: 测试任务重复!"})
     else:
-        return JsonResponse({"msg": "未知错误!"})
+        return JsonResponse({"msg": "ERROR: 未知错误!"})
 
 
+@login_required()
+def del_job(request):
+    func = request.POST['func'].strip()
+    mthd = request.POST['mthd'].strip()
+    execution = Execution.objects.filter(method=mthd, function__function=func)
+    if len(execution) > 0:
+        if len(execution.filter(status='running')) > 0:
+            return JsonResponse({"msg": "ERROR: 任务执行中,不能删除!"})
+        else:
+            for job in execution:
+                job.delete()
+            return JsonResponse({"msg": "删除成功!"})
+    else:
+        return JsonResponse({"msg": "ERROR: 未知错误!"})

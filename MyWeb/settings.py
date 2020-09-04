@@ -153,14 +153,11 @@ LOGIN_URL = '/login/'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 60*30
 
-today = time.strftime("%Y%m%d", time.localtime())
-log_file = os.path.join(BASE_DIR, 'log', today, today+'.log')
-if not os.path.exists(os.path.join(BASE_DIR, 'log', today)):
-    os.mkdir(os.path.join(BASE_DIR, 'log', today))
-if not os.path.exists(log_file):
-    f = open(log_file, 'w')
-    f.write('')
-    f.close()
+# today = time.strftime("%Y%m%d", time.localtime())
+LOG_FILE = os.path.join(BASE_DIR, 'log')
+if not os.path.exists(os.path.join(BASE_DIR, 'log')):
+    os.mkdir(os.path.join(BASE_DIR, 'log'))
+LOG_FILE_NAME = 'http.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -177,9 +174,14 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
+            # 'class': 'logging.FileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',  # 改为日志滚动
             'formatter': 'default',
-            'filename': log_file,
+            'filename': os.path.join(LOG_FILE, LOG_FILE_NAME),
+            'when': 'H',
+            'interval': 6,
+            'backupCount': 100,
+            'encoding': 'utf-8',
         },
     },
     'loggers': {

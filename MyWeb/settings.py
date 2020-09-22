@@ -183,10 +183,16 @@ LOGGING = {
             'backupCount': 100,
             'encoding': 'utf-8',
         },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout',
+            'formatter': 'default',
+        },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': 'INFO',
             'formatter': 'default',
             'propagate': True,

@@ -30,3 +30,25 @@ class UserMenu(models.Model):
 
     class Meta:
         db_table = 'user_menu'
+
+
+class PermissionDict(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    permi = models.CharField(max_length=64)
+    text = models.CharField(max_length=32)
+
+    def __str__(self):
+        return self.text
+
+    class Meta:
+        db_table = 'permission_dict'
+
+
+class UserPermission(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    permi = models.ForeignKey(PermissionDict, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'user_permission'
+

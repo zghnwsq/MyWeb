@@ -67,7 +67,6 @@ class IndexV(LoginRequiredMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        # todo index page
         pass
 
 
@@ -75,3 +74,12 @@ class IndexV(LoginRequiredMixin, generic.ListView):
 def logout_v(request):
     logout(request)
     return HttpResponseRedirect(reverse('login:login'))
+
+
+@login_required
+def permission_denied(request):
+    context = get_personal(request, {})
+    context = get_menu(context)
+    context['time'] = datetime.datetime.now().strftime('%Y-%m-%d %A')
+    context['message'] = 'Permission Denied!'
+    return render(request, 'login/index.html', context=context)

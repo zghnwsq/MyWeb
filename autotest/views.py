@@ -15,11 +15,13 @@ from .models import *
 from django.http import JsonResponse
 # from django.template.context_processors import csrf
 from .exec_test import *
+from Utils.MyMixin import URIPermissionMixin
+from Utils.decorators import auth_check
 
 # import pytz
 
 
-class RunHisV(LoginRequiredMixin, generic.ListView):
+class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     template_name = 'autotest/run_his.html'
     context_object_name = 'options'
 
@@ -42,6 +44,7 @@ class RunHisV(LoginRequiredMixin, generic.ListView):
 
 
 @login_required
+@auth_check
 def get_run_his(request):
     # default get params: page=1 limit=10
     # {
@@ -105,7 +108,7 @@ def get_report(request):
         return render(request, 'autotest/report.html', {'report': report})
 
 
-class RunCountV(LoginRequiredMixin, generic.ListView):
+class RunCountV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     template_name = 'autotest/run_count.html'
     context_object_name = 'options'
 
@@ -191,7 +194,7 @@ def get_run_count(request):
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
 
 
-class RunHisChartV(LoginRequiredMixin, generic.ListView):
+class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     template_name = 'autotest/run_his_chart.html'
     context_object_name = 'data'
 
@@ -254,7 +257,7 @@ def get_run_his_chart_data(request):
     return JsonResponse({'data': series})
 
 
-class ExecutionV(LoginRequiredMixin, generic.ListView):
+class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     template_name = 'autotest/execution.html'
     context_object_name = 'options'
 

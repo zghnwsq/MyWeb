@@ -84,3 +84,9 @@ method*
 ds_range
 comment
 保存后重载父表格
+
+
+--授予全权限
+-- insert into user_permission(permi_id, user_id)  select id, 2 from permission_dict;
+--授予全菜单
+-- insert into user_menu(user_id, menu_id)  select 1, id from menu;

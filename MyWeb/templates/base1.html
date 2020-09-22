@@ -95,6 +95,18 @@
         if (exp != null && exp.toString() !== '') {
             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
         }
+        {% if message %}
+            layer.open({
+                content: '<div style="padding: 20px 100px;">' + '{{message}}' + '</div>'
+                , type: 1
+                , title: '提示'
+                , time: 5000
+                , btn: '确定'
+                , yes: function () {
+                    layer.closeAll();
+                }
+            });
+        {% endif %}
 
     }();
 </script>

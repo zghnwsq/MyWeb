@@ -214,9 +214,9 @@
                     let locator = "tr[data-index= '" + index.toString() + "'] select#node";
                     let node = $(locator).val();
                     const csrf = $("#csrf").val();
-                    {#console.log(node);#}
+                    {#console.log(mthd);#}
                     if (layEvent === 'exec') {
-                        if (node === 'none' || ds_range.trim() === '') {
+                        if (node === 'none' || (! mthd.trim().includes('all') && ds_range.trim() === '')) {
                             layer.open({
                                 content: '<div style="padding: 20px 100px;">' + '数据源范围或执行节点不能为空!' + '</div>'
                                 , type: 1

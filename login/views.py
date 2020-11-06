@@ -26,6 +26,11 @@ class LoginV(LoginView):
     template_name = 'login/login.html'
     logger = logging.getLogger('django')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['err'] = ''
+        return context
+
     def post(self, request, *args, **kwargs):
         form = LoginForm(request.POST)
         redirect = request.POST.get('next', '')

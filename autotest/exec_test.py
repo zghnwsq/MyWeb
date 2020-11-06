@@ -16,6 +16,9 @@ def run_by_node(func, mthd, ds_range, node, comment):
     """
     try:
         s = ServerProxy("http://%s" % node)
+        is_alive = s.is_alive()
+        if 'alive' not in is_alive:
+            raise TimeoutError('Node connection timeout!')
         func_obj = getattr(s, func)
         res = func_obj(mthd, ds_range, comment)
         return res  # 执行成功将返回:finished,否则返回报错信息
@@ -23,6 +26,10 @@ def run_by_node(func, mthd, ds_range, node, comment):
         return 'Node connection timeout!'
     except AttributeError:
         return 'Node function not exists!'
+    except ConnectionRefusedError:
+        return 'Node Connection refused!'
+    except Exception:
+        return 'Node Error!'
 
 
 class RunnerThread(threading.Thread):
@@ -43,9 +50,13 @@ class RunnerThread(threading.Thread):
 
     def run(self):
         self.res = run_by_node(self.func, self.mthd, self.ds_range, self.node, self.comment)
+        if 'Node' in self.res:
+            node_status = 'off'
+        else:
+            node_status = 'on'
         # 执行结束，释放节点
         for row in self.node_model:
-            row.status = 'on'
+            row.status = node_status
             row.save()
         # 执行结束，修改任务状态
         status = self.res

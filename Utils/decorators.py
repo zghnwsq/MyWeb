@@ -1,12 +1,17 @@
 # coding:utf-8
 from functools import wraps
-from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import render
-from django.urls import reverse
+from django.http import JsonResponse
+# from django.shortcuts import render
+# from django.urls import reverse
 from login.models import *
 
 
 def auth_check(func):
+    """
+    鉴权修饰器
+    :param func: method view function
+    :return: 鉴权通过，执行原视图方法；鉴权不通过，则返回报错json
+    """
     @wraps(func)
     def check(request, *args, **kwargs):
         # print(request.user)

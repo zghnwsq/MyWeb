@@ -66,12 +66,14 @@
         </form>
     </div>
     <script>
-        var err = '{{ err }}';
         !function(){
             var layer = layui.layer;
-            if(err !== ''){
-                layer.msg(err, {offset:'30%', time:2000})
-            }
+            {% if err %}
+                var err = '{{ err }}';
+                if(err !== ''){
+                    layer.msg(err, {offset:'30%', time:2000})
+                }
+            {% endif %}
             var $ = layui.jquery;
             var form = layui.form;
             form.on('submit(login)', function (data){

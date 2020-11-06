@@ -370,8 +370,8 @@ def new_job_html(request):
         新建任务的弹出层html
     """
     func = RegisterFunction.objects.distinct().values('group', 'suite', 'function').order_by('group', 'suite',
-                                                                                             'function').distinct()
-    print(func)
+                                                                                                   'function').distinct()
+    # print(func)
     return render(request, 'autotest/new_job.html', {'func': func})
 
 
@@ -386,9 +386,9 @@ def save_new_job(request):
     comment = request.POST['comment'].strip()
     if not func or not mthd:
         return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
-    exec_count = len(Execution.objects.filter(function=func, method=mthd))
-    get_func = RegisterFunction.objects.filter(id=func)
-    if len(get_func) == 1 and exec_count == 0:
+    exec_count = len(Execution.objects.filter(function__function=func, method=mthd))
+    get_func = RegisterFunction.objects.filter(function=func)
+    if len(get_func) >= 1 and exec_count == 0:
         new = Execution(method=mthd, ds_range=ds_range, comment=comment, function=get_func[0])
         new.save()
         return JsonResponse({"msg": "保存成功!"})

@@ -83,17 +83,29 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    'autotest': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    },
+    # 'autotest': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    # },
     # 'autotest': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
     # }
-    # 'autotest': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
+    'autotest': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    },
+    # 'mysql': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'HOST': '',
+    #     'PORT': '',
+    #     'NAME': '',
+    #     'USER': '',
+    #     'PASSWORD': '',
+    #     'OPTIONS': {
+    #         'default-character-set': 'utf8'
+    #     },
     # }
 }
 
@@ -142,6 +154,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "layui"),
     os.path.join(BASE_DIR, "MyWeb/statics"),
     os.path.join(BASE_DIR, "MyWeb/statics/hightcharts"),
+    'D:/PythonProject/EasySelenium/Report',
     # os.path.join(BASE_DIR, "layui/imges/face"),
     # os.path.join(BASE_DIR, "layui/css/modules/laydate/default"),
     # os.path.join(BASE_DIR, "layui/css/modules/layer/default"),
@@ -155,59 +168,60 @@ SESSION_COOKIE_AGE = 60*30
 
 # today = time.strftime("%Y%m%d", time.localtime())
 LOG_FILE = os.path.join(BASE_DIR, 'log')
-if not os.path.exists(os.path.join(BASE_DIR, 'log')):
-    os.mkdir(os.path.join(BASE_DIR, 'log'))
-LOG_FILE_NAME = 'http.log'
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'default': {
-            'format': '{asctime} {filename:s} {module} {funcName:s} {levelname} {message}',
-            'style': '{',
-        },
-        'detail': {
-            'format': '{asctime} {process:d} {thread:d} {pathname:s} {module} {funcName:s} {levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            # 'class': 'logging.FileHandler',
-            'class': 'logging.handlers.TimedRotatingFileHandler',  # 改为日志滚动
-            'formatter': 'default',
-            'filename': os.path.join(LOG_FILE, LOG_FILE_NAME),
-            'when': 'H',
-            'interval': 6,
-            'backupCount': 100,
-            'encoding': 'utf-8',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout',
-            'formatter': 'default',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'formatter': 'default',
-            'propagate': True,
-        },
-        # 'django.request': {
-        #     'handlers': ['file'],
-        #     'level': 'INFO',
-        #     'formatter': 'default',
-        #     'propagate': True,
-        # },
-        # 'django.server': {
-        #     'handlers': ['file'],
-        #     'level': 'INFO',
-        #     'formatter': 'default',
-        #     'propagate': True,
-        # },
-    },
-}
+# if not os.path.exists(os.path.join(BASE_DIR, 'log')):
+#     os.mkdir(os.path.join(BASE_DIR, 'log'))
+# LOG_FILE_NAME = 'http.log'
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'default': {
+#             'format': '{asctime} {filename:s} {module} {funcName:s} {levelname} {message}',
+#             'style': '{',
+#         },
+#         'detail': {
+#             'format': '{asctime} {process:d} {thread:d} {pathname:s} {module} {funcName:s} {levelname} {message}',
+#             'style': '{',
+#         },
+#     },
+#     'handlers': {
+#         'file': {
+#             'level': 'INFO',
+#             # 'class': 'logging.FileHandler',
+#             'class': 'logging.handlers.TimedRotatingFileHandler',  # 改为日志滚动
+#             'formatter': 'default',
+#             'filename': os.path.join(LOG_FILE, LOG_FILE_NAME),
+#             'when': 'H',
+#             'interval': 6,
+#             'backupCount': 100,
+#             'encoding': 'utf-8',
+#         },
+#         'console': {
+#             'level': 'INFO',
+#             'class': 'logging.StreamHandler',
+#             'stream': 'ext://sys.stdout',
+#             'formatter': 'default',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['file', 'console'],
+#             'level': 'INFO',
+#             'formatter': 'default',
+#             'propagate': True,
+#         },
+#         # 'django.request': {
+#         #     'handlers': ['file'],
+#         #     'level': 'INFO',
+#         #     'formatter': 'default',
+#         #     'propagate': True,
+#         # },
+#         # 'django.server': {
+#         #     'handlers': ['file'],
+#         #     'level': 'INFO',
+#         #     'formatter': 'default',
+#         #     'propagate': True,
+#         # },
+#     },
+# }
+

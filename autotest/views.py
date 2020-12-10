@@ -12,7 +12,7 @@ from django.views import generic
 from Utils.Personal import get_personal, get_menu
 from Utils.Paginator import *
 from .models import *
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 # from django.template.context_processors import csrf
 from .exec_test import *
 from Utils.MyMixin import URIPermissionMixin
@@ -102,7 +102,10 @@ def get_run_his(request):
 def get_report(request):
     file_path = request.GET['path']
     if file_path:
-        return render(request, file_path, {})
+        if '.html' in file_path:
+            return render(request, file_path, {})
+        else:
+            return HttpResponseRedirect('/static/' + file_path.replace('\\', '/') + '/index.html')
     else:
         report = '<h2>Can not get the report.</h2>'
         return render(request, 'autotest/report.html', {'report': report})

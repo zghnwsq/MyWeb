@@ -9,6 +9,7 @@ from login.models import *
 def auth_check(func):
     """
     鉴权修饰器
+    @wraps(view_func)的作用: 不改变使用装饰器原有函数的结构(如__name__, __doc__)
     :param func: method view function
     :return: 鉴权通过，执行原视图方法；鉴权不通过，则返回报错json
     """

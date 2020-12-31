@@ -62,15 +62,15 @@
 {% block script %}
     <script>
         !function () {
-            var table = layui.table;
-            var form = layui.form;
-            var laydate = layui.laydate;
-            var $ = layui.$;
-            var expand = layui.sessionData('expand').expand;
-            var group = $('#group').val();
-            var suite = $('#suite').val();
-            var beg = '';
-            var end = '';
+            let table = layui.table;
+            let form = layui.form;
+            let laydate = layui.laydate;
+            let $ = layui.$;
+            let expand = layui.sessionData('expand').expand;
+            let group = $('#group').val();
+            let suite = $('#suite').val();
+            let beg = '';
+            let end = '';
 
             laydate.render({
                 elem: '#from'
@@ -78,9 +78,9 @@
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
                     beg = value;
-                    if(end!='' && beg!=''){
-                        var end_date = new Date(end).getDate();
-                        var beg_date = new Date(beg).getDate();
+                    if(end!=='' && beg!==''){
+                        let end_date = new Date(end).getDate();
+                        let beg_date = new Date(beg).getDate();
                         if (beg_date>end_date){
                             layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000})
                         }
@@ -94,9 +94,9 @@
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
                     end = value;
-                    if(end!='' && beg!=''){
-                        var end_date = new Date(end).getDate();
-                        var beg_date = new Date(beg).getDate();
+                    if(end!=='' && beg!==''){
+                        let end_date = new Date(end).getDate();
+                        let beg_date = new Date(beg).getDate();
                         if (beg_date>end_date){
                             layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000})
                         }
@@ -104,7 +104,7 @@
                 }
             });
 
-            var run_his = table.render({
+            let run_his = table.render({
                     elem: '#run_his'
                     , height: 'full'
                     , url: '/autotest/run_count/get/' //数据接口
@@ -130,8 +130,8 @@
                         , {field: 'pass_ratio', title: 'Pass Ratio', align: 'center'}
                     ]]
                     , done: function (res, curr, count) {
-                        var exp = res.expand;
-                        if (exp != '' && exp != null) {
+                        let exp = res.expand;
+                        if (exp !== '' && exp != null) {
                             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                         }
                     }
@@ -139,11 +139,11 @@
                 })
             ;
 
-            var active = {
+            let active = {
                 reload: function () {
-                    var group = $('#group').val();
-                    var suite = $('#suite').val();
-                    var expand = layui.sessionData('expand').expand;
+                    let group = $('#group').val();
+                    let suite = $('#suite').val();
+                    let expand = layui.sessionData('expand').expand;
                     {#console.log(group);#}
                     run_his.reload({
                         page: {
@@ -157,8 +157,8 @@
                             expand: expand
                         }
                         , done: function (res, curr, count) {
-                            var exp = res.expand;
-                            if (exp != '' && exp != null) {
+                            let exp = res.expand;
+                            if (exp !== '' && exp != null) {
                                 $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                             }
                         }
@@ -167,7 +167,7 @@
             };
 
             $('#search').on('click', function () {
-                var type = $(this).data('type');
+                let type = $(this).data('type');
                 active[type] ? active[type].call(this) : '';
             });
 
@@ -183,7 +183,6 @@
             });
 
         }();
-
 
     </script>
 {% endblock %}

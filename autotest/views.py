@@ -1,22 +1,23 @@
 import datetime
-import pytz
 from django.utils.timezone import *
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Min, Count, CharField, F
-from django.db.models.functions import Trunc, TruncDate, Cast
+from django.db.models.functions import TruncDate, Cast
 from django.shortcuts import render
 from django.views import generic
 # from MyWeb import settings
 from Utils.Personal import get_personal, get_menu
 from Utils.Paginator import *
+from Utils.hightchart import chart_series
 from .models import *
 from django.http import JsonResponse, HttpResponseRedirect
 # from django.template.context_processors import csrf
 from .exec_test import *
 from Utils.MyMixin import URIPermissionMixin
 from Utils.decorators import auth_check
+
 
 # import pytz
 
@@ -76,6 +77,14 @@ def get_run_his(request):
     if 'result' in request.GET.keys() and request.GET['result']:
         result = str(request.GET['result']).strip()
         run_his = run_his.filter(result=result)
+    if request.GET['beg']:
+        beg = request.GET['beg'].strip().split('-')
+        run_his = run_his.filter(
+            create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
+    if request.GET['end']:
+        end = request.GET['end'].strip().split('-')
+        run_his = run_his.filter(create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59,
+                                                                    tzinfo=utc))
     count = run_his.count()
     for line in run_his:
         result = ResDict.objects.using('autotest').filter(result=line['result'])[0] or 'null'
@@ -99,6 +108,7 @@ def get_run_his(request):
 
 
 @login_required
+@auth_check
 def get_report(request):
     file_path = request.GET['path']
     if file_path:
@@ -122,7 +132,6 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        # todo run count page
         group = RunHis.objects.using('autotest').values('group').distinct()
         suite = RunHis.objects.using('autotest').values('suite').distinct()
         context = {
@@ -133,6 +142,7 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 
 
 @login_required
+@auth_check
 def get_run_count(request):
     # default get params: page=1 limit=10
     # {
@@ -208,21 +218,11 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        # todo run his chart page
         run_his = RunHis.objects.using('autotest').values('group').annotate(
             time=Cast(TruncDate('create_time'), output_field=CharField()),
             count=Count(1))  # tzinfo=pytz.timezone('US/Pacific')
         # print(run_his)
-        names = run_his.values('group').distinct()
-        # print(names)
-        series = []
-        for name in names:
-            list_of_group = run_his.filter(group=name['group'])
-            # print(list_of_group)
-            datas = []
-            for data_of_group in list_of_group:
-                datas.append([data_of_group['time'], data_of_group['count']])
-            series.append({'name': name['group'], 'data': datas})
+        series = chart_series(run_his)
         # print(series)
         group = RunHis.objects.using('autotest').values('group').distinct()
         context = {
@@ -233,6 +233,7 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 
 
 @login_required
+@auth_check
 def get_run_his_chart_data(request):
     run_his = RunHis.objects.using('autotest').all()
     if request.GET['group']:
@@ -248,14 +249,7 @@ def get_run_his_chart_data(request):
             create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59, tzinfo=utc))
     run_his = run_his.values('group').annotate(
         time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
-    series = []
-    names = run_his.values('group').distinct()
-    for name in names:
-        list_of_group = run_his.filter(group=name['group'])
-        datas = []
-        for data_of_group in list_of_group:
-            datas.append([data_of_group['time'], data_of_group['count']])
-        series.append({'name': name['group'], 'data': datas})
+    series = chart_series(run_his)
     # print(series)
     return JsonResponse({'data': series})
 
@@ -292,6 +286,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 
 
 @login_required()
+@auth_check
 def get_jobs(request):
     page = request.GET['page'] or '0'
     limit = request.GET['limit'] or '30'
@@ -332,12 +327,14 @@ def get_jobs(request):
 
 
 @login_required()
+@auth_check
 def exec_job(request):
     func = request.POST['func'].strip()
     mthd = request.POST['mthd'].strip()
     ds_range = request.POST['ds_range'].strip()
     node = request.POST['node'].strip()
     comment = request.POST['comment'].strip()
+    tester = request.session['user_name']
     # 校验是否存在
     func_count = len(RegisterFunction.objects.filter(function=func))
     execution = Execution.objects.filter(method=mthd, ds_range=ds_range)
@@ -356,7 +353,7 @@ def exec_job(request):
             row.comment = comment
             row.save()
         # 多线程异步执行
-        status = job_run(func, mthd, ds_range, node, comment, get_node, execution)
+        status = job_run(func, mthd, ds_range, node, comment, get_node, execution, tester)
         # 线程异常，更新任务状态
         if 'Error' in status:
             for row in execution:
@@ -368,17 +365,19 @@ def exec_job(request):
 
 
 @login_required()
+@auth_check
 def new_job_html(request):
     """
         新建任务的弹出层html
     """
     func = RegisterFunction.objects.distinct().values('group', 'suite', 'function').order_by('group', 'suite',
-                                                                                                   'function').distinct()
+                                                                                             'function').distinct()
     # print(func)
     return render(request, 'autotest/new_job.html', {'func': func})
 
 
 @login_required()
+@auth_check
 def save_new_job(request):
     """
         保存新建任务
@@ -404,6 +403,7 @@ def save_new_job(request):
 
 
 @login_required()
+@auth_check
 def del_job(request):
     func = request.POST['func'].strip()
     mthd = request.POST['mthd'].strip()

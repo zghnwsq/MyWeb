@@ -2,7 +2,7 @@ from django.contrib.sessions.models import Session
 from django.utils import timezone
 
 from login.models import UserMenu, Menu
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 
 
 def get_personal(request, context):

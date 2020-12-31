@@ -1,20 +1,16 @@
 import datetime
-
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView
 from django.views import generic
-from login.models import UserMenu, Menu
 from .form import LoginForm
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.contrib.auth.models import Group, User
 from Utils.Personal import *
-from django.utils import timezone
-from django.contrib.sessions.models import Session
 import logging
 
 

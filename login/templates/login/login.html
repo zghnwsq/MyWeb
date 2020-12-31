@@ -67,15 +67,15 @@
     </div>
     <script>
         !function(){
-            var layer = layui.layer;
+            let layer = layui.layer;
             {% if err %}
-                var err = '{{ err }}';
+                let err = '{{ err }}';
                 if(err !== ''){
                     layer.msg(err, {offset:'30%', time:2000})
                 }
             {% endif %}
-            var $ = layui.jquery;
-            var form = layui.form;
+            let $ = layui.jquery;
+            let form = layui.form;
             form.on('submit(login)', function (data){
                 {#layer.msg(JSON.stringify(data.field));#}
                 $('.layui-form').submit();

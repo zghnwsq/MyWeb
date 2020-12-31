@@ -37,10 +37,6 @@
                     <div class="layui-input-inline">
                         <input class="layui-input" name="testcase" id="testcase" autocomplete="off">
                     </div>
-                </div>
-
-                <div class="layui-inline">
-
                     <label class="layui-form-label">Tester：</label>
                     <div class="layui-input-inline">
                         <select name="tester" id="tester">
@@ -52,7 +48,9 @@
                             {% endif %}
                         </select>
                     </div>
+                </div>
 
+                <div class="layui-inline">
                     <label class="layui-form-label">Result：</label>
                     <div class="layui-input-inline">
                         <select name="result" id="result">
@@ -62,6 +60,17 @@
                             <option value="2">错误</option>
                             <option value="3">跳过</option>
                         </select>
+                    </div>
+
+                    <label class="layui-form-label">From：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="from" id="from" placeholder="请选择"
+                               autocomplete="off">
+                    </div>
+
+                    <label class="layui-form-label">To：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="to" id="to" placeholder="请选择" autocomplete="off">
                     </div>
 
                     <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
@@ -78,17 +87,52 @@
 {% block script %}
     <script>
         !function () {
-            var table = layui.table;
-            var form = layui.form;
-            var $ = layui.$;
-            var expand = layui.sessionData('expand').expand;
-            var tester = $('#tester').val();
-            var group = $('#group').val();
-            var suite = $('#suite').val();
-            var testcase = $('#testcase').val();
-            var result = $('#result').val();
+            let table = layui.table;
+            let form = layui.form;
+            let laydate = layui.laydate;
+            let $ = layui.$;
+            let expand = layui.sessionData('expand').expand;
+            let tester = $('#tester').val();
+            let group = $('#group').val();
+            let suite = $('#suite').val();
+            let testcase = $('#testcase').val();
+            let result = $('#result').val();
+            let beg = '';
+            let end = '';
 
-            var run_his = table.render({
+            laydate.render({
+                elem: '#from'
+                , max: 0
+                , done: function (value, date, endDate) {
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
+                    beg = value;
+                    if (end !== '' && beg !== '') {
+                        let end_date = new Date(end).getDate();
+                        let beg_date = new Date(beg).getDate();
+                        if (beg_date > end_date) {
+                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
+                        }
+                    }
+                }
+            });
+
+            laydate.render({
+                elem: '#to'
+                , max: 0
+                , done: function (value, date, endDate) {
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
+                    end = value;
+                    if(end!=='' && beg!==''){
+                        let end_date = new Date(end).getDate();
+                        let beg_date = new Date(beg).getDate();
+                        if (beg_date>end_date){
+                            layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000})
+                        }
+                    }
+                }
+            });
+
+            let run_his = table.render({
                     elem: '#run_his'
                     , height: 'full'
                     , url: '/autotest/run_his/get/' //数据接口
@@ -98,6 +142,8 @@
                         suite: suite,
                         testcase: testcase,
                         result: result,
+                        beg: beg,
+                        end: end,
                         expand: expand
                     }
                     , page: {
@@ -113,11 +159,11 @@
                         , {field: 'tester', title: 'Tester', width: '10%', align: 'center'}
                         , {
                             field: 'result', title: 'Result', width: '10%', sort: true, align: 'center', templet: function (d) {
-                                if (d.result.toString() == '通过') {
+                                if (d.result.toString() === '通过') {
                                     return '<span style="color: green">' + d.result + '</span>'
-                                } else if (d.result.toString() == '失败') {
+                                } else if (d.result.toString() === '失败') {
                                     return '<span style="color: red">' + d.result + '</span>'
-                                } else if (d.result.toString() == '错误') {
+                                } else if (d.result.toString() === '错误') {
                                     return '<span style="color: brown">' + d.result + '</span>'
                                 } else {
                                     return d.result
@@ -132,8 +178,8 @@
                         }
                     ]]
                     , done: function (res, curr, count) {
-                        var exp = res.expand;
-                        if (exp != '' && exp != null) {
+                        let exp = res.expand;
+                        if (exp !== '' && exp != null) {
                             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                         }
                     }
@@ -141,14 +187,14 @@
                 })
             ;
 
-            var active = {
+            let active = {
                 reload: function () {
-                    var tester = $('#tester').val();
-                    var group = $('#group').val();
-                    var suite = $('#suite').val();
-                    var testcase = $('#testcase').val();
-                    var result = $('#result').val();
-                    var expand = layui.sessionData('expand').expand;
+                    let tester = $('#tester').val();
+                    let group = $('#group').val();
+                    let suite = $('#suite').val();
+                    let testcase = $('#testcase').val();
+                    let result = $('#result').val();
+                    let expand = layui.sessionData('expand').expand;
                     {#console.log(group);#}
                     run_his.reload({
                         page: {
@@ -160,6 +206,8 @@
                             suite: suite,
                             testcase: testcase,
                             result: result,
+                            beg: beg,
+                            end: end,
                             expand: expand
                         }
                         , done: function (res, curr, count) {
@@ -173,7 +221,7 @@
             };
 
             $('#search').on('click', function () {
-                var type = $(this).data('type');
+                let type = $(this).data('type');
                 active[type] ? active[type].call(this) : '';
             });
 
@@ -184,13 +232,13 @@
                     ,"testcase": ""
                     ,"tester": 1
                     ,"result": -1
-                })
+                    ,"from": ""
+                    ,"to": ""
+                });
+                beg = '';
+                end = '';
 
             });
-
-
         }();
-
-
     </script>
 {% endblock %}

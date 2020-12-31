@@ -77,11 +77,11 @@
 <script src="{% static 'layui.all.js' %} "></script>
 <script>
     !function () {
-        var layer = layui.layer;
-        var $ = layui.jquery;
-        var element = layui.element;
+        let layer = layui.layer;
+        let $ = layui.jquery;
+        let element = layui.element;
         $(".layui-side li.layui-nav-item a").on('click', function () {
-            var expand = $(this).attr('class');
+            let expand = $(this).attr('class');
             if (layui.sessionData('expand').expand === 'none') {
                 {#console.log('expand');#}
                 layui.sessionData('expand', {key: 'expand', value: expand});
@@ -91,7 +91,7 @@
             }
         });
 
-        var exp = layui.sessionData('expand').expand;
+        let exp = layui.sessionData('expand').expand;
         if (exp != null && exp.toString() !== '') {
             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
         }

@@ -78,13 +78,19 @@ def get_run_his(request):
         result = str(request.GET['result']).strip()
         run_his = run_his.filter(result=result)
     if request.GET['beg']:
-        beg = request.GET['beg'].strip().split('-')
+        beg = request.GET['beg'].strip().split(' ')
+        ymd = beg[0].split('-')
+        hms = beg[1].split(':')
         run_his = run_his.filter(
-            create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
+            create_time__gte=datetime.datetime(int(ymd[0]), int(ymd[1]), int(ymd[2]), int(hms[0]), int(hms[1]),
+                                               int(hms[2]), tzinfo=utc))
     if request.GET['end']:
-        end = request.GET['end'].strip().split('-')
-        run_his = run_his.filter(create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59,
-                                                                    tzinfo=utc))
+        end = request.GET['end'].strip().split(' ')
+        ymd = end[0].split('-')
+        hms = end[1].split(':')
+        run_his = run_his.filter(
+            create_time__lte=datetime.datetime(int(ymd[0]), int(ymd[1]), int(ymd[2]), int(hms[0]), int(hms[1]),
+                                               int(hms[2]), tzinfo=utc))
     count = run_his.count()
     for line in run_his:
         result = ResDict.objects.using('autotest').filter(result=line['result'])[0] or 'null'

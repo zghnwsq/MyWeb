@@ -154,11 +154,14 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "layui"),
     os.path.join(BASE_DIR, "MyWeb/statics"),
     os.path.join(BASE_DIR, "MyWeb/statics/hightcharts"),
+    os.path.join(BASE_DIR, "Report"),
     'D:/PythonProject/EasySelenium/Report',
     # os.path.join(BASE_DIR, "layui/imges/face"),
     # os.path.join(BASE_DIR, "layui/css/modules/laydate/default"),
     # os.path.join(BASE_DIR, "layui/css/modules/layer/default"),
 ]
+
+# STATIC_ROOT = 'D:/PythonProject/MyWeb/Statics'
 
 LOGIN_REDIRECT_URL = '/index/'
 LOGIN_URL = '/login/'

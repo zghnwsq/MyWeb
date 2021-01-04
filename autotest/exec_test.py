@@ -21,7 +21,8 @@ def run_by_node(func, mthd, ds_range, node, comment, tester):
         if 'alive' not in is_alive:
             raise TimeoutError('Node connection timeout!')
         func_obj = getattr(s, func)
-        res = func_obj(mthd, ds_range, comment, tester)
+        # res = func_obj(mthd, ds_range, comment, tester)
+        res = func_obj({'mtd': mthd, 'rg': ds_range, 'comment': comment, 'tester': tester})
         return res  # 执行成功将返回:finished,否则返回报错信息
     except TimeoutError:
         return 'Node connection timeout!'

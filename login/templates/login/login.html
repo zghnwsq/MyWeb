@@ -80,6 +80,12 @@
                 {#layer.msg(JSON.stringify(data.field));#}
                 $('.layui-form').submit();
             });
+            $('.layui-form').keydown(function (e) {
+                if (e.keyCode === 13) {
+                    $('.layui-form').submit();
+                }
+            });
+
         }();
     </script>
 </body>

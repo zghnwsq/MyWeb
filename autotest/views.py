@@ -17,9 +17,8 @@ from django.http import JsonResponse, HttpResponseRedirect
 from .exec_test import *
 from Utils.MyMixin import URIPermissionMixin
 from Utils.decorators import auth_check
-
-
 # import pytz
+from .orm import *
 
 
 class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
@@ -54,62 +53,24 @@ def get_run_his(request):
     #     "count": "",
     #     "data": "[]"
     # }
-    page = request.GET['page'] or '0'
-    limit = request.GET['limit'] or '30'
+    page = request.GET.get('page', '0')
+    limit = request.GET.get('limit', '30')
     expand = ''
     if 'expand' in request.GET:
         expand = request.GET['expand']
-    run_his = RunHis.objects.using('autotest').all().order_by('-create_time').values('group', 'suite', 'case', 'title',
-                                                                                     'tester', 'result', 'report',
-                                                                                     'create_time')
-    if 'tester' in request.GET.keys() and request.GET['tester']:
-        tester = str(request.GET['tester']).strip()
-        run_his = run_his.filter(tester=tester)
-    if 'group' in request.GET.keys() and request.GET['group']:
-        group = str(request.GET['group']).strip()
-        run_his = run_his.filter(group=group)
-    if 'suite' in request.GET.keys() and request.GET['suite']:
-        suite = str(request.GET['suite']).strip()
-        run_his = run_his.filter(suite=suite)
-    if 'testcase' in request.GET.keys() and request.GET['testcase']:
-        testcase = str(request.GET['testcase']).strip()
-        run_his = run_his.filter(case=testcase)
-    if 'result' in request.GET.keys() and request.GET['result']:
-        result = str(request.GET['result']).strip()
-        run_his = run_his.filter(result=result)
-    if request.GET['beg']:
-        beg = request.GET['beg'].strip().split(' ')
-        ymd = beg[0].split('-')
-        hms = beg[1].split(':')
-        run_his = run_his.filter(
-            create_time__gte=datetime.datetime(int(ymd[0]), int(ymd[1]), int(ymd[2]), int(hms[0]), int(hms[1]),
-                                               int(hms[2]), tzinfo=utc))
-    if request.GET['end']:
-        end = request.GET['end'].strip().split(' ')
-        ymd = end[0].split('-')
-        hms = end[1].split(':')
-        run_his = run_his.filter(
-            create_time__lte=datetime.datetime(int(ymd[0]), int(ymd[1]), int(ymd[2]), int(hms[0]), int(hms[1]),
-                                               int(hms[2]), tzinfo=utc))
+    run_his = filter_run_his(
+        tester=request.GET.get('tester', None),
+        group=request.GET.get('group', None),
+        suite=request.GET.get('suite', None),
+        testcase=request.GET.get('testcase', None),
+        result=request.GET.get('result', None),
+        beg=request.GET.get('beg', None),
+        end=request.GET.get('end', None)
+    ).extra(
+        select={'create_time': 'strftime("%%Y-%%m-%%d %%H:%%M:%%S", create_time)'}).values(
+        'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
     count = run_his.count()
-    for line in run_his:
-        result = ResDict.objects.using('autotest').filter(result=line['result'])[0] or 'null'
-        line['result'] = result.desc
-        line['create_time'] = line['create_time'].strftime("%Y-%m-%d %H:%M:%S")
-    # data_list = [data for data in run_his]
-    # # 利用django分页划分数据
-    # paginator = Paginator(data_list, int(limit))
-    # try:
-    #     pg = paginator.page(int(page))
-    # except PageNotAnInteger:
-    #     pg = paginator.page(1)
-    # except EmptyPage:
-    #     pg = paginator.page(paginator.num_pages)
-    # # Page obj转回list
-    # data_list = [data for data in pg]
     data_list = paginator(run_his, int(page), int(limit))
-    # data_list = paginator(data_list, int(page), int(limit))
-    # return json
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
 
 
@@ -162,24 +123,18 @@ def get_run_count(request):
     expand = ''
     if 'expand' in request.GET:
         expand = request.GET['expand']
-    run_his = RunHis.objects.using('autotest').all()
-    suite_total = SuiteCount.objects.all().order_by('group', 'suite')
-    if request.GET['group']:
-        group = request.GET['group'].strip()
-        run_his = run_his.filter(group=group)
-        suite_total = suite_total.filter(group=group)
-    if request.GET['suite']:
-        suite = request.GET['suite'].strip()
-        run_his = run_his.filter(suite=suite)
-        suite_total = suite_total.filter(suite=suite)
-    if request.GET['beg']:
-        beg = request.GET['beg'].strip().split('-')
-        run_his = run_his.filter(
-            create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
-    if request.GET['end']:
-        end = request.GET['end'].strip().split('-')
-        run_his = run_his.filter(create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59,
-                                                                    tzinfo=utc))  # pytz.timezone(settings.TIME_ZONE)
+    run_his = filter_run_his(
+        group=request.GET.get('group', None),
+        suite=request.GET.get('suite', None),
+        beg=request.GET.get('beg', None),
+        end=request.GET.get('end', None)
+    ).extra(
+        select={'create_time': 'strftime("%%Y-%%m-%%d %%H:%%M:%%S", create_time)'}).values(
+        'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
+    suite_total = get_suite_total(
+        group=request.GET.get('group', None),
+        suite=request.GET.get('suite', None)
+    )
     run_his = run_his.values('group', 'suite', 'case', res=Min('result'))
     suite_list = [line for line in suite_total]
     count = len(suite_list)
@@ -224,12 +179,8 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        run_his = RunHis.objects.using('autotest').values('group').annotate(
-            time=Cast(TruncDate('create_time'), output_field=CharField()),
-            count=Count(1))  # tzinfo=pytz.timezone('US/Pacific')
-        # print(run_his)
+        run_his = count_by_group()
         series = chart_series(run_his)
-        # print(series)
         group = RunHis.objects.using('autotest').values('group').distinct()
         context = {
             'series': series,
@@ -241,22 +192,12 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 @login_required
 @auth_check
 def get_run_his_chart_data(request):
-    run_his = RunHis.objects.using('autotest').all()
-    if request.GET['group']:
-        group = request.GET['group'].strip()
-        run_his = run_his.filter(group=group)
-    if request.GET['beg']:
-        beg = request.GET['beg'].strip().split('-')
-        run_his = run_his.filter(
-            create_time__gte=datetime.datetime(int(beg[0]), int(beg[1]), int(beg[2]), 0, 0, 0, tzinfo=utc))
-    if request.GET['end']:
-        end = request.GET['end'].strip().split('-')
-        run_his = run_his.filter(
-            create_time__lte=datetime.datetime(int(end[0]), int(end[1]), int(end[2]), 23, 59, 59, tzinfo=utc))
-    run_his = run_his.values('group').annotate(
-        time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
+    run_his = count_by_group(
+        group=request.GET.get('group', None),
+        beg=request.GET.get('beg', None),
+        end=request.GET.get('end', None)
+    )
     series = chart_series(run_his)
-    # print(series)
     return JsonResponse({'data': series})
 
 
@@ -294,41 +235,20 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 @login_required()
 @auth_check
 def get_jobs(request):
-    page = request.GET['page'] or '0'
-    limit = request.GET['limit'] or '30'
-    expand = ''
-    if 'expand' in request.GET:
-        expand = request.GET['expand']
-    jobs = Execution.objects.all().annotate(group=F('function__group'),
-                                            suite=F('function__suite'),
-                                            func=F('function__function'),
-                                            mthd=F('method')
-                                            ).values('group', 'suite',
-                                                     'mthd', 'ds_range',
-                                                     'func', 'comment',
-                                                     'status')
-    if 'group' in request.GET.keys() and request.GET['group']:
-        group = request.GET['group'].strip()
-        jobs = jobs.filter(function__group=group)
-    if 'suite' in request.GET.keys() and request.GET['suite']:
-        suite = request.GET['suite'].strip()
-        jobs = jobs.filter(function__suite=suite)
-    if 'func' in request.GET.keys() and request.GET['func']:
-        func = request.GET['func'].strip()
-        jobs = jobs.filter(function__function=func)
-    jobs = jobs.order_by('group', 'suite')
+    page = request.GET.get('page', '0')
+    limit = request.GET.get('limit', '30')
+    expand = request.GET.get('expand', '')
+    jobs = filter_jobs(
+        group=request.GET.get('group', None),
+        suite=request.GET.get('suite', None),
+        func=request.GET.get('func', None)
+    )
     count = jobs.count()
     if count > 0:
         data_list = paginator(jobs, int(page), int(limit))
     else:
         data_list = {}
-    for data in data_list:
-        nodes = list(RegisterFunction.objects.filter(function=data['func']).values('node').distinct())
-        for node in nodes:
-            tag = Node.objects.filter(ip_port=node['node']).values('tag')[:1]
-            # print(tag[0])
-            node['tag'] = tag[0]['tag']
-        data['nodes'] = nodes
+    data_list = get_node_options(data_list)
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
 
 
@@ -341,6 +261,11 @@ def exec_job(request):
     node = request.POST['node'].strip()
     comment = request.POST['comment'].strip()
     tester = request.session['user_name']
+    res = execute_job_asyn(func, mthd, ds_range, node, comment, tester)
+    return JsonResponse(res)
+
+
+def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     # 校验是否存在
     func_count = len(RegisterFunction.objects.filter(function=func))
     execution = Execution.objects.filter(method=mthd, ds_range=ds_range)
@@ -365,9 +290,9 @@ def exec_job(request):
             for row in execution:
                 row.status = status
                 row.save()
+        return {"msg": "提交成功!"}
     else:
-        return JsonResponse({"msg": "ERROR: 节点注册方法或任务不存在，或执行节点不可用!"})
-    return JsonResponse({"msg": "提交成功!"})
+        return {"msg": "ERROR: 节点注册方法或任务不存在，或执行节点不可用!"}
 
 
 @login_required()

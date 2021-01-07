@@ -104,9 +104,9 @@
                     }
                     , even: true
                     , cols: [[
-                        {field: 'group', title: 'TestGroup', sort: true, align: 'center'}
-                        , {field: 'suite', title: 'TestSuit', sort: true, align: 'center'}
-                        , {field: 'func', title: 'NodeFunction', sort: true, align: 'center'}
+                        {field: 'group', title: 'TestGroup', width: '10%', sort: true, align: 'center'}
+                        , {field: 'suite', title: 'TestSuit', width: '10%', sort: true, align: 'center'}
+                        , {field: 'func', title: 'NodeRPCFunction', minWidth: 200, sort: true, align: 'center'}
                         , {field: 'mthd', title: 'TestMethod', sort: true, align: 'center'}
                         , {field: 'ds_range', title: 'Range', sort: true, edit: 'text', align: 'center'}
                         , {field: 'comment', title: 'Comment', edit: 'text'}
@@ -286,7 +286,7 @@
                     let new_layer = layer.open({
                         title: '新建任务'
                         , type: 1
-                        , area: ['500px', '400px']
+                        , area: ['500px', '360px']
                         {# 注意，如果str是object，那么需要字符拼接。 #}
                         , content: str
                         , scrollbar: false

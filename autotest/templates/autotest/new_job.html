@@ -1,8 +1,8 @@
 <div class="layui-form  layui-form-pane" lay-filter="new_job" style="padding: 20px 5em;">
     {% csrf_token %}
-    <div class="new_job">
+    <div class="new_job"  style="min-width: 70%">
         <div class="layui-form-item">
-            <label class="layui-form-label ">Function：</label>
+            <label class="layui-form-label" style="min-width: 40%">RPC Function：</label>
             <div class="layui-input-inline">
                 <select name="new_func" id="new_func" lay-verify="required" lay-filter="new_func">
                     <option value="">请选择注册测试类</option>
@@ -15,19 +15,19 @@
             </div>
         </div>
         <div class="layui-form-item">
-            <label class="layui-form-label">Method：</label>
+            <label class="layui-form-label" style="min-width: 40%">Method：</label>
             <div class="layui-input-inline">
                 <input class="layui-input" name="new_method" id="new_method" autocomplete="off">
             </div>
         </div>
         <div class="layui-form-item">
-            <label class="layui-form-label">Range：</label>
+            <label class="layui-form-label" style="min-width: 40%">Range：</label>
             <div class="layui-input-inline">
                 <input class="layui-input" name="new_ds_range" id="new_ds_range" autocomplete="off">
             </div>
         </div>
         <div class="layui-form-item">
-            <label class="layui-form-label">Comment：</label>
+            <label class="layui-form-label" style="min-width: 40%">Comment：</label>
             <div class="layui-input-inline">
                 <input class="layui-input" name="new_comment" id="new_comment" autocomplete="off">
             </div>

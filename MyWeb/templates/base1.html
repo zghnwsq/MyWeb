@@ -82,7 +82,7 @@
         let element = layui.element;
         $(".layui-side li.layui-nav-item a").on('click', function () {
             let expand = $(this).attr('class');
-            if (layui.sessionData('expand').expand === 'none') {
+            if (layui.sessionData('expand').expand === 'none' || layui.sessionData('expand').expand !== expand) {
                 {#console.log('expand');#}
                 layui.sessionData('expand', {key: 'expand', value: expand});
             } else {

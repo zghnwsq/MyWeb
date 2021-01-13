@@ -55,9 +55,7 @@ def get_run_his(request):
     # }
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    expand = ''
-    if 'expand' in request.GET:
-        expand = request.GET['expand']
+    expand = request.GET.get('expand', 'none')
     run_his = filter_run_his(
         tester=request.GET.get('tester', None),
         group=request.GET.get('group', None),

@@ -26,7 +26,7 @@
 </head>
 <body class="" style="color: #f0f0f0" background="{% static 'bg.jpg' %}">
     <div class="layui-container">
-        <!--表单-->
+        {#<!--表单-->#}
         <form class="layui-form" action="{% url 'login:login' %}" method="post">
             {% csrf_token %}
             <div class="layui-row">
@@ -59,7 +59,8 @@
             <div class="layui-row">
                 <div class="layui-col-lg4 layui-col-lg-offset4" style="text-align: center">
 {#                    <div class="layui-input-inline">#}
-                        <button type="button" class="layui-btn layui-btn-normal" lay-submit lay-filter="login">登录</button>
+                    <input type="hidden" name="next" value="{{ next }}">
+                    <button type="button" class="layui-btn layui-btn-normal" lay-submit lay-filter="login">登录</button>
 {#                    </div>#}
                 </div>
             </div>

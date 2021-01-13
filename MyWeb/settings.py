@@ -59,7 +59,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates'), os.path.join('D:/PythonProject/zbh/Report'),
-                 os.path.join('D:/PythonProject/EasySelenium/Report')],  # 加入报告路径，用于展示报告
+                 os.path.join('D:/PythonProject/EasySelenium/Report'), os.path.join('D:/PythonProject/MyWeb/Report')],  # 加入报告路径，用于展示报告
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -143,7 +143,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -171,60 +171,60 @@ SESSION_COOKIE_AGE = 60*30
 
 # today = time.strftime("%Y%m%d", time.localtime())
 LOG_FILE = os.path.join(BASE_DIR, 'log')
-# if not os.path.exists(os.path.join(BASE_DIR, 'log')):
-#     os.mkdir(os.path.join(BASE_DIR, 'log'))
-# LOG_FILE_NAME = 'http.log'
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'default': {
-#             'format': '{asctime} {filename:s} {module} {funcName:s} {levelname} {message}',
-#             'style': '{',
-#         },
-#         'detail': {
-#             'format': '{asctime} {process:d} {thread:d} {pathname:s} {module} {funcName:s} {levelname} {message}',
-#             'style': '{',
-#         },
-#     },
-#     'handlers': {
-#         'file': {
-#             'level': 'INFO',
-#             # 'class': 'logging.FileHandler',
-#             'class': 'logging.handlers.TimedRotatingFileHandler',  # 改为日志滚动
-#             'formatter': 'default',
-#             'filename': os.path.join(LOG_FILE, LOG_FILE_NAME),
-#             'when': 'H',
-#             'interval': 6,
-#             'backupCount': 100,
-#             'encoding': 'utf-8',
-#         },
-#         'console': {
-#             'level': 'INFO',
-#             'class': 'logging.StreamHandler',
-#             'stream': 'ext://sys.stdout',
-#             'formatter': 'default',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['file', 'console'],
-#             'level': 'INFO',
-#             'formatter': 'default',
-#             'propagate': True,
-#         },
-#         # 'django.request': {
-#         #     'handlers': ['file'],
-#         #     'level': 'INFO',
-#         #     'formatter': 'default',
-#         #     'propagate': True,
-#         # },
-#         # 'django.server': {
-#         #     'handlers': ['file'],
-#         #     'level': 'INFO',
-#         #     'formatter': 'default',
-#         #     'propagate': True,
-#         # },
-#     },
-# }
+if not os.path.exists(os.path.join(BASE_DIR, 'log')):
+    os.mkdir(os.path.join(BASE_DIR, 'log'))
+LOG_FILE_NAME = 'http.log'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            'format': '{asctime} {filename:s} {module} {funcName:s} {levelname} {message}',
+            'style': '{',
+        },
+        'detail': {
+            'format': '{asctime} {process:d} {thread:d} {pathname:s} {module} {funcName:s} {levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            # 'class': 'logging.FileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',  # 改为日志滚动
+            'formatter': 'default',
+            'filename': os.path.join(LOG_FILE, LOG_FILE_NAME),
+            'when': 'H',
+            'interval': 6,
+            'backupCount': 100,
+            'encoding': 'utf-8',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout',
+            'formatter': 'default',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'formatter': 'default',
+            'propagate': True,
+        },
+        # 'django.request': {
+        #     'handlers': ['file'],
+        #     'level': 'INFO',
+        #     'formatter': 'default',
+        #     'propagate': True,
+        # },
+        # 'django.server': {
+        #     'handlers': ['file'],
+        #     'level': 'INFO',
+        #     'formatter': 'default',
+        #     'propagate': True,
+        # },
+    },
+}
 

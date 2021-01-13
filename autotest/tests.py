@@ -8,7 +8,7 @@
 #     def setUp(self):
 #         pass
 #
-#     def test_run_his_view(self):
+#     def test_login_view(self):
 #         c = Client()
 #         response = c.get('/run_his/')
 #         status_code = response.status_code

@@ -1,7 +1,12 @@
 # coding: utf-8
+import os
 import threading
+import time
 from threading import ThreadError
 from xmlrpc.client import ServerProxy
+import Utils.zip as zip_util
+from MyWeb import settings
+from autotest.models import RunHis
 
 
 def run_by_node(func, mthd, ds_range, node, comment, tester):
@@ -23,15 +28,53 @@ def run_by_node(func, mthd, ds_range, node, comment, tester):
         func_obj = getattr(s, func)
         # res = func_obj(mthd, ds_range, comment, tester)
         res = func_obj({'mtd': mthd, 'rg': ds_range, 'comment': comment, 'tester': tester})
-        return res  # 执行成功将返回:finished,否则返回报错信息
+        print(res)
+        status = handle_result(s, res)
+        return status
     except TimeoutError:
         return 'Node connection timeout!'
     except AttributeError:
         return 'Node function not exists!'
     except ConnectionRefusedError:
-        return 'Node Connection refused!'
-    except Exception:
-        return 'Node Error!'
+        return 'Node connection refused!'
+    except Exception as e:
+        return f'Node Error: {e.__str__()[:256]}...'
+
+
+def handle_result(server, res):
+    if not isinstance(res, dict):
+        return f'Node Error: {res}...'  # 执行成功将返回结果字典,否则返回报错信息
+    else:
+        # 压缩前文件名或文件夹
+        if '.html' in res['report']:
+            file_name = res['report'].split(os.sep)[-1]
+        else:
+            file_name = ''
+        file_binary = server.get_report_file(res['report']).data
+        time_stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        # 解压缩文件夹
+        report_file_path = os.path.join(os.path.join(settings.BASE_DIR, 'Report'), res['test_group'],
+                                        res['test_suite'], time_stamp)
+        # zip文件路径
+        zip_file_path = report_file_path + '.zip'
+        os.makedirs(report_file_path, exist_ok=True)
+        # binary数据写入zip
+        with open(zip_file_path, 'wb') as handle:
+            handle.write(file_binary)
+        # 解压缩zip到文件夹
+        zip_util.unzip_file(zip_file_path, report_file_path)
+        # 写入数据库的相对路径
+        op_path = os.path.join(res['test_group'], res['test_suite'], time_stamp, file_name)
+        # 写入MyWeb数据库
+        his = []
+        if len(res['result']) > 0:
+            for res in res['result']:
+                # print(res)
+                his.append(RunHis(group=res['group'], suite=res['suite'], case=res['case'], title=res['title'],
+                                  tester=res['tester'], desc=res['desc'], comment=res['comment'], report=op_path,
+                                  result=res['result'], create_time=res['finish_time']))
+            RunHis.objects.bulk_create(his, batch_size=50)
+        return 'finished'
 
 
 class RunnerThread(threading.Thread):
@@ -53,7 +96,7 @@ class RunnerThread(threading.Thread):
 
     def run(self):
         self.res = run_by_node(self.func, self.mthd, self.ds_range, self.node, self.comment, self.tester)
-        if 'Node' in self.res:
+        if 'connection' in self.res:
             node_status = 'off'
         else:
             node_status = 'on'

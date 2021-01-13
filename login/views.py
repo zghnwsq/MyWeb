@@ -24,6 +24,7 @@ class LoginV(LoginView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['next'] = self.request.GET.get('next', '')
         context['err'] = ''
         return context
 

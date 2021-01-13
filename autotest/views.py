@@ -79,8 +79,10 @@ def get_run_his(request):
 def get_report(request):
     file_path = request.GET['path']
     if file_path:
+        # HtmlTestReport
         if '.html' in file_path:
             return render(request, file_path, {})
+        # Pytest html report
         else:
             return HttpResponseRedirect('/static/' + file_path.replace('\\', '/') + '/index.html')
     else:
@@ -268,7 +270,7 @@ def exec_job(request):
 def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     # 校验是否存在
     func_count = len(RegisterFunction.objects.filter(function=func))
-    execution = Execution.objects.filter(method=mthd, ds_range=ds_range)
+    execution = Execution.objects.filter(method=mthd, function__function=func)
     execution_count = len(execution)
     get_node = Node.objects.filter(ip_port=node, status='on')
     node_count = len(get_node)
@@ -325,7 +327,7 @@ def save_new_job(request):
         new = Execution(method=mthd, ds_range=ds_range, comment=comment, function=get_func[0])
         new.save()
         return JsonResponse({"msg": "保存成功!"})
-    elif len(get_func) != 1:
+    elif len(get_func) < 1:
         return JsonResponse({"msg": "ERROR: 节点注册方法不存在!"})
     elif exec_count > 0:
         return JsonResponse({"msg": "ERROR: 测试任务重复!"})

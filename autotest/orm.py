@@ -89,7 +89,8 @@ def filter_jobs(group=None, suite=None, func=None):
 def get_node_options(data_list):
     tmp_list = copy.deepcopy(data_list)
     for data in tmp_list:
-        nodes = list(RegisterFunction.objects.filter(function=data['func']).extra(
+        nodes = list(RegisterFunction.objects.filter(function=data['func'],
+                                                     node__in=Node.objects.filter(status='on').values('ip_port')).extra(
             select={
                 'tag': 'select tag from autotest_node where ip_port=autotest_registerfunction.node limit 1'}).values(
             'node', 'tag').distinct())

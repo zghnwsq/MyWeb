@@ -216,9 +216,9 @@
                     const csrf = $("#csrf").val();
                     {#console.log(mthd);#}
                     if (layEvent === 'exec') {
-                        if (node === 'none' || (! mthd.trim().includes('all') && ds_range.trim() === '')) {
+                        if (node === 'none') {
                             layer.open({
-                                content: '<div style="padding: 20px 100px;">' + '数据源范围或执行节点不能为空!' + '</div>'
+                                content: '<div style="padding: 20px 100px;">' + '执行节点不能为空!' + '</div>'
                                 , type: 1
                                 , title: '提示'
                                 , time: 5000

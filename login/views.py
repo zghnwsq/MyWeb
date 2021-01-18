@@ -1,4 +1,5 @@
 import datetime
+import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
@@ -6,12 +7,15 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView
 from django.views import generic
+from MyWeb import settings
 from .form import LoginForm
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from Utils.Personal import *
 import logging
+import requests
+from .models import Weather
 
 
 # Create your views here.
@@ -57,6 +61,55 @@ class LoginV(LoginView):
             return render(request, 'login/login.html', context={'err': 'Invalid Form!'})
 
 
+def get_weather():
+    edge = datetime.datetime.now() - datetime.timedelta(minutes=30)
+    need_refresh = len(Weather.objects.filter(status='ok', create_time__gte=edge)) <= 0
+    weather = {}
+    if need_refresh:
+        session = requests.session()
+        url = f'https://api.caiyunapp.com/v2.5/{settings.WEATHER_API_KEY}/{settings.CITY_LOCATION}/realtime'
+        try:
+            response = session.get(url)
+            resp_json = json.loads(response.text)
+            session.close()
+            if 'ok' in resp_json['status']:
+                skycon_dict = {'CLEAR_DAY': '晴', 'CLEAR_NIGHT': '晴', 'PARTLY_CLOUDY_DAY': '多云',
+                               'PARTLY_CLOUDY_NIGHT': '多云', 'CLOUDY': '阴', 'LIGHT_HAZE': '轻度雾霾',
+                               'MODERATE_HAZE': '中度雾霾', 'HEAVY_HAZE': '重度雾霾', 'LIGHT_RAIN': '小雨',
+                               'MODERATE_RAIN': '中雨', 'HEAVY_RAIN': '大雨', 'STORM_RAIN': '暴雨', 'FOG': '雾',
+                               'LIGHT_SNOW': '小雪', 'MODERATE_SNOW': '中雪', 'HEAVY_SNOW': '大雪', 'STORM_SNOW': '暴雪',
+                               'DUST': '浮尘', 'SAND': '沙尘', 'WIND': '大风'}
+                weather['temperature'] = '{:.0f}'.format(resp_json['result']['realtime']['temperature'])
+                weather['humidity'] = '{:.0f}'.format(resp_json['result']['realtime']['humidity'] * 100)
+                weather['pm25'] = resp_json['result']['realtime']['air_quality']['pm25']
+                weather['comfort'] = resp_json['result']['realtime']['life_index']['comfort']['desc']
+                skycon = resp_json['result']['realtime']['skycon'].strip()
+                weather['skycon'] = skycon_dict[skycon] if skycon in skycon_dict.keys() else skycon
+                weather['aqi'] = resp_json['result']['realtime']['air_quality']['aqi']['chn']
+                weather['air_desc'] = resp_json['result']['realtime']['air_quality']['description']['chn']
+                Weather.objects.update(status=resp_json['status'].strip(), temperature=weather['temperature'],
+                                       humidity=weather['humidity'], pm25=weather['pm25'], comfort=weather['comfort'],
+                                       skycon=weather['skycon'], aqi=weather['aqi'], air_desc=weather['air_desc'],
+                                       create_time=datetime.datetime.now())
+            else:
+                weather = None
+                Weather.objects.update(status=resp_json['status'].strip())
+        except requests.exceptions.RequestException:
+            session.close()
+            Weather.objects.update(status='ng')
+            weather = None
+    else:
+        result = Weather.objects.get(status='ok')
+        weather['temperature'] = result.temperature
+        weather['humidity'] = result.humidity
+        weather['pm25'] = result.pm25
+        weather['comfort'] = result.comfort
+        weather['skycon'] = result.skycon
+        weather['aqi'] = result.aqi
+        weather['air_desc'] = result.air_desc
+    return weather
+
+
 class IndexV(LoginRequiredMixin, generic.ListView):
     template_name = 'login/index.html'
     context_object_name = 'index'  # 要改名
@@ -66,6 +119,7 @@ class IndexV(LoginRequiredMixin, generic.ListView):
         context = get_personal(self.request, context)
         context = get_menu(context)
         context['time'] = datetime.datetime.now().strftime('%Y-%m-%d %A')
+        context['weather'] = get_weather()
         return context
 
     def get_queryset(self, **kwargs):

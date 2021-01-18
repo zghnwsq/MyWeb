@@ -52,3 +52,20 @@ class UserPermission(models.Model):
     class Meta:
         db_table = 'user_permission'
 
+
+class Weather(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    status = models.CharField(max_length=32, default='ng')
+    temperature = models.FloatField(max_length=8, default=0.0, null=True)
+    humidity = models.FloatField(max_length=8, default=0.0, null=True)
+    pm25 = models.FloatField(max_length=8, default=0.0, null=True)
+    comfort = models.CharField(max_length=32, default='', null=True)
+    skycon = models.CharField(max_length=32, default='', null=True)
+    aqi = models.FloatField(max_length=8, default=0.0, null=True)
+    air_desc = models.CharField(max_length=32, default='', null=True)
+    create_time = models.DateTimeField(auto_created=True)
+
+    class Meta:
+        db_table = 'weather'
+
+

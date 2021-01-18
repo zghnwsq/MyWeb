@@ -61,14 +61,14 @@
     {% endif %}
 
 
-    <!-- body -->
-    <div class="layui-body">
+    {#<!-- body -->#}
+    {# 修改原始样式,不出现滚动条,和footer配合 #}
+    <div class="layui-body" style="bottom: 20px">
         {% block content %}
         {% endblock %}
     </div>
-
-    <div class="layui-footer">
-        <!-- footer -->
+    <!-- footer -->
+    <div class="layui-footer" style="max-height: 20px;line-height:20px">
         © ted.wang
     </div>
 

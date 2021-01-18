@@ -1,4 +1,15 @@
 ﻿{% extends "base1.html" %}
+{% load static %}
+{% block statics %}
+    <style type="text/css">
+        .weather {
+            text-align: center;
+        }
+        .weather span{
+            margin: 5px;
+        }
+    </style>
+{% endblock %}
 <!--{% block nav_side %}-->
 <!--    <div class="layui-side layui-bg-cyan">-->
 <!--        <div class="layui-side-scroll">-->
@@ -30,7 +41,48 @@
         <div class="layui-row">
             <div class="layui-col-md4 layui-col-md-offset4">
                 {% if time %}
-                    <h2 align="center">{{time}}</h2>
+                    <h2 style="text-align: center">{{time}}</h2>
+                {% endif %}
+                {% if weather %}
+                    <h3 class="weather">
+                        <span>{{ weather.skycon }}</span>
+                        <span>温度: {{ weather.temperature }}度</span>
+                        <span>湿度: {{ weather.humidity|floatformat:"0" }}%</span>
+                        <span>{{ weather.comfort }}</span>
+                    </h3>
+                    <h3 class="weather">
+                        <span>AQI:</span>
+                        {% if weather.aqi <= 50 %}
+                            <span style="color: #00FF00; margin: 0px">
+                        {% elif weather.aqi > 50 and weather.aqi <= 100 %}
+                            <span style="color: #5cb85c; margin: 0px">
+                        {% elif weather.aqi > 100 and weather.aqi <= 150 %}
+                            <span style="color: #ffcc00; margin: 0px">
+                        {% elif weather.aqi > 150 and weather.aqi <= 200 %}
+                            <span style="color: #df5000; margin: 0px">
+                        {% elif weather.aqi > 200 %}
+                            <span style="color: #FF0000; margin: 0px">
+                        {% else %}
+                            <span>
+                        {% endif %}
+                        {{ weather.aqi|floatformat:"0" }}</span>
+                        <span>PM2.5:</span>
+                        {% if weather.pm25 <= 50 %}
+                            <span style="color: #00FF00; margin: 0px">
+                        {% elif weather.pm25 > 50 and weather.pm25 <= 100 %}
+                            <span style="color: #5cb85c; margin: 0px">
+                        {% elif weather.pm25 > 100 and weather.pm25 <= 150 %}
+                            <span style="color: #ffcc00; margin: 0px">
+                        {% elif weather.pm25 > 150 and weather.pm25 <= 200 %}
+                            <span style="color: #df5000; margin: 0px">
+                        {% elif weather.pm25 > 200 %}
+                            <span style="color: #FF0000; margin: 0px">
+                        {% else %}
+                            <span>
+                        {% endif %}
+                        {{ weather.pm25|floatformat:"0" }}</span>
+                        <span>空气质量: {{ weather.air_desc }}</span>
+                    </h3>
                 {% endif %}
             </div>
         </div>

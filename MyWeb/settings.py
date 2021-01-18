@@ -200,7 +200,7 @@ LOGGING = {
             'encoding': 'utf-8',
         },
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',
             'formatter': 'default',
@@ -227,4 +227,8 @@ LOGGING = {
         # },
     },
 }
+
+# 自定义参数
+WEATHER_API_KEY = 'aJkb6gTZrkEqnAQh'
+CITY_LOCATION = '121.46924,31.22986'
 

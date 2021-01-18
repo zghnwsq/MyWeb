@@ -149,8 +149,8 @@ def get_run_count(request):
             executed_ratio = 'error'
         pass_count = int(
             run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct().count())
-        if run > 0 and pass_count <= run:
-            pass_ratio = '%.1f%%' % (pass_count / run * 100)
+        if line.count > 0 and pass_count <= line.count:
+            pass_ratio = '%.1f%%' % (pass_count / line.count * 100)
         elif pass_count > run:
             pass_ratio = 'error'
         else:

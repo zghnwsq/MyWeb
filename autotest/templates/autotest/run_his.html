@@ -158,10 +158,10 @@
                         {field: 'group', title: 'TestGroup', width: '10%', sort: true, fixed: 'left', align: 'center'}
                         , {field: 'suite', title: 'TestSuit', width: '10%', sort: true, align: 'center'}
                         , {field: 'case', title: 'TestCase', minWidth: 100, sort: true, align: 'center'}
-                        , {field: 'title', title: 'Title', minWidth: 245, align: 'center'}
-                        , {field: 'tester', title: 'Tester', width: '8%', align: 'center'}
+                        , {field: 'title', title: 'Title', minWidth: 280, align: 'center'}
+                        , {field: 'tester', title: 'Tester', width: '6%', align: 'center'}
                         , {
-                            field: 'result', title: 'Result', width: '8%', sort: true, align: 'center', templet: function (d) {
+                            field: 'result', title: 'Result', width: '7%', sort: true, align: 'center', templet: function (d) {
                                 if (d.result.toString() === '通过') {
                                     return '<span style="color: green">' + d.result + '</span>'
                                 } else if (d.result.toString() === '失败') {
@@ -173,9 +173,9 @@
                                 }
                             }
                         }
-                        , {field: 'create_time', title: 'Time', minWidth: 160, sort: true, align: 'center'}
+                        , {field: 'create_time', title: 'Time', width: '15%', sort: true, align: 'center'}
                         , {
-                            field: 'report', title: 'Report', width: '10%', align: 'center', templet: function (d) {
+                            field: 'report', title: 'Report', width: '8%', align: 'center', templet: function (d) {
                                 return '<a target="_blank" class="layui-btn layui-btn-xs" href="report\\?path=' + d.report + '">查看报告</a>'
                             }
                         }

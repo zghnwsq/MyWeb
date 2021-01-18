@@ -91,5 +91,11 @@ comment
 --授予全菜单
 -- insert into user_menu(user_id, menu_id)  select 1, id from menu;
 
+# 2021.1.18 节点管理
+列出当前'on'状态节点
+执行'停止节点',则新建一个clinet,调用stop_server方法
+执行'更新',则新建一个cline,调用update方法
+
+
 
 

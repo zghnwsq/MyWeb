@@ -57,11 +57,11 @@ def count_by_group(group=None, beg=None, end=None):
     if group:
         run_his = run_his.filter(group=group)
     if beg:
-        edge = datetime.datetime.strptime(beg, '%Y-%m-%d')
-        run_his = run_his.filter( create_time__gte=edge)
+        edge = datetime.datetime.strptime(f'{beg} 00:00:00', '%Y-%m-%d %H:%M:%S')
+        run_his = run_his.filter(create_time__gte=edge)
     if end:
-        edge = datetime.datetime.strptime(end, '%Y-%m-%d')
-        run_his = run_his.filter( create_time__lte=edge)
+        edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
+        run_his = run_his.filter(create_time__lte=edge)
     run_his = run_his.values('group').annotate(
         time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
     return run_his

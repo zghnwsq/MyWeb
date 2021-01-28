@@ -93,9 +93,12 @@ comment
 
 # 2021.1.18 节点管理
 列出当前'on'状态节点
-执行'停止节点',则新建一个clinet,调用stop_server方法
-执行'更新',则新建一个cline,调用update方法
+执行'停止节点',则新建一个client,调用stop_server方法
+执行'更新',则新建一个client,调用update方法
+查询条件:tag status ip_port
+操作:停止(on) 更新(on) 删除(只能删off状态的)
 
-
+# layui和django模板语言标记符冲突
+前后加上{% verbatim %}{% endverbatim %},django就不会解析
 
 

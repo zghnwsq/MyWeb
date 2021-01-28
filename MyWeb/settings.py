@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.*']
 # Application definition
 
 INSTALLED_APPS = [
+    'SysAdmin.apps.SysadminConfig',
     'autotest.apps.AutotestConfig',
     'login.apps.LoginConfig',
     'django.contrib.admin',

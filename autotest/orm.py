@@ -1,7 +1,7 @@
 import datetime
 from django.db.models import Min, Count, CharField, F
 from django.db.models.functions import TruncDate, Cast
-from pytz import utc
+# from pytz import utc
 from .models import *
 import copy
 

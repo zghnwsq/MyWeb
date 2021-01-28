@@ -44,7 +44,8 @@
             <div class="layui-side-scroll">
                 <ul class="layui-nav layui-nav-tree layui-bg-cyan" lay-shrink="all" lay-filter="test">
                     {% for first_level in menus %}
-                        <li class="layui-nav-item {% ifequal first_level.text '自动化测试' %}layui-nav-itemed{% endifequal %}">
+{#                        <li class="layui-nav-item {% ifequal first_level.text '自动化测试' %}layui-nav-itemed{% endifequal %}">#}
+                        <li class="layui-nav-item ">
                             <a class="{{ first_level.text }}" href="{{ first_level.url }}">{{ first_level.text }}</a>
                             {% if first_level.childs %}
                                 <dl class="layui-nav-child">
@@ -92,6 +93,9 @@
         });
 
         let exp = layui.sessionData('expand').expand;
+        {% if expand %}
+            exp = "{{expand}}";
+        {% endif %}
         if (exp != null && exp.toString() !== '') {
             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
         }

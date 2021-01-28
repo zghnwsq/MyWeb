@@ -29,6 +29,7 @@ class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
+        context['expand'] = '自动化测试'
         return context
 
     def get_queryset(self, **kwargs):
@@ -38,7 +39,7 @@ class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = {
             'group': group,
             'suite': suite,
-            'tester': tester,
+            'tester': tester
         }
         return context
 
@@ -67,7 +68,7 @@ def get_run_his(request):
     ).extra(
         select={'create_time': 'strftime("%%Y-%%m-%%d %%H:%%M:%%S", create_time)'}).values(
         'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
-    count = run_his.count()
+    count = len(run_his)
     data_list = paginator(run_his, int(page), int(limit))
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
 
@@ -96,6 +97,7 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
+        context['expand'] = '自动化测试'
         return context
 
     def get_queryset(self, **kwargs):
@@ -176,6 +178,7 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
+        context['expand'] = '自动化测试'
         return context
 
     def get_queryset(self, **kwargs):
@@ -209,6 +212,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
+        context['expand'] = '自动化测试'
         return context
 
     def get_queryset(self, **kwargs):

@@ -3,10 +3,9 @@ from django.utils.timezone import *
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Min, Count, CharField, F
-from django.db.models.functions import TruncDate, Cast
 from django.shortcuts import render
 from django.views import generic
+from django.db.models import Q
 # from MyWeb import settings
 from Utils.Personal import get_personal, get_menu
 from Utils.Paginator import *
@@ -20,6 +19,8 @@ from Utils.decorators import auth_check
 # import pytz
 from .orm import *
 
+PARENT_MENU = '自动化测试'
+
 
 class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     template_name = 'autotest/run_his.html'
@@ -29,7 +30,7 @@ class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
-        context['expand'] = '自动化测试'
+        context['expand'] = PARENT_MENU
         return context
 
     def get_queryset(self, **kwargs):
@@ -70,13 +71,13 @@ def get_run_his(request):
         'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
     count = len(run_his)
     data_list = paginator(run_his, int(page), int(limit))
-    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
+    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
 
 
 @login_required
 @auth_check
 def get_report(request):
-    file_path = request.GET['path']
+    file_path = request.GET.get('path', None)
     if file_path:
         # HtmlTestReport
         if '.html' in file_path:
@@ -97,7 +98,7 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
-        context['expand'] = '自动化测试'
+        context['expand'] = PARENT_MENU
         return context
 
     def get_queryset(self, **kwargs):
@@ -167,7 +168,7 @@ def get_run_count(request):
             'pass_ratio': pass_ratio}
         )
     data_list = paginator(data_table, int(page), int(limit))
-    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
+    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
 
 
 class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
@@ -178,7 +179,7 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
-        context['expand'] = '自动化测试'
+        context['expand'] = PARENT_MENU
         return context
 
     def get_queryset(self, **kwargs):
@@ -212,7 +213,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
         context = get_menu(context)
-        context['expand'] = '自动化测试'
+        context['expand'] = PARENT_MENU
         return context
 
     def get_queryset(self, **kwargs):
@@ -253,17 +254,17 @@ def get_jobs(request):
     else:
         data_list = {}
     data_list = get_node_options(data_list)
-    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list, "expand": expand})
+    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
 
 
 @login_required()
 @auth_check
 def exec_job(request):
-    func = request.POST['func'].strip()
-    mthd = request.POST['mthd'].strip()
-    ds_range = request.POST['ds_range'].strip()
-    node = request.POST['node'].strip()
-    comment = request.POST['comment'].strip()
+    func = request.POST.get('func', '#').strip()
+    mthd = request.POST.get('mthd', '#').strip()
+    ds_range = request.POST.get('ds_range', '#').strip()
+    node = request.POST.get('node', '#').strip()
+    comment = request.POST.get('comment', '#').strip()
     tester = request.session['user_name']
     res = execute_job_asyn(func, mthd, ds_range, node, comment, tester)
     return JsonResponse(res)
@@ -272,7 +273,7 @@ def exec_job(request):
 def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     # 校验是否存在
     func_count = len(RegisterFunction.objects.filter(function=func))
-    execution = Execution.objects.filter(method=mthd, function__function=func)
+    execution = Execution.objects.filter(Q(status='finished') | Q(status=None), method=mthd, function__function=func)
     execution_count = len(execution)
     get_node = Node.objects.filter(ip_port=node, status='on')
     node_count = len(get_node)
@@ -317,10 +318,10 @@ def save_new_job(request):
     """
         保存新建任务
     """
-    func = request.POST['func'].strip()
-    mthd = request.POST['mthd'].strip()
-    ds_range = request.POST['ds_range'].strip()
-    comment = request.POST['comment'].strip()
+    func = request.POST.get('func', None).strip()
+    mthd = request.POST.get('mthd', None).strip()
+    ds_range = request.POST.get('ds_range', None).strip()
+    comment = request.POST.get('comment', None).strip()
     if not func or not mthd:
         return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
     exec_count = len(Execution.objects.filter(function__function=func, method=mthd))
@@ -340,8 +341,8 @@ def save_new_job(request):
 @login_required()
 @auth_check
 def del_job(request):
-    func = request.POST['func'].strip()
-    mthd = request.POST['mthd'].strip()
+    func = request.POST.get('func', '#').strip()
+    mthd = request.get('mthd', '#').strip()
     execution = Execution.objects.filter(method=mthd, function__function=func)
     if len(execution) > 0:
         if len(execution.filter(status='running')) > 0:

@@ -1,4 +1,13 @@
 /venv/
+*.sqlite3
+*.db
+/Report/
+/.idea/
+*/__pycache__/
+*.coverage
+/migrations/*
+/autotest/migrations/
+/login/migrations/
+/SysAdmin/migrations/
+/System Volume Information/
 /log/
-/log/20200326/20200326.log
-/log/20200731/20200731.log

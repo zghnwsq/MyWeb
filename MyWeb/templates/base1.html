@@ -94,7 +94,10 @@
 
         let exp = layui.sessionData('expand').expand;
         {% if expand %}
-            exp = "{{expand}}";
+            if (layui.sessionData('expand').expand === 'none' || layui.sessionData('expand').expand == null) {
+                exp = "{{expand}}";
+                layui.sessionData('expand', {key: 'expand', value: exp});
+             }
         {% endif %}
         if (exp != null && exp.toString() !== '') {
             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");

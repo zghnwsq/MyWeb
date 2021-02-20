@@ -3,6 +3,7 @@ from django.db.models import Min, Count, CharField, F
 from django.db.models.functions import TruncDate, Cast
 import copy
 from autotest.models import Node
+from .models import Sys_Config
 
 
 def filter_nodes(tag=None, status=None, ip_port=None):
@@ -16,6 +17,13 @@ def filter_nodes(tag=None, status=None, ip_port=None):
     return nodes
 
 
+def filter_conf(key=None, desc=None):
+    conf = Sys_Config.objects.all().values('key', 'value', 'desc')
+    if key:
+        conf = conf.filter(key=key)
+    if desc:
+        conf = conf.filter(desc__contains=desc)
+    return conf
 
 
 

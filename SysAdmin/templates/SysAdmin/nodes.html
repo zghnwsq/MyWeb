@@ -106,7 +106,7 @@
                         $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                     }
                 }
-            })
+            });
 
             table.on('tool(nodes_table)', function (obj) {
                 {#获得当前行数据#}
@@ -119,6 +119,8 @@
                 if (layEvent === 'stop_node') {
                     {#发送停止请求1#}
                     layer.confirm('确定要停止该节点吗?', function (index) {
+                        {#禁止重复提交#}
+                        $(tr).find("a[lay-event='stop_node']").addClass("layui-btn-disabled");
                         $.ajax({
                             url: 'stop/'
                             , type: 'POST'
@@ -135,12 +137,15 @@
                                 } else {
                                     layer.msg(ret['msg'], {offset: '15%', time: 3000});
                                 }
+                                node_table.reload();
                             }
                         })
                         layer.close(index)
                     })
-                    node_table.reload()
+                    {#node_table.reload();#}
                 } else if (layEvent === 'update_node') {
+                    {#禁止重复提交#}
+                    $(tr).find("a[lay-event='update_node']").addClass("layui-btn-disabled");
                     {#发送更新请求#}
                     layer.confirm('确定要更新该节点吗?', function (index) {
                         $.ajax({
@@ -159,12 +164,15 @@
                                 } else {
                                     layer.msg(ret['msg'], {offset: '15%', time: 3000});
                                 }
+                                node_table.reload();
                             }
-                        })
-                        layer.close(index)
+                        });
+                        layer.close(index);
                     })
-                    node_table.reload()
+                    {#node_table.reload();#}
                 } else if (layEvent === 'del_node') {
+                    {#禁止重复提交#}
+                    $(tr).find("a[lay-event='del_node']").addClass("layui-btn-disabled");
                     {#发送删除请求#}
                     layer.confirm('确定要删除该节点吗?', function (index) {
                         $.ajax({
@@ -183,9 +191,10 @@
                                 } else {
                                     layer.msg(ret['msg'], {offset: '15%', time: 3000});
                                 }
+                                node_table.reload();
                             }
-                        })
-                        layer.close(index)
+                        });
+                        layer.close(index);
                     })
                     {#删除对应行（tr）的DOM结构，并更新缓存#}
                     obj.del();

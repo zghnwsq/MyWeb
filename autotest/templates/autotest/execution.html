@@ -79,8 +79,14 @@
     {#        </select>#}
     {#    </script>#}
     <script type="text/html" id="operations">
+        {% verbatim %}
+        {{#  if(d.status === 'finished' || d.status === null){ }}
         <a class="layui-btn layui-btn-xs" lay-event="exec">执行</a>
+        {{#  } }}
+        {{#  if(d.status === 'finished' || d.status === null){ }}
         <a class="layui-btn layui-btn-xs" lay-event="del">删除</a>
+        {{#  } }}
+        {% endverbatim %}
     </script>
     <script>
         !function () {
@@ -206,6 +212,7 @@
                     {#console.log('event: ' + layEvent);#}
                     {#console.log('tr: ' + tr);#}
                     {#console.log(tr.attr('data-index')); //行序号#}
+                    {#console.log($(tr).find("a[lay-event='exec']")); //获取行内子元素#}
                     let func = data.func;
                     let mthd = data.mthd;
                     let ds_range = data.ds_range;
@@ -216,6 +223,7 @@
                     const csrf = $("#csrf").val();
                     {#console.log(mthd);#}
                     if (layEvent === 'exec') {
+                        {#执行#}
                         if (node === 'none') {
                             layer.open({
                                 content: '<div style="padding: 20px 100px;">' + '执行节点不能为空!' + '</div>'
@@ -228,6 +236,8 @@
                                 }
                             });
                         } else {
+                            {#禁止重复提交#}
+                            $(tr).find("a[lay-event='exec']").addClass("layui-btn-disabled");
                             {#执行#}
                             $.ajax({
                                 url: "/autotest/job/exec/"
@@ -248,11 +258,15 @@
                                             layer.closeAll();
                                         }
                                     });
+                                    {# 表格重载 刷新结果 #}
+                                    active['reload'].call(this);
                                 }
                             });
                         }
                     } else if (layEvent === 'del') {
-                        {#执行#}
+                        {#禁止重复提交#}
+                        $(tr).find("a[lay-event='del']").addClass("layui-btn-disabled");
+                        {#删除#}
                         $.ajax({
                             url: "/autotest/job/del/"
                             , type: "POST"

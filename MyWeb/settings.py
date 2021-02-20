@@ -157,9 +157,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "MyWeb/statics/hightcharts"),
     os.path.join(BASE_DIR, "Report"),
     'D:/PythonProject/EasySelenium/Report',
-    # os.path.join(BASE_DIR, "layui/imges/face"),
-    # os.path.join(BASE_DIR, "layui/css/modules/laydate/default"),
-    # os.path.join(BASE_DIR, "layui/css/modules/layer/default"),
 ]
 
 # STATIC_ROOT = 'D:/PythonProject/MyWeb/Statics'
@@ -171,13 +168,13 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 60*30
 
 # today = time.strftime("%Y%m%d", time.localtime())
-LOG_FILE = os.path.join(BASE_DIR, 'log')
-if not os.path.exists(os.path.join(BASE_DIR, 'log')):
-    os.mkdir(os.path.join(BASE_DIR, 'log'))
+LOG_PATH = os.path.join(BASE_DIR, 'log')
+if not os.path.exists(LOG_PATH):
+    os.mkdir(LOG_PATH)
 LOG_FILE_NAME = 'http.log'
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
     'formatters': {
         'default': {
             'format': '{asctime} {filename:s} {module} {funcName:s} {levelname} {message}',
@@ -194,7 +191,7 @@ LOGGING = {
             # 'class': 'logging.FileHandler',
             'class': 'logging.handlers.TimedRotatingFileHandler',  # 改为日志滚动
             'formatter': 'default',
-            'filename': os.path.join(LOG_FILE, LOG_FILE_NAME),
+            'filename': os.path.join(LOG_PATH, LOG_FILE_NAME),
             'when': 'H',
             'interval': 6,
             'backupCount': 100,

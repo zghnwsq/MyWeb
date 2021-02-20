@@ -16,6 +16,7 @@ from Utils.Personal import *
 import logging
 import requests
 from .models import Weather
+from SysAdmin.models import Sys_Config
 
 
 # Create your views here.
@@ -66,8 +67,10 @@ def get_weather():
     need_refresh = len(Weather.objects.filter(status='ok', create_time__gte=edge)) <= 0
     weather = {}
     if need_refresh:
+        weather_api_key = Sys_Config.objects.get(key='WEATHER_API_KEY').value
+        city_location = Sys_Config.objects.get(key='CITY_LOCATION').value
         session = requests.session()
-        url = f'https://api.caiyunapp.com/v2.5/{settings.WEATHER_API_KEY}/{settings.CITY_LOCATION}/realtime'
+        url = f'https://api.caiyunapp.com/v2.5/{weather_api_key}/{city_location}/realtime'
         try:
             response = session.get(url)
             resp_json = json.loads(response.text)

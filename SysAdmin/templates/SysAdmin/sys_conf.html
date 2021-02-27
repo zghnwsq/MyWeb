@@ -15,7 +15,7 @@
                             <option value=""></option>
                             {% if options.keys %}
                                 {% for key in options.keys %}
-                                    <option value="{{ key.key }}">{{ key.key }}</option>
+                                    <option value="{{ key.dict_key }}">{{ key.dict_key }}</option>
                                 {% endfor %}
                             {% endif %}
                         </select>
@@ -62,9 +62,9 @@
                 }
                 , even: true
                 , cols: [[
-                    {field: 'key', title: 'Key', sort: true, align: 'center'}
-                    , {field: 'value', title: 'Value', edit: 'text', sort: true, align: 'center'}
-                    , {field: 'desc', title: 'Describe', sort: true, align: 'center'}
+                    {field: 'dict_key', title: 'Key', sort: true, align: 'center'}
+                    , {field: 'dict_value', title: 'Value', edit: 'text', sort: true, align: 'center'}
+                    , {field: 'description', title: 'Describe', sort: true, align: 'center'}
                     , {
                         field: 'actions', title: 'Actions', align: 'center', toolbar: '#actions'
                     }

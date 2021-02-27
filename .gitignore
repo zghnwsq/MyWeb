@@ -1,5 +1,4 @@
 /venv/
-*.sqlite3
 *.db
 /Report/
 /.idea/
@@ -11,3 +10,4 @@
 /SysAdmin/migrations/
 /System Volume Information/
 /log/
+*.sqlite3

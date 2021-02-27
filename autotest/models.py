@@ -9,9 +9,9 @@ class RunHis(models.Model):
     suite = models.CharField(max_length=32, null=False)
     case = models.CharField(max_length=32, null=False)
     title = models.CharField(max_length=64)
-    desc = models.CharField(max_length=200)
+    description = models.CharField(max_length=200, null=True)
     tester = models.CharField(max_length=32)
-    comment = models.CharField(max_length=200)
+    comment = models.CharField(max_length=200, null=True)
     report = models.CharField(max_length=100)
     result = models.CharField(max_length=1)
     create_time = models.DateTimeField(auto_created=False)
@@ -27,10 +27,10 @@ class RunHis(models.Model):
 class ResDict(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     result = models.CharField(max_length=1, null=False)
-    desc = models.CharField(max_length=32, null=False)
+    description = models.CharField(max_length=32, null=False)
 
     def __str__(self):
-        return self.desc
+        return self.description
 
     class Meta:
         db_table = 'res_dict'
@@ -54,13 +54,13 @@ class RegisterFunction(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     group = models.CharField(max_length=32, null=True)
     suite = models.CharField(max_length=32, null=True)
-    function = models.CharField(max_length=64, null=False)
+    func = models.CharField(max_length=64, null=False)
     node = models.CharField(max_length=32, null=True)
 
 
 class Execution(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    function = models.ForeignKey(RegisterFunction, blank=True, null=True, on_delete=models.CASCADE)
+    func = models.ForeignKey(RegisterFunction, blank=True, null=True, on_delete=models.CASCADE)
     method = models.CharField(max_length=64)
     ds_range = models.CharField(max_length=32, null=True)
     comment = models.CharField(max_length=64, null=True)

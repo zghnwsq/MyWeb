@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 import time
+from os import environ
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,10 +81,11 @@ WSGI_APPLICATION = 'MyWeb.wsgi.application'
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    },
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    #     'NAME': 'D:\\PythonProject\\myweb.sqlite3'
+    # },
     # 'autotest': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
@@ -92,22 +94,33 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
     # }
-    'autotest': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    # 'autotest': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     # 'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
+    #     'NAME': 'D:\\PythonProject\\myweb.sqlite3',
+    # },
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': '8.136.125.0',
+        'PORT': 9306,
+        'NAME': 'myweb',
+        'USER': environ.get('MYSQL_USER'),
+        'PASSWORD': environ.get('MYSQL_PWD'),
+        # 'OPTIONS': {
+        #     'default-character-set': 'utf8'
+        # },
     },
-    # 'mysql': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'HOST': '',
-    #     'PORT': '',
-    #     'NAME': '',
-    #     'USER': '',
-    #     'PASSWORD': '',
-    #     'OPTIONS': {
-    #         'default-character-set': 'utf8'
-    #     },
-    # }
+    'autotest': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': '8.136.125.0',
+        'PORT': 9306,
+        'NAME': 'myweb',
+        'USER': environ.get('MYSQL_USER'),
+        'PASSWORD': environ.get('MYSQL_PWD'),
+        # 'OPTIONS': {
+        #     'default-character-set': 'utf8'
+        # },
+    }
 }
 
 DATABASE_ROUTERS = []
@@ -151,6 +164,7 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+# 开发环境
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "layui"),
     os.path.join(BASE_DIR, "MyWeb/statics"),
@@ -159,7 +173,8 @@ STATICFILES_DIRS = [
     'D:/PythonProject/EasySelenium/Report',
 ]
 
-# STATIC_ROOT = 'D:/PythonProject/MyWeb/Statics'
+# 生产环境
+# STATIC_ROOT = os.path.join(BASE_DIR, "MyWeb/statics")
 
 LOGIN_REDIRECT_URL = '/index/'
 LOGIN_URL = '/login/'
@@ -227,6 +242,5 @@ LOGGING = {
 }
 
 # 自定义参数
-WEATHER_API_KEY = 'aJkb6gTZrkEqnAQh'
-CITY_LOCATION = '121.46924,31.22986'
+
 

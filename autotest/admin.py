@@ -14,7 +14,7 @@ class NodeAdmin(admin.ModelAdmin):
 
 
 class RegisterFunctionAdmin(admin.ModelAdmin):
-    list_display = ('group', 'suite', 'function', 'node')
+    list_display = ('group', 'suite', 'func', 'node')
 
 
 admin.site.register(SuiteCount, SuiteCountAdmin)

@@ -67,10 +67,11 @@ def get_weather():
     need_refresh = len(Weather.objects.filter(status='ok', create_time__gte=edge)) <= 0
     weather = {}
     if need_refresh:
-        weather_api_key = Sys_Config.objects.get(key='WEATHER_API_KEY').value
-        city_location = Sys_Config.objects.get(key='CITY_LOCATION').value
+        weather_api_key = Sys_Config.objects.get(dict_key='WEATHER_API_KEY').dict_value
+        city_location = Sys_Config.objects.get(dict_key='CITY_LOCATION').dict_value
+        weather_api_url = Sys_Config.objects.get(dict_key='WEATHER_API_URL').dict_value
         session = requests.session()
-        url = f'https://api.caiyunapp.com/v2.5/{weather_api_key}/{city_location}/realtime'
+        url = f'{weather_api_url}/{weather_api_key}/{city_location}/realtime'
         try:
             response = session.get(url)
             resp_json = json.loads(response.text)

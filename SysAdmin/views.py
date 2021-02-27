@@ -27,9 +27,9 @@ class NodesV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        tags = Node.objects.using('autotest').values('tag').distinct()
-        status = Node.objects.using('autotest').values('status').distinct()
-        ip_port = Node.objects.using('autotest').values('ip_port').distinct()
+        tags = Node.objects.values('tag').distinct()
+        status = Node.objects.values('status').distinct()
+        ip_port = Node.objects.values('ip_port').distinct()
         csrf_token = self.request.COOKIES.get('csrftoken')
         context = {
             'tags': tags,
@@ -60,18 +60,18 @@ def get_nodes(request):
 @auth_check
 def stop_node(request):
     ip_port = request.POST.get('ip_port', '#').strip()
-    target_node = Node.objects.using('autotest').filter(ip_port__contains=ip_port, status='on')
+    target_node = Node.objects.filter(ip_port__contains=ip_port, status='on')
     if len(target_node) > 0:
         # 防止多次提交
         target_node.update(status='stopping')
         res = stop_node_service(ip_port)
         if 'stopped' in res:
-            target_node.update(status='off')
+            Node.objects.filter(ip_port__contains=ip_port, status='stopping').update(status='off')
             msg = 'succ'
         else:
             msg = res + '...'
         if 'connection' in res:
-            target_node.update(status='off')
+            Node.objects.filter(ip_port__contains=ip_port, status='stopping').update(status='off')
     else:
         msg = f'Error: 该节点 {ip_port} 不存在或未启动!'
     return JsonResponse({"msg": msg})
@@ -81,7 +81,7 @@ def stop_node(request):
 @auth_check
 def update_node(request):
     ip_port = request.POST.get('ip_port', '#').strip()
-    target_node = Node.objects.using('autotest').filter(ip_port__contains=ip_port, status='on')
+    target_node = Node.objects.filter(ip_port__contains=ip_port, status='on')
     if len(target_node) > 0:
         # 防止多次提交
         target_node.update(status='updating')
@@ -91,7 +91,7 @@ def update_node(request):
         else:
             msg = res
         if 'connection' in res:
-            target_node.update(status='off')
+            Node.objects.filter(ip_port__contains=ip_port, status='updating').update(status='off')
     else:
         msg = f'Error: 该节点 {ip_port} 不存在或使用中!'
     return JsonResponse({"msg": msg})
@@ -101,11 +101,11 @@ def update_node(request):
 @auth_check
 def del_node(request):
     ip_port = request.POST['ip_port'].strip()
-    target_node = Node.objects.using('autotest').filter(ip_port__contains=ip_port, status='off')
+    target_node = Node.objects.filter(ip_port__contains=ip_port, status='off')
     if len(target_node) > 0:
         # 防止多次提交
         target_node.update(status='deleting')
-        target_node.delete()
+        Node.objects.filter(ip_port__contains=ip_port, status='deleting').delete()
         msg = 'succ'
     else:
         msg = f'Error: 该节点 {ip_port} 不存在或已启动!'
@@ -124,7 +124,7 @@ class SysConfV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        keys = Sys_Config.objects.values('key').distinct()
+        keys = Sys_Config.objects.values('dict_key').distinct()
         csrf_token = self.request.COOKIES.get('csrftoken')
         context = {
             'keys': keys,
@@ -155,11 +155,11 @@ def modify_sys_conf(request):
     if not key or not value:
         msg = 'Key 或 Value不能为空!'
     else:
-        sys_conf = Sys_Config.objects.filter(key=key)
+        sys_conf = Sys_Config.objects.filter(dict_key=key)
         if len(sys_conf) < 1:
             msg = 'Key 不存在!'
         else:
-            sys_conf.update(value=value)
+            sys_conf.update(dict_value=value)
             msg = 'succ'
     return JsonResponse({"msg": msg})
 

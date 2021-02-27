@@ -18,11 +18,11 @@ def filter_nodes(tag=None, status=None, ip_port=None):
 
 
 def filter_conf(key=None, desc=None):
-    conf = Sys_Config.objects.all().values('key', 'value', 'desc')
+    conf = Sys_Config.objects.all().values('dict_key', 'dict_value', 'description')
     if key:
-        conf = conf.filter(key=key)
+        conf = conf.filter(dict_key=key)
     if desc:
-        conf = conf.filter(desc__contains=desc)
+        conf = conf.filter(description=desc)
     return conf
 
 

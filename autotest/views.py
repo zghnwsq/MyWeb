@@ -66,8 +66,7 @@ def get_run_his(request):
         result=request.GET.get('result', None),
         beg=request.GET.get('beg', None),
         end=request.GET.get('end', None)
-    ).extra(
-        select={'create_time': 'strftime("%%Y-%%m-%%d %%H:%%M:%%S", create_time)'}).values(
+    ).values(
         'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
     count = len(run_his)
     data_list = paginator(run_his, int(page), int(limit))
@@ -131,8 +130,7 @@ def get_run_count(request):
         suite=request.GET.get('suite', None),
         beg=request.GET.get('beg', None),
         end=request.GET.get('end', None)
-    ).extra(
-        select={'create_time': 'strftime("%%Y-%%m-%%d %%H:%%M:%%S", create_time)'}).values(
+    ).values(
         'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
     suite_total = get_suite_total(
         group=request.GET.get('group', None),
@@ -221,7 +219,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         # functions = RegisterFunction.objects.all()
         group = RegisterFunction.objects.values('group').distinct()
         suite = RegisterFunction.objects.values('suite').distinct()
-        function = RegisterFunction.objects.values('function').distinct()
+        function = RegisterFunction.objects.values('func').distinct()
         # executions = Execution.objects.all().values('function__group', 'function__suite', 'method', 'ds_range',
         #                                             'function__function', 'comment', 'status')
         # csrf
@@ -272,8 +270,8 @@ def exec_job(request):
 
 def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     # 校验是否存在
-    func_count = len(RegisterFunction.objects.filter(function=func))
-    execution = Execution.objects.filter(Q(status='finished') | Q(status=None), method=mthd, function__function=func)
+    func_count = len(RegisterFunction.objects.filter(func=func))
+    execution = Execution.objects.filter(Q(status='finished') | Q(status=None), method=mthd, func__func=func)
     execution_count = len(execution)
     get_node = Node.objects.filter(ip_port=node, status='on')
     node_count = len(get_node)
@@ -306,8 +304,8 @@ def new_job_html(request):
     """
         新建任务的弹出层html
     """
-    func = RegisterFunction.objects.distinct().values('group', 'suite', 'function').order_by('group', 'suite',
-                                                                                             'function').distinct()
+    func = RegisterFunction.objects.distinct().values('group', 'suite', 'func').order_by('group', 'suite',
+                                                                                         'func').distinct()
     # print(func)
     return render(request, 'autotest/new_job.html', {'func': func})
 
@@ -324,10 +322,10 @@ def save_new_job(request):
     comment = request.POST.get('comment', None).strip()
     if not func or not mthd:
         return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
-    exec_count = len(Execution.objects.filter(function__function=func, method=mthd))
-    get_func = RegisterFunction.objects.filter(function=func)
+    exec_count = len(Execution.objects.filter(func__func=func, method=mthd))
+    get_func = RegisterFunction.objects.filter(func=func)
     if len(get_func) >= 1 and exec_count == 0:
-        new = Execution(method=mthd, ds_range=ds_range, comment=comment, function=get_func[0])
+        new = Execution(method=mthd, ds_range=ds_range, comment=comment, func=get_func[0])
         new.save()
         return JsonResponse({"msg": "保存成功!"})
     elif len(get_func) < 1:
@@ -343,7 +341,7 @@ def save_new_job(request):
 def del_job(request):
     func = request.POST.get('func', '#').strip()
     mthd = request.get('mthd', '#').strip()
-    execution = Execution.objects.filter(method=mthd, function__function=func)
+    execution = Execution.objects.filter(method=mthd, func__func=func)
     if len(execution) > 0:
         if len(execution.filter(status='running')) > 0:
             return JsonResponse({"msg": "ERROR: 任务执行中,不能删除!"})

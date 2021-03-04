@@ -11,3 +11,4 @@
 /System Volume Information/
 /log/
 *.sqlite3
+/Statics/

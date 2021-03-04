@@ -164,7 +164,7 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-# 开发环境
+#
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "layui"),
     os.path.join(BASE_DIR, "MyWeb/statics"),
@@ -173,8 +173,8 @@ STATICFILES_DIRS = [
     'D:/PythonProject/EasySelenium/Report',
 ]
 
-# 生产环境
-# STATIC_ROOT = os.path.join(BASE_DIR, "MyWeb/statics")
+# 部署生产前运行python manage.py collectstatic
+STATIC_ROOT = os.path.join(BASE_DIR, "Statics")
 
 LOGIN_REDIRECT_URL = '/index/'
 LOGIN_URL = '/login/'

@@ -40,7 +40,7 @@
                             <option value=""></option>
                             {% if options.function %}
                                 {% for func in options.function %}
-                                    <option value="{{ func.function }}">{{ func.function }}</option>
+                                    <option value="{{ func.func }}">{{ func.func }}</option>
                                 {% endfor %}
                             {% endif %}
                         </select>
@@ -112,7 +112,7 @@
                     , cols: [[
                         {field: 'group', title: 'TestGroup', width: '10%', sort: true, align: 'center'}
                         , {field: 'suite', title: 'TestSuit', width: '10%', sort: true, align: 'center'}
-                        , {field: 'func', title: 'NodeRPCFunction', minWidth: 200, sort: true, align: 'center'}
+                        , {field: 'funct', title: 'NodeRPCFunction', minWidth: 200, sort: true, align: 'center'}
                         , {field: 'mthd', title: 'TestMethod', sort: true, align: 'center'}
                         , {field: 'ds_range', title: 'Range', sort: true, edit: 'text', align: 'center'}
                         , {field: 'comment', title: 'Comment', edit: 'text'}
@@ -213,7 +213,7 @@
                     {#console.log('tr: ' + tr);#}
                     {#console.log(tr.attr('data-index')); //行序号#}
                     {#console.log($(tr).find("a[lay-event='exec']")); //获取行内子元素#}
-                    let func = data.func;
+                    let func = data.funct;
                     let mthd = data.mthd;
                     let ds_range = data.ds_range;
                     let comment = data.comment;

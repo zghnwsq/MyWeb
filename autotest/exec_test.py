@@ -4,9 +4,10 @@ import threading
 import time
 from threading import ThreadError
 from xmlrpc.client import ServerProxy
+from django.db.models import Q
 import Utils.zip as zip_util
 from MyWeb import settings
-from autotest.models import RunHis
+from autotest.models import RunHis, Execution
 
 
 def run_by_node(func, mthd, ds_range, node, comment, tester):
@@ -28,7 +29,7 @@ def run_by_node(func, mthd, ds_range, node, comment, tester):
         func_obj = getattr(s, func)
         # res = func_obj(mthd, ds_range, comment, tester)
         res = func_obj({'mtd': mthd, 'rg': ds_range, 'comment': comment, 'tester': tester})
-        print(res)
+        print(f'RPC return:{res}')
         status = handle_result(s, res)
         return status
     except TimeoutError:
@@ -71,7 +72,7 @@ def handle_result(server, res):
             for res in res['result']:
                 # print(res)
                 his.append(RunHis(group=res['group'], suite=res['suite'], case=res['case'], title=res['title'],
-                                  tester=res['tester'], desc=res['desc'], comment=res['comment'], report=op_path,
+                                  tester=res['tester'], description=res['desc'], comment=res['comment'], report=op_path,
                                   result=res['result'], create_time=res['finish_time']))
             RunHis.objects.bulk_create(his, batch_size=50)
         return 'finished'
@@ -82,7 +83,7 @@ class RunnerThread(threading.Thread):
         多线程执行
     """
 
-    def __init__(self, func, mthd, ds_range, node, comment, node_model, exec_model, tester):
+    def __init__(self, func, mthd, ds_range, node, comment, node_model, tester):
         threading.Thread.__init__(self)
         self.func = func
         self.mthd = mthd
@@ -90,7 +91,6 @@ class RunnerThread(threading.Thread):
         self.node = node
         self.comment = comment
         self.node_model = node_model
-        self.exec_model = exec_model
         self.tester = tester
         self.res = ''
 
@@ -106,15 +106,17 @@ class RunnerThread(threading.Thread):
             row.save()
         # 执行结束，修改任务状态
         status = self.res
-        for row in self.exec_model:
-            row.status = status
+        print(f'Status:{status}')
+        exec_model = Execution.objects.filter(Q(status='running') | Q(status=None), method=self.mthd, func__func=self.func)
+        for row in exec_model:
+            row.status = status[:255]
             row.save()
 
     def get_res(self):
         return self.res
 
 
-def job_run(func, mthd, ds_range, node, comment, node_model, exec_model, tester):
+def job_run(func, mthd, ds_range, node, comment, node_model, tester):
     """
     使用多线程，使用节点异步执行测试任务，不阻断页面响应
     :param tester:
@@ -127,7 +129,7 @@ def job_run(func, mthd, ds_range, node, comment, node_model, exec_model, tester)
     :param exec_model: 任务model对象，用于更新状态
     :return: none
     """
-    thd = RunnerThread(func, mthd, ds_range, node, comment, node_model, exec_model, tester)
+    thd = RunnerThread(func, mthd, ds_range, node, comment, node_model, tester)
     status = 'running'
     try:
         thd.start()

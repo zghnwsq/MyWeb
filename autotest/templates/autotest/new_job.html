@@ -8,7 +8,7 @@
                     <option value="">请选择注册测试类</option>
                     {% if func %}
                         {% for opt in func %}
-                            <option value="{{ opt.function }}">{{ opt.group }} - {{ opt.suite }}: {{ opt.function }}</option>
+                            <option value="{{ opt.function }}">{{ opt.group }} - {{ opt.suite }}: {{ opt.func }}</option>
                         {% endfor %}
                     {% endif %}
                 </select>

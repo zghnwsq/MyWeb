@@ -64,7 +64,7 @@ class Execution(models.Model):
     method = models.CharField(max_length=64)
     ds_range = models.CharField(max_length=32, null=True)
     comment = models.CharField(max_length=64, null=True)
-    status = models.CharField(max_length=16, null=True)
+    status = models.CharField(max_length=256, null=True)
 
 
 

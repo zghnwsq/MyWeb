@@ -269,9 +269,19 @@ def exec_job(request):
 
 
 def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
+    """
+       异步调用RPC执行测试用例的方法
+    :param func: 对应用例组，测试类
+    :param mthd: 对应测试方法
+    :param ds_range: 参数范围
+    :param node: 执行节点
+    :param comment: 备注
+    :param tester: 测试人
+    :return:
+    """
     # 校验是否存在
     func_count = len(RegisterFunction.objects.filter(func=func))
-    execution = Execution.objects.filter(Q(status='finished') | Q(status=None), method=mthd, func__func=func)
+    execution = Execution.objects.exclude(status='running').filter(method=mthd, func__func=func)
     execution_count = len(execution)
     get_node = Node.objects.filter(ip_port=node, status='on')
     node_count = len(get_node)
@@ -287,7 +297,7 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
             row.comment = comment
             row.save()
         # 多线程异步执行
-        status = job_run(func, mthd, ds_range, node, comment, get_node, execution, tester)
+        status = job_run(func, mthd, ds_range, node, comment, get_node, tester)
         # 线程异常，更新任务状态
         if 'Error' in status:
             for row in execution:

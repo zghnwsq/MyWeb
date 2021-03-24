@@ -45,8 +45,19 @@
 
                 </div>
 
-                <div class="layui-row layui-input-block">
-                    <div class="layui-col-md3 layui-col-md-offset9">
+                <div class="layui-inline"> {# layui-row layui-input-block #}
+                    <label class="layui-form-label">Tester：</label>
+                    <div class="layui-input-inline">
+                        <select name="tester" id="tester">
+                            <option value=""></option>
+                            {% if options.tester %}
+                                {% for tst in options.tester %}
+                                    <option value="{{ tst.tester }}">{{ tst.tester }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="layui-input-inline">
                         <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
                         <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
                     </div>
@@ -69,6 +80,7 @@
             let expand = layui.sessionData('expand').expand;
             let group = $('#group').val();
             let suite = $('#suite').val();
+            let tester = $('#tester').val();
             let beg = '';
             let end = '';
 
@@ -107,21 +119,23 @@
             let run_his = table.render({
                     elem: '#run_his'
                     , height: 'full'
-                    , url: '/autotest/run_count/get/' //数据接口
+                    , url: '/autotest/run_count/get/' {#//数据接口#}
                     , where: {
                         group: group,
                         suite: suite,
                         beg: beg,
                         end: end,
+                        tester: tester,
                         expand: expand
                     }
                     , page: {
                         curr: 1,
                         limit: 10
                     } //开启分页
-                    , even: true //奇偶行背景
-                    , cols: [[ //表头
-                        {field: 'group', title: 'TestGroup', sort: true, fixed: 'left', align: 'center'}
+                    , even: true {#//奇偶行背景 #}
+                    , totalRow: true {# 统计行 #}
+                    , cols: [[ {#//表头 #}
+                        {field: 'group', title: 'TestGroup', sort: true, fixed: 'left', align: 'center', totalRowText: 'SUM'}
                         , {field: 'suite', title: 'TestSuit', sort: true, align: 'center'}
                         , {field: 'total', title: 'Total', sort: true, align: 'center', totalRow: true}
                         , {field: 'executed', title: 'Executions', sort: true, align: 'center', totalRow: true}
@@ -134,8 +148,15 @@
                         if (exp !== '' && exp != null) {
                             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                         }
+                        {# 统计去掉小数 #}
+                        let divArr = $(".layui-table-total div.layui-table-cell");
+                        $.each(divArr, function (index, item) {
+                            let _div = $(item);
+                            let content = _div.html();
+                            content = content.replace(".00", "");
+                            _div.html(content);
+                        });
                     }
-
                 })
             ;
 
@@ -143,6 +164,7 @@
                 reload: function () {
                     let group = $('#group').val();
                     let suite = $('#suite').val();
+                    let tester = $('#tester').val();
                     let expand = layui.sessionData('expand').expand;
                     {#console.log(group);#}
                     run_his.reload({
@@ -154,6 +176,7 @@
                             suite: suite,
                             beg: beg,
                             end: end,
+                            tester: tester,
                             expand: expand
                         }
                         , done: function (res, curr, count) {
@@ -161,6 +184,14 @@
                             if (exp !== '' && exp != null) {
                                 $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                             }
+                            {# 统计去掉小数 #}
+                            let divArr = $(".layui-table-total div.layui-table-cell");
+                            $.each(divArr, function (index, item) {
+                                let _div = $(item);
+                                let content = _div.html();
+                                content = content.replace(".00", "");
+                                _div.html(content);
+                            });
                         }
                     });
                 }
@@ -177,6 +208,7 @@
                     ,"suite": 1
                     ,"from": ""
                     ,"to": ""
+                    ,"tester": 1
                 });
                 beg = '';
                 end = '';

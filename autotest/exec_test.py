@@ -122,7 +122,7 @@ def job_run(func, mthd, ds_range, node, comment, node_model, tester):
     :param tester:
     :param func: 节点注册的方法（一个节点方法对应一个测试类）
     :param mthd: 要执行的测试类中的测试方法,全部（all）或指定
-    :param ds_range: 数据源范围, 1  1,3  2-4
+    :param ds_range: 数据源范围, 格式如：1  1,3  2-4
     :param node: 节点ip:port
     :param comment: 任务执行备注
     :param node_model: 节点model对象，用于更新状态

@@ -2,6 +2,7 @@ from django.http import JsonResponse
 # from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from SysAdmin.node_manage import *
 from SysAdmin.orm import *
 from Utils.MyMixin import URIPermissionMixin
@@ -45,7 +46,7 @@ class NodesV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 def get_nodes(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    expand = request.GET.get('expand', 'none')
+    # expand = request.GET.get('expand', 'none')
     nodes = filter_nodes(
         tag=request.GET.get('tag', None),
         status=request.GET.get('status', None),
@@ -79,6 +80,7 @@ def stop_node(request):
 
 @login_required
 @auth_check
+@require_http_methods(['POST'])
 def update_node(request):
     ip_port = request.POST.get('ip_port', '#').strip()
     target_node = Node.objects.filter(ip_port__contains=ip_port, status='on')
@@ -99,6 +101,7 @@ def update_node(request):
 
 @login_required
 @auth_check
+@require_http_methods(['POST'])
 def del_node(request):
     ip_port = request.POST['ip_port'].strip()
     target_node = Node.objects.filter(ip_port__contains=ip_port, status='off')
@@ -138,7 +141,7 @@ class SysConfV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 def get_sys_conf(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    expand = request.GET.get('expand', 'none')
+    # expand = request.GET.get('expand', 'none')
     key = request.GET.get('key', None)
     desc = request.GET.get('desc', None)
     conf = filter_conf(key=key, desc=desc)
@@ -149,6 +152,7 @@ def get_sys_conf(request):
 
 @login_required
 @auth_check
+@require_http_methods(['POST'])
 def modify_sys_conf(request):
     key = request.POST.get('key', None).strip()
     value = request.POST.get('value', None).strip()

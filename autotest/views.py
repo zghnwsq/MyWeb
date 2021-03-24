@@ -1,16 +1,16 @@
-import datetime
-from django.utils.timezone import *
+# import datetime
+# from django.utils.timezone import *
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.views import generic
-from django.db.models import Q
+# from django.db.models import Q
 # from MyWeb import settings
 from Utils.Personal import get_personal, get_menu
 from Utils.Paginator import *
 from Utils.hightchart import chart_series
-from .models import *
+# from .models import *
 from django.http import JsonResponse, HttpResponseRedirect
 # from django.template.context_processors import csrf
 from .exec_test import *
@@ -57,7 +57,7 @@ def get_run_his(request):
     # }
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    expand = request.GET.get('expand', 'none')
+    # expand = request.GET.get('expand', 'none')
     run_his = filter_run_his(
         tester=request.GET.get('tester', None),
         group=request.GET.get('group', None),
@@ -101,11 +101,13 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        group = RunHis.objects.using('autotest').values('group').distinct()
-        suite = RunHis.objects.using('autotest').values('suite').distinct()
+        group = RunHis.objects.values('group').distinct()
+        suite = RunHis.objects.values('suite').distinct()
+        tester = RunHis.objects.values('tester').distinct()
         context = {
             'group': group,
             'suite': suite,
+            'tester': tester
         }
         return context
 
@@ -122,12 +124,13 @@ def get_run_count(request):
     # }
     page = request.GET['page'] or '0'
     limit = request.GET['limit'] or '30'
-    expand = ''
-    if 'expand' in request.GET:
-        expand = request.GET['expand']
+    # expand = ''
+    # if 'expand' in request.GET:
+    #     expand = request.GET['expand']
     run_his = filter_run_his(
         group=request.GET.get('group', None),
         suite=request.GET.get('suite', None),
+        tester=request.GET.get('tester', None),
         beg=request.GET.get('beg', None),
         end=request.GET.get('end', None)
     ).values(
@@ -240,7 +243,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
 def get_jobs(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    expand = request.GET.get('expand', '')
+    # expand = request.GET.get('expand', '')
     jobs = filter_jobs(
         group=request.GET.get('group', None),
         suite=request.GET.get('suite', None),
@@ -277,7 +280,7 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     :param node: 执行节点
     :param comment: 备注
     :param tester: 测试人
-    :return:
+    :return: json msg
     """
     # 校验是否存在
     func_count = len(RegisterFunction.objects.filter(func=func))

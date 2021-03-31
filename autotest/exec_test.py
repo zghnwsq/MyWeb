@@ -109,7 +109,8 @@ class RunnerThread(threading.Thread):
         print(f'Status:{status}')
         exec_model = Execution.objects.filter(Q(status='running') | Q(status=None), method=self.mthd, func__func=self.func)
         for row in exec_model:
-            row.status = status[:255]
+            # row.status = status[:255]
+            row.status = 'finished'
             row.save()
 
     def get_res(self):

@@ -18,7 +18,7 @@
 <div class="layui-layout layui-layout-admin">
     <!--head nav-->
     <div class="layui-header">
-        <div class="layui-logo"><a href="{% url 'login:index' %}" style="color: #009680">My Web System</a></div>
+        <div class="layui-logo"><a href="{% url 'login:index' %}" style="color: #009680; font-size: 17px"> Automated Test Platform</a></div>
         <!-- header-nav -->
         <ul class="layui-nav layui-layout-left">
             {% block head_nav %}
@@ -30,7 +30,7 @@
                     {{ user_name }} - {{ user_group }}
                 </a>
                 <dl class="layui-nav-child">
-                    <dd><a href="">个人中心</a></dd>
+                    <dd><a href="{% url 'login:personal' %}">个人中心</a></dd>
                     <dd><a href="{% url 'login:logout' %}">注销</a></dd>
                 </dl>
             </li>

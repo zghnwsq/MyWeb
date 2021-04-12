@@ -1,6 +1,6 @@
 # coding=utf-8
 
-def chart_series(run_his):
+def group_count_and_result_series(run_his):
     series = []
     names = run_his.values('group').distinct()
     for name in names:
@@ -20,3 +20,16 @@ def chart_series(run_his):
             fail_datas.append([fa['time'], fa['count']])
         series.append({'name': name['group'] + '_fail', 'data': fail_datas})
     return series
+
+
+def group_count_series(run_his):
+    series = []
+    names = run_his.values('group').distinct()
+    for name in names:
+        list_of_group = run_his.filter(group=name['group'])
+        datas = []
+        for data_of_group in list_of_group:
+            datas.append([data_of_group['time'], data_of_group['count']])
+        series.append({'name': name['group'], 'data': datas})
+    return series
+

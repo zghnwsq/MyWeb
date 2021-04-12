@@ -5,43 +5,45 @@
         .weather {
             text-align: center;
         }
-        .weather span{
+
+        .weather span {
             margin: 5px;
         }
     </style>
 {% endblock %}
 <!--{% block nav_side %}-->
-<!--    <div class="layui-side layui-bg-cyan">-->
-<!--        <div class="layui-side-scroll">-->
-<!--            <ul class="layui-nav layui-nav-tree layui-bg-cyan"  lay-filter="test">-->
-<!--                <li class="layui-nav-item">-->
-<!--                    <a href="javascript:;">默认展开</a>-->
-<!--                </li>-->
-<!--                {% for first_level in menus %}-->
-<!--                <li class="layui-nav-item">-->
-<!--                    <a class="" href="{{first_level.url}}">{{first_level.text}}</a>-->
-<!--                    {% if first_level.childs %}-->
-<!--                    <dl class="layui-nav-child">-->
-<!--                        {% for child in first_level.childs %}-->
-<!--                        <dd><a href="{{child.url}}">{{child.text}}</a>-->
-<!--                        {% endfor %}-->
-<!--                    </dl>-->
-<!--                    {% endif %}-->
-<!--                </li>-->
-<!--                {% endfor %}-->
-<!--            </ul>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--{% endblock %}-->
+    <!--    <div class="layui-side layui-bg-cyan">-->
+    <!--        <div class="layui-side-scroll">-->
+    <!--            <ul class="layui-nav layui-nav-tree layui-bg-cyan"  lay-filter="test">-->
+    <!--                <li class="layui-nav-item">-->
+    <!--                    <a href="javascript:;">默认展开</a>-->
+    <!--                </li>-->
+    <!--                {% for first_level in menus %}-->
+        <!--                <li class="layui-nav-item">-->
+        <!--                    <a class="" href="{{first_level.url}}">{{first_level.text}}</a>-->
+        <!--                    {% if first_level.childs %}-->
+            <!--                    <dl class="layui-nav-child">-->
+            <!--                        {% for child in first_level.childs %}-->
+                <!--                        <dd><a href="{{child.url}}">{{child.text}}</a>-->
+                <!--                        {% endfor %}-->
+            <!--                    </dl>-->
+            <!--                    {% endif %}-->
+        <!--                </li>-->
+        <!--                {% endfor %}-->
+    <!--            </ul>-->
+    <!--        </div>-->
+    <!--    </div>-->
+    <!--{% endblock %}-->
 {% block content %}
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
-    <legend>首页</legend>
+        <legend>首页</legend>
     </fieldset>
     <div class="layui-container">
         <div class="layui-row">
             <div class="layui-col-md4 layui-col-md-offset4">
+                <h1 style="text-align: center; margin-bottom: 5%">欢迎来到自动化测试平台</h1>
                 {% if time %}
-                    <h2 style="text-align: center">{{time}}</h2>
+                    <h2 style="text-align: center">{{ time }}</h2>
                 {% endif %}
                 {% if weather %}
                     <h3 class="weather">
@@ -87,4 +89,191 @@
             </div>
         </div>
     </div>
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>近七天趋势</legend>
+    </fieldset>
+    <div class="layui-row">
+        <div class="layui-col-lg6" id="trend" style="width: 50%">
+        </div>
+        <div class="layui-col-lg6" id="result" style="width: 50%">
+        </div>
+    </div>
 {% endblock %}
+
+{% load static %}
+{% block script %}
+    <script src="{% static 'highcharts.js' %}"></script>
+    <script src="{% static 'exporting.js' %}"></script>
+    <script src="{% static 'offline-exporting.js' %}"></script>
+    <script src="{% static 'highcharts-zh_CN.js' %}"></script>
+    <script>
+        let seri = [
+            {% if data %}
+                {% for se in data.series %}
+                    {
+                        'name': '{{ se.name }}',
+                        'data': [
+                            {% for points in se.data %}
+                                [
+                                    {% for point in points %}
+                                        '{{ point }}',
+                                    {% endfor %}
+                                ],
+                            {% endfor %}
+                        ]
+                    },
+                {% endfor %}
+            {% endif %}
+        ];
+
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+
+        let chart1 = Highcharts.chart('trend', {
+            chart: {
+                type: 'spline'
+                , zoomType: 'xy'
+            },
+            title: {
+                text: '近七天自动化执行情况'
+            },
+            subtitle: {
+                text: ''
+            },
+            colors: ['#63b2ee', '#76da91', '#f8cb7f', '#f89588', '#7cd6cf', '#9192ab', '#7898e1', '#efa666', '#eddd86', '#9987ce', '#63b2ee', '#76da91'],
+            credits: {
+                enabled: false {# 禁用版权信息 #}
+            },
+            exporting: {
+                enabled: false {# 禁用导出按钮 #}
+            },
+            xAxis: {
+                type: 'datetime',
+                title: {
+                    text: null
+                },
+                tickInterval: 24 * 3600 * 1000,  {# 单位: 毫秒 #}
+                dateTimeLabelFormats: {
+                    week: '%Y-%m-%d'
+                }
+            },
+            yAxis: [
+                {
+                    title: {
+                        text: '次数'
+                    },
+                    min: 0
+                },
+            ],
+            tooltip: {
+                headerFormat: '<b>用例组: {series.name}</b><br>',
+                pointFormat: '{point.x:%Y/%m/%d}: {point.y} 次',
+                {#shared: true#}
+            },
+            plotOptions: {
+                spline: {
+                    marker: {
+                        enabled: true
+                    },
+                    dataLabels: {
+                        enabled: false,
+                        formatter: function () {
+                            return this.x + "   " + this.y;
+                        },
+                        format: "{x:%Y/%m/%d}:      {y}"
+                    }
+                },
+                column: {
+                    stacking: 'normal',
+                    maxPointWidth: 50,
+                }
+            },
+            series: []
+        });
+        for (let i in seri) {
+            let points = [];
+            let item = seri[i];
+            for (let j in item['data']) {
+                let it = item['data'][j];
+                let time = new Date(it[0]).getTime();
+                const time_offset = new Date().getTimezoneOffset()*60*1000; {# 与UTC相差毫秒, 分钟*60*1000 #}
+                let bjt = new Date(time + time_offset).getTime(); {# 北京时间毫秒时间戳 #}
+                let count = parseInt(it[1]);
+                points.push([bjt, count]);
+            }
+            chart1.addSeries({name: item.name, data: points});
+        }
+
+        let result_count = {% if data.result %}
+            [
+                {
+                    name: 'pass',
+                    y: {{ data.result.pass }},
+                    dataLabels: {
+                        enabled: {% if data.result.pass_pec < 0.01 %} false {% else %} true {% endif %}
+                    }
+                },
+                {
+                    name: 'fail',
+                    y: {{ data.result.fail }},
+                    dataLabels: {
+                        enabled: {% if data.result.fail_pec < 0.01 %} false {% else %} true {% endif %}
+                    }
+                },
+                {
+                    name: 'error',
+                    y: {{ data.result.error }},
+                    dataLabels: {
+                        enabled: {% if data.result.error_pec < 0.01 %} false {% else %} true {% endif %}
+                    }
+                }
+            ]
+                {% else %} [[]] {% endif %}
+        let chart2 = Highcharts.chart('result', {
+            title: {
+                text: '近七天执行结果分布',
+                align: 'center',
+                verticalAlign: 'top',
+                y: 50
+            },
+            colors: ['#90ed7d', '#f15c80', '#ed551a'],
+            tooltip: {
+                headerFormat: '{series.name}<br>',
+                pointFormat: '{point.name}: <b>{point.percentage:.0f}%</b>'
+            },
+            plotOptions: {
+                pie: {
+                    dataLabels: {
+                        enabled: true,
+                        distance: -50,
+                        style: {
+                            fontWeight: 'bold',
+                            color: 'white',
+                            textShadow: '0px 1px 2px black'
+                        }
+                    },
+                    startAngle: -90, {# 圆环的开始角度 #}
+                    endAngle: 90, {# 圆环的结束角度 #}
+                    center: ['50%', '75%']
+                }
+            },
+            credits: {
+                enabled: false {# 禁用版权信息 #}
+            },
+            exporting: {
+                enabled: false {# 禁用导出按钮 #}
+            },
+            series: [{
+                type: 'pie',
+                name: '近七天结果分布',
+                size: '120%',
+                innerSize: '50%',
+                data: result_count
+            }]
+        });
+    </script>
+{% endblock %}
+

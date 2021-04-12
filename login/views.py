@@ -1,14 +1,17 @@
 import datetime
 import json
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView
 from django.views import generic
-from MyWeb import settings
-from .form import LoginForm
+from Utils.MyMixin import URIPermissionMixin
+from Utils.hightchart import group_count_series
+from autotest.orm import count_by_group, result_count
+from .form import LoginForm, PersonalInfoForm, ChangePasswordFrom
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -52,6 +55,7 @@ class LoginV(LoginView):
                     request.session['user_name'] = user_name
                     request.session['user_group'] = user_group
                     self.logger.info('%s login' % user_name)
+                    request.session['menus'] = get_menu({'user_name': user_name})
                     if redirect:
                         return HttpResponseRedirect(redirect)
                     else:
@@ -121,9 +125,16 @@ class IndexV(LoginRequiredMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        context = get_menu(context)
-        context['time'] = datetime.datetime.now().strftime('%Y-%m-%d %A')
+        context['menus'] = get_menu(context)
+        self.request.session['menus'] = context['menus']
+        context['time'] = datetime.datetime.now().strftime('%Y-%m-%d')
         context['weather'] = get_weather()
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        seven_day = (datetime.datetime.now()+datetime.timedelta(days=-6)).strftime('%Y-%m-%d')
+        run_his = count_by_group(beg=seven_day, end=today)
+        series = group_count_series(run_his)
+        res_count = result_count(beg=seven_day, end=today)
+        context['data'] = {'series': series, 'result': res_count}
         return context
 
     def get_queryset(self, **kwargs):
@@ -139,7 +150,78 @@ def logout_v(request):
 @login_required
 def permission_denied(request):
     context = get_personal(request, {})
-    context = get_menu(context)
+    context['menus'] = request.session.get('menus', [])
     context['time'] = datetime.datetime.now().strftime('%Y-%m-%d %A')
     context['message'] = 'Permission Denied!'
     return render(request, 'login/index.html', context=context)
+
+
+class PersonalInfoV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
+    template_name = 'login/personal.html'
+    logger = logging.getLogger('django')
+    context_object_name = 'info'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context = get_personal(self.request, context)
+        context['menus'] = self.request.session.get('menus', [])
+        return context
+
+    def get_queryset(self, **kwargs):
+        username = self.request.session['user_name']
+        info = User.objects.get(username=username)
+        context = {'personal': info}
+        return context
+
+    def post(self, request, *args, **kwargs):
+        info = PersonalInfoForm(request.POST)
+        passwd = ChangePasswordFrom(request.POST)
+        msg = '没有改变.'
+        username = request.session['user_name']
+        if info.is_valid():
+            email = request.POST.get('email', '')
+            csrf = request.POST.get('csrfmiddlewaretoken', '')
+            cs = request.session.get('email_csrf', '')
+            old_email = User.objects.get(username=username).email
+            if cs and csrf == cs:
+                msg = '请勿重复提交!'
+            elif email == old_email:
+                pass
+            else:
+                request.session['email_csrf'] = csrf
+                self.logger.info(f'Email: {email}')
+                if email:
+                    User.objects.filter(username=username).update(email=email)
+                    msg = '修改成功.'
+                else:
+                    msg = '邮箱不能为空!'
+        if passwd.is_valid():
+            old_pwd = request.POST.get('old_pwd', '')
+            new_pwd = request.POST.get('new_pwd', '')
+            repeat_pwd = request.POST.get('repeat_pwd', '')
+            self.logger.info(f'Old: {old_pwd}, new: {new_pwd}, repeat: {repeat_pwd}')
+            csrf = request.POST.get('csrfmiddlewaretoken', '')
+            cs = request.session.get('pwd_csrf', '')
+            if cs and csrf == cs:
+                msg = '请勿重复提交!'
+            elif new_pwd != repeat_pwd:
+                msg = '两次输入密码不一致!'
+            else:
+                request.session['pwd_csrf'] = csrf
+                if old_pwd and new_pwd and repeat_pwd:
+                    user = authenticate(request, username=username, password=old_pwd)
+                    if user is not None:
+                        encode_pwd = make_password(new_pwd)
+                        User.objects.filter(username=username).update(password=encode_pwd)
+                        msg = '修改成功.'
+                    else:
+                        msg = '原密码错误!'
+                else:
+                    msg = '密码不能为空!'
+        context = {'menus': self.request.session.get('menus', []), 'message': msg}
+        context = get_personal(self.request, context)
+        info = User.objects.get(username=username)
+        context['info'] = {'personal': info}
+        return render(request, 'login/personal.html', context=context)
+
+

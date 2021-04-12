@@ -23,7 +23,7 @@ class NodesV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        context = get_menu(context)
+        context['menus'] = self.request.session.get('menus', [])
         context['expand'] = PARENT_MENU
         return context
 
@@ -122,7 +122,7 @@ class SysConfV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        context = get_menu(context)
+        context['menus'] = self.request.session.get('menus', [])
         context['expand'] = PARENT_MENU
         return context
 

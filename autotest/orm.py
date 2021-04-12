@@ -68,6 +68,27 @@ def count_by_group(group=None, beg=None, end=None):
     return run_his
 
 
+def result_count(group=None, beg=None, end=None):
+    run_his = RunHis.objects.all()
+    if group:
+        run_his = run_his.filter(group=group)
+    if beg:
+        edge = datetime.datetime.strptime(f'{beg} 00:00:00', '%Y-%m-%d %H:%M:%S')
+        run_his = run_his.filter(create_time__gte=edge)
+    if end:
+        edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
+        run_his = run_his.filter(create_time__lte=edge)
+    pass_count = len(run_his.filter(result='0'))
+    fail_count = len(run_his.filter(result='1'))
+    error_count = len(run_his.filter(result='2'))
+    total = pass_count + fail_count + error_count
+    pass_pec = pass_count/total
+    fail_pec = fail_count/total
+    error_pec = error_count/total
+    return {'pass': pass_count, 'fail': fail_count, 'error': error_count, 'pass_pec': pass_pec, 'fail_pec': fail_pec,
+            'error_pec': error_pec}
+
+
 def filter_jobs(group=None, suite=None, func=None):
     jobs = Execution.objects.all().annotate(group=F('func__group'),
                                             suite=F('func__suite'),

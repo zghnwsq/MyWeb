@@ -10,7 +10,7 @@ def get_personal(request, context):
     user_group = request.session['user_group']
     context['user_name'] = user_name
     context['user_group'] = user_group
-    context['message'] = ''
+    # context['message'] = ''
     return context
 
 
@@ -27,8 +27,9 @@ def get_menu(context):
             childs.append({'url': m2.url, 'text': m2.text})
         menu_items['childs'] = childs
         u_menu.append(menu_items)
-    context['menus'] = u_menu
-    return context
+    # 2021.4.2 user menu改为存储在session中
+    # context['menus'] = u_menu
+    return u_menu
 
 
 def clear_logged_session(user):

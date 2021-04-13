@@ -9,7 +9,7 @@ from django.views import generic
 # from MyWeb import settings
 from Utils.Personal import get_personal, get_menu
 from Utils.Paginator import *
-from Utils.hightchart import chart_series
+from Utils.hightchart import group_count_and_result_series
 # from .models import *
 from django.http import JsonResponse, HttpResponseRedirect
 # from django.template.context_processors import csrf
@@ -29,7 +29,7 @@ class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        context = get_menu(context)
+        context['menus'] = self.request.session.get('menus', [])
         context['expand'] = PARENT_MENU
         return context
 
@@ -96,7 +96,7 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        context = get_menu(context)
+        context['menus'] = self.request.session.get('menus', [])
         context['expand'] = PARENT_MENU
         return context
 
@@ -155,6 +155,8 @@ def get_run_count(request):
             run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct().count())
         if line.count > 0 and pass_count <= line.count:
             pass_ratio = '%.1f%%' % (pass_count / line.count * 100)
+        elif run >= pass_count > line.count:
+            pass_ratio = '100.0%'
         elif pass_count > run:
             pass_ratio = 'error'
         else:
@@ -179,13 +181,13 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        context = get_menu(context)
+        context['menus'] = self.request.session.get('menus', [])
         context['expand'] = PARENT_MENU
         return context
 
     def get_queryset(self, **kwargs):
         run_his = count_by_group()
-        series = chart_series(run_his)
+        series = group_count_and_result_series(run_his)
         group = RunHis.objects.using('autotest').values('group').distinct()
         context = {
             'series': series,
@@ -202,7 +204,7 @@ def get_run_his_chart_data(request):
         beg=request.GET.get('beg', None),
         end=request.GET.get('end', None)
     )
-    series = chart_series(run_his)
+    series = group_count_and_result_series(run_his)
     return JsonResponse({'data': series})
 
 
@@ -213,7 +215,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = get_personal(self.request, context)
-        context = get_menu(context)
+        context['menus'] = self.request.session.get('menus', [])
         context['expand'] = PARENT_MENU
         return context
 

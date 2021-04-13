@@ -9,5 +9,6 @@ urlpatterns = [
     path('index/', views.IndexV.as_view(), name='index'),
     path('logout/', views.logout_v, name='logout'),
     path('403/', views.permission_denied, name='permission_denied'),
+    path('personal/', views.PersonalInfoV.as_view(), name='personal'),
 ]
 

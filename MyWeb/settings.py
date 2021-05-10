@@ -106,21 +106,22 @@ DATABASES = {
         'NAME': 'myweb',
         'USER': environ.get('MYSQL_USER'),
         'PASSWORD': environ.get('MYSQL_PWD'),
+        'CONN_MAX_AGE': 2*60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
         # 'OPTIONS': {
         #     'default-character-set': 'utf8'
         # },
     },
-    'autotest': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': '8.136.125.0',
-        'PORT': 9306,
-        'NAME': 'myweb',
-        'USER': environ.get('MYSQL_USER'),
-        'PASSWORD': environ.get('MYSQL_PWD'),
-        # 'OPTIONS': {
-        #     'default-character-set': 'utf8'
-        # },
-    }
+    # 'autotest': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'HOST': '8.136.125.0',
+    #     'PORT': 9306,
+    #     'NAME': 'myweb',
+    #     'USER': environ.get('MYSQL_USER'),
+    #     'PASSWORD': environ.get('MYSQL_PWD'),
+    #     # 'OPTIONS': {
+    #     #     'default-character-set': 'utf8'
+    #     # },
+    # }
 }
 
 DATABASE_ROUTERS = []
@@ -222,7 +223,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file', 'console'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'formatter': 'default',
             'propagate': True,
         },

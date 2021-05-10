@@ -15,6 +15,7 @@ class Menu(models.Model):
     url = models.CharField(max_length=64)
     parent = models.IntegerField(blank=True, null=True)
     list_order = models.IntegerField(blank=True, null=True)
+    icon = models.CharField(max_length=64)
 
     def __str__(self):
         return self.text

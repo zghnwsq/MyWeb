@@ -7,7 +7,7 @@ from .models import Sys_Config
 
 
 def filter_nodes(tag=None, status=None, ip_port=None):
-    nodes = Node.objects.using('autotest').all().order_by('-status').values('tag', 'status', 'ip_port')
+    nodes = Node.objects.all().order_by('-status').values('tag', 'status', 'ip_port')
     if tag:
         nodes = nodes.filter(tag__contains=tag)
     if status:

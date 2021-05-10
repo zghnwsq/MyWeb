@@ -5,7 +5,6 @@
         .weather {
             text-align: center;
         }
-
         .weather span {
             margin: 5px;
         }
@@ -103,8 +102,8 @@
 {% load static %}
 {% block script %}
     <script src="{% static 'highcharts.js' %}"></script>
-    <script src="{% static 'exporting.js' %}"></script>
-    <script src="{% static 'offline-exporting.js' %}"></script>
+    <script src="{% static 'modules/exporting.js' %}"></script>
+    <script src="{% static 'modules/offline-exporting.js' %}"></script>
     <script src="{% static 'highcharts-zh_CN.js' %}"></script>
     <script>
         let seri = [

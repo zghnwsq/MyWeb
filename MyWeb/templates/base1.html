@@ -18,7 +18,8 @@
 <div class="layui-layout layui-layout-admin">
     <!--head nav-->
     <div class="layui-header">
-        <div class="layui-logo"><a href="{% url 'login:index' %}" style="color: #009680; font-size: 17px"> Automated Test Platform</a></div>
+        <div class="layui-logo"><a href="{% url 'login:index' %}" style="color: #009680; font-size: 17px"> Automated
+            Test Platform</a></div>
         <!-- header-nav -->
         <ul class="layui-nav layui-layout-left">
             {% block head_nav %}
@@ -27,11 +28,14 @@
         <ul class="layui-nav layui-layout-right">
             <li class="layui-nav-item">
                 <a href="javascript:;">
+                    <i class="layui-icon layui-icon-username" style="font-size: 18px;"></i>
                     {{ user_name }} - {{ user_group }}
                 </a>
                 <dl class="layui-nav-child">
-                    <dd><a href="{% url 'login:personal' %}">个人中心</a></dd>
-                    <dd><a href="{% url 'login:logout' %}">注销</a></dd>
+                    <dd><a href="{% url 'login:personal' %}"><i class="layui-icon layui-icon-home"
+                                                                style="font-size: 16px;"></i> 个人中心</a></dd>
+                    <dd><a href="{% url 'login:logout' %}"><i class="layui-icon layui-icon-logout"
+                                                              style="font-size: 16px;"></i> 注销</a></dd>
                 </dl>
             </li>
             <li class="layui-nav-item"><a href=""> </a></li>
@@ -44,13 +48,25 @@
             <div class="layui-side-scroll">
                 <ul class="layui-nav layui-nav-tree layui-bg-cyan" lay-shrink="all" lay-filter="test">
                     {% for first_level in menus %}
-{#                        <li class="layui-nav-item {% ifequal first_level.text '自动化测试' %}layui-nav-itemed{% endifequal %}">#}
-                        <li class="layui-nav-item ">
-                            <a class="{{ first_level.text }}" href="{{ first_level.url }}">{{ first_level.text }}</a>
+                        {#                        <li class="layui-nav-item {% ifequal first_level.text '自动化测试' %}layui-nav-itemed{% endifequal %}">#}
+                        <li class="layui-nav-item">
+                            <a class="{{ first_level.text }}" href="{{ first_level.url }}">
+                                {% if first_level.icon %}
+                                    <i class="layui-icon {{ first_level.icon }}"
+                                       style="font-size: 18px;"></i>
+                                {% endif %}
+                                {{ first_level.text }}
+                            </a>
                             {% if first_level.childs %}
                                 <dl class="layui-nav-child">
                                     {% for child in first_level.childs %}
-                                        <dd><a href="{{ child.url }}">{{ child.text }}</a>
+                                        <dd><a href="{{ child.url }}">
+                                            {% if child.icon %}
+                                                <i class="layui-icon {{ child.icon }}"
+                                                   style="font-size: 18px;"></i>
+                                            {% endif %}
+                                            {{ child.text }}
+                                        </a></dd>
                                     {% endfor %}
                                 </dl>
                             {% endif %}
@@ -75,7 +91,7 @@
 
 </div>
 {% load static %}
-<script src="{% static 'layui.all.js' %} "></script>
+<script src="{% static 'layui.js' %} "></script>
 <script>
     !function () {
         let layer = layui.layer;
@@ -97,7 +113,7 @@
             if (layui.sessionData('expand').expand === 'none' || layui.sessionData('expand').expand == null) {
                 exp = "{{expand}}";
                 layui.sessionData('expand', {key: 'expand', value: exp});
-             }
+            }
         {% endif %}
         if (exp != null && exp.toString() !== '') {
             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");

@@ -34,9 +34,9 @@ class RunHisV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        group = RunHis.objects.using('autotest').values('group').distinct()
-        suite = RunHis.objects.using('autotest').values('suite').distinct()
-        tester = RunHis.objects.using('autotest').values('tester').distinct()
+        group = RunHis.objects.values('group').distinct()
+        suite = RunHis.objects.values('suite').distinct()
+        tester = RunHis.objects.values('tester').distinct()
         context = {
             'group': group,
             'suite': suite,
@@ -188,7 +188,7 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
     def get_queryset(self, **kwargs):
         run_his = count_by_group()
         series = group_count_and_result_series(run_his)
-        group = RunHis.objects.using('autotest').values('group').distinct()
+        group = RunHis.objects.values('group').distinct()
         context = {
             'series': series,
             'group': group

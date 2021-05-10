@@ -82,9 +82,12 @@ def result_count(group=None, beg=None, end=None):
     fail_count = len(run_his.filter(result='1'))
     error_count = len(run_his.filter(result='2'))
     total = pass_count + fail_count + error_count
-    pass_pec = pass_count/total
-    fail_pec = fail_count/total
-    error_pec = error_count/total
+    if total > 0:
+        pass_pec = pass_count/total
+        fail_pec = fail_count/total
+        error_pec = error_count/total
+    else:
+        pass_pec, fail_pec, error_pec = 0.0, 0.0, 0.0
     return {'pass': pass_count, 'fail': fail_count, 'error': error_count, 'pass_pec': pass_pec, 'fail_pec': fail_pec,
             'error_pec': error_pec}
 

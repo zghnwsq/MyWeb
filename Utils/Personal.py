@@ -20,11 +20,11 @@ def get_menu(context):
     first_level = Menu.objects.filter(id__in=all_menu, parent__isnull=True).order_by('list_order')
     u_menu = []
     for m1 in first_level:
-        menu_items = {'url': m1.url, 'text': m1.text}
+        menu_items = {'url': m1.url, 'text': m1.text, 'icon': m1.icon}
         second_level = Menu.objects.filter(id__in=all_menu, parent=m1.id).order_by('list_order')
         childs = []
         for m2 in second_level:
-            childs.append({'url': m2.url, 'text': m2.text})
+            childs.append({'url': m2.url, 'text': m2.text, 'icon': m2.icon})
         menu_items['childs'] = childs
         u_menu.append(menu_items)
     # 2021.4.2 user menu改为存储在session中

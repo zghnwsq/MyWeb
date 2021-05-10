@@ -48,8 +48,8 @@
 {% load static %}
 {% block script %}
     <script src="{% static 'highcharts.js' %}"></script>
-    <script src="{% static 'exporting.js' %}"></script>
-    <script src="{% static 'offline-exporting.js' %}"></script>
+    <script src="{% static 'modules/exporting.js' %}"></script>
+    <script src="{% static 'modules/offline-exporting.js' %}"></script>
     <script src="{% static 'highcharts-zh_CN.js' %}"></script>
     <script>
         !function () {
@@ -68,8 +68,8 @@
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
                     beg = value;
                     if (end !== '' && beg !== '') {
-                        let end_date = new Date(end).getDate();
-                        let beg_date = new Date(beg).getDate();
+                        let end_date = new Date(end);
+                        let beg_date = new Date(beg);
                         if (beg_date > end_date) {
                             layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
                         }
@@ -84,8 +84,8 @@
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
                     end = value;
                     if (end !== '' && beg !== '') {
-                        let end_date = new Date(end).getDate();
-                        let beg_date = new Date(beg).getDate();
+                        let end_date = new Date(end);
+                        let beg_date = new Date(beg);
                         if (beg_date > end_date) {
                             layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
                         }

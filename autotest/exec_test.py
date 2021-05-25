@@ -26,9 +26,11 @@ def run_by_node(func, mthd, ds_range, node, comment, tester):
         is_alive = s.is_alive()
         if 'alive' not in is_alive:
             raise TimeoutError('Node connection timeout!')
-        func_obj = getattr(s, func)
+        # 2021.5.25 改为通用调用方法
+        # func_obj = getattr(s, func)
+        func_obj = getattr(s, 'run_suite')
         # res = func_obj(mthd, ds_range, comment, tester)
-        res = func_obj({'mtd': mthd, 'rg': ds_range, 'comment': comment, 'tester': tester})
+        res = func_obj({'suite_name': func, 'mtd': mthd, 'rg': ds_range, 'comment': comment, 'tester': tester})
         print(f'RPC return:{res}')
         status = handle_result(s, res)
         return status

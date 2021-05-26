@@ -56,6 +56,7 @@ class RegisterFunction(models.Model):
     suite = models.CharField(max_length=32, null=True)
     func = models.CharField(max_length=64, null=False)
     node = models.CharField(max_length=32, null=True)
+    tests = models.CharField(max_length=512, null=True)
 
 
 class Execution(models.Model):

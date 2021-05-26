@@ -96,11 +96,12 @@ def filter_jobs(group=None, suite=None, func=None):
     jobs = Execution.objects.all().annotate(group=F('func__group'),
                                             suite=F('func__suite'),
                                             funct=F('func__func'),
-                                            mthd=F('method')
+                                            mthd=F('method'),
+                                            tests=F('func__tests')
                                             ).values('group', 'suite',
                                                      'mthd', 'ds_range',
                                                      'funct', 'comment',
-                                                     'status')
+                                                     'status', 'tests')
     if group:
         jobs = jobs.filter(func__group=group)
     if suite:

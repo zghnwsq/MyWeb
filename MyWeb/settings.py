@@ -243,5 +243,5 @@ LOGGING = {
 }
 
 # 自定义参数
-
+APSCHEDULER = 'on'
 

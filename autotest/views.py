@@ -1,5 +1,7 @@
 # import datetime
 # from django.utils.timezone import *
+import base64
+import json
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,7 +9,7 @@ from django.shortcuts import render
 from django.views import generic
 # from django.db.models import Q
 # from MyWeb import settings
-from Utils.Personal import get_personal, get_menu
+from Utils.Personal import get_personal
 from Utils.Paginator import *
 from Utils.hightchart import group_count_and_result_series
 # from .models import *
@@ -18,6 +20,8 @@ from Utils.MyMixin import URIPermissionMixin
 from Utils.decorators import auth_check
 # import pytz
 from .orm import *
+from django.views.decorators.csrf import csrf_exempt
+from SysAdmin.models import Sys_Config
 
 PARENT_MENU = '自动化测试'
 
@@ -279,7 +283,7 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     :param func: 对应用例组，测试类
     :param mthd: 对应测试方法
     :param ds_range: 参数范围
-    :param node: 执行节点
+    :param node: 执行节点 ip:port
     :param comment: 备注
     :param tester: 测试人
     :return: json msg
@@ -290,25 +294,30 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     execution_count = len(execution)
     get_node = Node.objects.filter(ip_port=node, status='on')
     node_count = len(get_node)
-    if func_count > 0 and execution_count > 0 and node_count > 0:
+    if func_count > 0 and execution_count == 1 and node_count > 0:
         # 占用节点
         for row in get_node:
             row.status = 'running'
             row.save()
-        # 更新任务状态
-        for row in execution:
-            row.status = 'running'
-            row.ds_range = ds_range
-            row.comment = comment
-            row.save()
+        # 更新任务状态 任务不允许重复
+        execution.update(status='running', ds_range=ds_range, comment=comment)
         # 多线程异步执行
         status = job_run(func, mthd, ds_range, node, comment, get_node, tester)
         # 线程异常，更新任务状态
         if 'Error' in status:
-            for row in execution:
-                row.status = status
-                row.save()
+            execution.update(status=status)
         return {"msg": "提交成功!"}
+    elif func_count > 0 and execution_count == 1:
+        # 加入队列
+        is_in_queue = len(JobQueue.objects.filter(executioin=execution[0], node=node, status='new'))
+        if is_in_queue < 1:
+            # 更新信息
+            execution.update(status='in job queue', ds_range=ds_range, comment=comment)
+            JobQueue(executioin=execution[0], node=node, status='new', tester=tester,
+                     create_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())).save()
+            return {"msg": "提交队列成功!"}
+        else:
+            return {"msg": "任务已在队列中!"}
     else:
         return {"msg": "ERROR: 节点注册方法或任务不存在，或执行节点不可用!"}
 
@@ -366,3 +375,60 @@ def del_job(request):
             return JsonResponse({"msg": "删除成功!"})
     else:
         return JsonResponse({"msg": "ERROR: 未知错误!"})
+
+
+@csrf_exempt
+def regiter_node(request):
+    msg = ''
+    if 'HTTP_AUTHORIZATION' in request.META:
+        auth = request.META['HTTP_AUTHORIZATION'].split()
+        if len(auth) == 2:
+            # NOTE: only support basic authentication for now.
+            if auth[0].lower() == "basic":
+                auth_token = base64.b64decode(auth[1]).decode()
+                db_token = Sys_Config.objects.get(dict_key='Register_Node_Auth').dict_value
+                if auth_token != db_token:
+                    msg = 'ERROR: token错误!'
+                else:
+                    req = request.body
+                    req_json = json.loads(req)
+                    if req_json['type'] == 'update':
+                        msg = update_node(req_json)
+                    if req_json['type'] == 'node_off':
+                        msg = update_node_off(req_json)
+        else:
+            msg = 'HTTP_AUTHORIZATION Invalid'
+    else:
+        msg = 'Required HTTP_AUTHORIZATION'
+    return JsonResponse({"msg": msg})
+
+
+def update_node(req_json):
+    if 'host_ip' in req_json.keys() and 'tag' in req_json.keys() and 'func' in req_json.keys():
+        host_ip = req_json['host_ip'].strip()
+        tag = req_json['host_ip']
+        func = req_json['func']
+        exist_node = Node.objects.filter(ip_port=host_ip)
+        if exist_node:
+            exist_node.update(status='on')
+        else:
+            Node(ip_port=host_ip, tag=tag, status='on').save()
+        for mthd_name in func.keys():
+            is_exists = RegisterFunction.objects.filter(func=mthd_name, node=host_ip)
+            if is_exists:
+                is_exists.update(tests=func[mthd_name])
+            else:
+                split_mthd_name = mthd_name.split('_')
+                group = split_mthd_name[0]
+                suite_name = split_mthd_name[1]
+                RegisterFunction(group=group, suite=suite_name, func=mthd_name, node=host_ip, tests=func[mthd_name]).save()
+        return 'OK'
+
+
+def update_node_off(req_json):
+    host_ip = req_json['host_ip'].strip()
+    Node.objects.filter(ip_port=host_ip).update(status='off')
+    return 'OK'
+
+
+

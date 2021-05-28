@@ -7,7 +7,7 @@ from xmlrpc.client import ServerProxy
 from django.db.models import Q
 import Utils.zip as zip_util
 from MyWeb import settings
-from autotest.models import RunHis, Execution
+from autotest.models import RunHis, Execution, JobQueue
 
 
 def run_by_node(func, mthd, ds_range, node, comment, tester):
@@ -112,6 +112,9 @@ class RunnerThread(threading.Thread):
         exec_model = Execution.objects.filter(Q(status='running') | Q(status=None), method=self.mthd, func__func=self.func)
         for row in exec_model:
             # row.status = status[:255]
+            job = JobQueue.objects.filter(executioin=row.id)
+            if job:
+                job.update(status='finished')
             row.status = 'finished'
             row.save()
 
@@ -129,7 +132,7 @@ def job_run(func, mthd, ds_range, node, comment, node_model, tester):
     :param node: 节点ip:port
     :param comment: 任务执行备注
     :param node_model: 节点model对象，用于更新状态
-    :param exec_model: 任务model对象，用于更新状态
+    :param tester: 执行人
     :return: none
     """
     thd = RunnerThread(func, mthd, ds_range, node, comment, node_model, tester)

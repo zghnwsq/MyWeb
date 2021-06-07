@@ -18,8 +18,7 @@
 <div class="layui-layout layui-layout-admin">
     <!--head nav-->
     <div class="layui-header">
-        <div class="layui-logo"><a href="{% url 'login:index' %}" style="color: #009680; font-size: 17px"> Automated
-            Test Platform</a></div>
+        <div class="layui-logo"><a href="" style="color: #009680; font-size: 17px"> Automated Test Platform</a></div>
         <!-- header-nav -->
         <ul class="layui-nav layui-layout-left">
             {% block head_nav %}
@@ -47,6 +46,12 @@
         <div class="layui-side layui-bg-cyan">
             <div class="layui-side-scroll">
                 <ul class="layui-nav layui-nav-tree layui-bg-cyan" lay-shrink="all" lay-filter="test">
+                    <li class="layui-nav-item">
+                        <a class="首页" href="{% url 'login:index' %}">
+                            <i class="layui-icon layui-icon-website" style="font-size: 18px;"></i>
+                            首页
+                        </a>
+                    </li>
                     {% for first_level in menus %}
                         {#                        <li class="layui-nav-item {% ifequal first_level.text '自动化测试' %}layui-nav-itemed{% endifequal %}">#}
                         <li class="layui-nav-item">

@@ -243,5 +243,6 @@ LOGGING = {
 }
 
 # 自定义参数
-
+APSCHEDULER = 'off'
+DATA_SOURCE_ROOT = os.path.join(BASE_DIR, 'Upload', 'DS')
 

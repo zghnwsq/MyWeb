@@ -124,9 +124,8 @@
                         $.ajax({
                             url: 'stop/'
                             , type: 'POST'
-                            , data: {
-                                ip_port: data.ip_port
-                            }
+                            , contentType: 'application/json; charset=utf-8'
+                            , data: JSON.stringify({ip_port: data.ip_port})
                             , beforeSend: function (xhr) {
                                     xhr.setRequestHeader("X-CSRFToken", nodes_csrf);
                                 }
@@ -151,12 +150,11 @@
                         $.ajax({
                             url: 'update/'
                             , type: 'POST'
+                            , contentType: 'application/json; charset=utf-8'
                             , beforeSend: function (xhr) {
                                     xhr.setRequestHeader("X-CSRFToken", nodes_csrf);
                                 }
-                            , data: {
-                                ip_port: data.ip_port
-                            }
+                            , data: JSON.stringify({ip_port: data.ip_port})
                             , success: function (ret) {
                                 console.log(ret);
                                 if ( ret.hasOwnProperty('msg') && ret['msg'].indexOf('succ')!== -1) {
@@ -178,12 +176,11 @@
                         $.ajax({
                             url: 'del/'
                             , type: 'POST'
+                            , contentType: 'application/json; charset=utf-8'
                             , beforeSend: function (xhr) {
                                     xhr.setRequestHeader("X-CSRFToken", nodes_csrf);
                                 }
-                            , data: {
-                                ip_port: data.ip_port
-                            }
+                            , data: JSON.stringify({ip_port: data.ip_port})
                             , success: function (ret) {
                                 console.log(ret);
                                 if ( ret.hasOwnProperty('msg') && ret['msg'].indexOf('succ')!== -1) {

@@ -1,6 +1,9 @@
+import os
+
 from django.db import models
 
 # Create your models here.
+from MyWeb import settings
 
 
 class RunHis(models.Model):
@@ -61,11 +64,28 @@ class RegisterFunction(models.Model):
 
 class Execution(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    func = models.ForeignKey(RegisterFunction, blank=True, null=True, on_delete=models.CASCADE)
+    func = models.ForeignKey(RegisterFunction, blank=False, null=False, on_delete=models.CASCADE)
     method = models.CharField(max_length=64)
     ds_range = models.CharField(max_length=32, null=True)
     comment = models.CharField(max_length=64, null=True)
     status = models.CharField(max_length=256, null=True)
+
+
+class JobQueue(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    executioin = models.ForeignKey(Execution, on_delete=models.CASCADE, null=False)
+    node = models.CharField(max_length=32, null=False)
+    status = models.CharField(max_length=256, null=False)
+    tester = models.CharField(max_length=32)
+    create_time = models.DateTimeField(auto_created=True)
+    update_time = models.DateTimeField(auto_created=False, null=True)
+
+
+class DataSource(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    ds_name = models.CharField(max_length=64, null=False)
+    file_path = models.FilePathField(path=settings.DATA_SOURCE_ROOT, max_length=256, null=False)
+    update_time = models.DateTimeField(auto_created=False, null=True)
 
 
 

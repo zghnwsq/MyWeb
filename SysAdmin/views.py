@@ -1,3 +1,4 @@
+import json
 from django.http import JsonResponse
 # from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -6,19 +7,21 @@ from django.views.decorators.http import require_http_methods
 from SysAdmin.node_manage import *
 from SysAdmin.orm import *
 from Utils.MyMixin import URIPermissionMixin
-from django.views import generic
+# from django.views import generic
 from Utils.Paginator import paginator
-from Utils.Personal import get_personal, get_menu
+from Utils.Personal import get_personal
 from Utils.decorators import auth_check
+from Utils.CustomView import ListViewWithMenu
 from autotest.models import Node
 
 PARENT_MENU = '系统管理'
 
 
 # Create your views here.
-class NodesV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
+class NodesV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     template_name = 'SysAdmin/nodes.html'
     context_object_name = 'options'
+    parent_menu = PARENT_MENU
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -60,7 +63,8 @@ def get_nodes(request):
 @login_required
 @auth_check
 def stop_node(request):
-    ip_port = request.POST.get('ip_port', '#').strip()
+    req = json.loads(request.body)
+    ip_port = req.get('ip_port', '#').strip()
     target_node = Node.objects.filter(ip_port__contains=ip_port, status='on')
     if len(target_node) > 0:
         # 防止多次提交
@@ -82,7 +86,8 @@ def stop_node(request):
 @auth_check
 @require_http_methods(['POST'])
 def update_node(request):
-    ip_port = request.POST.get('ip_port', '#').strip()
+    req = json.loads(request.body)
+    ip_port = req.get('ip_port', '#').strip()
     target_node = Node.objects.filter(ip_port__contains=ip_port, status='on')
     if len(target_node) > 0:
         # 防止多次提交
@@ -103,7 +108,8 @@ def update_node(request):
 @auth_check
 @require_http_methods(['POST'])
 def del_node(request):
-    ip_port = request.POST['ip_port'].strip()
+    req = json.loads(request.body)
+    ip_port = req.get('ip_port', '#').strip()
     target_node = Node.objects.filter(ip_port__contains=ip_port, status='off')
     if len(target_node) > 0:
         # 防止多次提交
@@ -115,9 +121,10 @@ def del_node(request):
     return JsonResponse({"msg": msg})
 
 
-class SysConfV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
+class SysConfV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     template_name = 'SysAdmin/sys_conf.html'
     context_object_name = 'options'
+    parent_menu = PARENT_MENU
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -154,8 +161,9 @@ def get_sys_conf(request):
 @auth_check
 @require_http_methods(['POST'])
 def modify_sys_conf(request):
-    key = request.POST.get('key', None).strip()
-    value = request.POST.get('value', None).strip()
+    req = json.loads(request.body)
+    key = req.get('key', None).strip()
+    value = req.get('value', None).strip()
     if not key or not value:
         msg = 'Key 或 Value不能为空!'
     else:

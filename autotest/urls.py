@@ -1,5 +1,7 @@
 from django.urls import path
+from MyWeb import settings
 from . import views
+from .APScheduler import start_scheduler
 
 app_name = 'autotest'
 urlpatterns = [
@@ -16,5 +18,12 @@ urlpatterns = [
     path('job/new_layer/', views.new_job_html, name='new_job_html'),
     path('job/save/', views.save_new_job, name='save_new_job'),
     path('job/del/', views.del_job, name='del_job'),
+    path('node/register/', views.regsiter_node, name='register_node'),
+    path('suite/count/', views.update_suite_cases_count, name='update_suite_case_count'),
+    path('datasource/update/', views.update_ds, name='update_datasource'),
 ]
+
+# 随项目启动运行
+if settings.APSCHEDULER == 'on':
+    start_scheduler()
 

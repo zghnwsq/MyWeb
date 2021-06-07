@@ -93,10 +93,8 @@
                         $.ajax({
                             url: 'modify/'
                             , type: 'POST'
-                            , data: {
-                                key: data.key,
-                                value: data.value
-                            }
+                            , contentType: 'application/json; charset=utf-8'
+                            , data: JSON.stringify({key: data.key, value: data.value})
                             , beforeSend: function (xhr) {
                                     xhr.setRequestHeader("X-CSRFToken", sys_conf_csrf);
                                 }

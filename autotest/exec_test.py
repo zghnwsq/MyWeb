@@ -3,11 +3,11 @@ import os
 import threading
 import time
 from threading import ThreadError
-from xmlrpc.client import ServerProxy
+from xmlrpc.client import ServerProxy, Binary
 from django.db.models import Q
 import Utils.zip as zip_util
 from MyWeb import settings
-from autotest.models import RunHis, Execution, JobQueue
+from autotest.models import RunHis, Execution, JobQueue, DataSource
 
 
 def run_by_node(func, mthd, ds_range, node, comment, tester):
@@ -26,6 +26,18 @@ def run_by_node(func, mthd, ds_range, node, comment, tester):
         is_alive = s.is_alive()
         if 'alive' not in is_alive:
             raise TimeoutError('Node connection timeout!')
+        # 2021.6.4 增加更新数据源
+        ds = DataSource.objects.filter(ds_name=func)
+        if len(ds) == 1:
+            file_path = ds[0].file_path
+            if os.path.isfile(file_path):
+                with open(file_path, 'rb') as ds_file:
+                    bin_data = Binary(ds_file.read())
+                    # print(bin_data)
+                    update_ds_func = getattr(s, 'replace_datasource')
+                    update_res = update_ds_func(func, bin_data)
+                    if 'Error' in update_res:
+                        raise Exception(update_res)
         # 2021.5.25 改为通用调用方法
         # func_obj = getattr(s, func)
         func_obj = getattr(s, 'run_suite')

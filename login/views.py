@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView
 from django.views import generic
+from Utils.CustomView import ListViewWithMenu
 from Utils.MyMixin import URIPermissionMixin
 from Utils.hightchart import group_count_series
 from autotest.orm import count_by_group, result_count
@@ -156,16 +157,16 @@ def permission_denied(request):
     return render(request, 'login/index.html', context=context)
 
 
-class PersonalInfoV(LoginRequiredMixin, URIPermissionMixin, generic.ListView):
+class PersonalInfoV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     template_name = 'login/personal.html'
     logger = logging.getLogger('django')
     context_object_name = 'info'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context = get_personal(self.request, context)
-        context['menus'] = self.request.session.get('menus', [])
-        return context
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context = get_personal(self.request, context)
+    #     context['menus'] = self.request.session.get('menus', [])
+    #     return context
 
     def get_queryset(self, **kwargs):
         username = self.request.session['user_name']

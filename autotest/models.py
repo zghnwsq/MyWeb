@@ -1,6 +1,9 @@
+import os
+
 from django.db import models
 
 # Create your models here.
+from MyWeb import settings
 
 
 class RunHis(models.Model):
@@ -76,5 +79,14 @@ class JobQueue(models.Model):
     tester = models.CharField(max_length=32)
     create_time = models.DateTimeField(auto_created=True)
     update_time = models.DateTimeField(auto_created=False, null=True)
+
+
+class DataSource(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    ds_name = models.CharField(max_length=64, null=False)
+    file_path = models.FilePathField(path=settings.DATA_SOURCE_ROOT, max_length=256, null=False)
+    update_time = models.DateTimeField(auto_created=False, null=True)
+
+
 
 

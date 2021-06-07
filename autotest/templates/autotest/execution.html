@@ -80,11 +80,15 @@
     {#    </script>#}
     <script type="text/html" id="operations">
         {% verbatim %}
+        <a class="layui-btn layui-btn-normal layui-btn-xs update_ds" id="{{ d.funct }}">数据源</a>
         {{#  if(d.status === 'finished' || d.status === null){ }}
         <a class="layui-btn layui-btn-xs" lay-event="exec">执行</a>
         {{#  } }}
+        {{# if(d.status === 'in queue'){ }}
+        <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="pullback">撤回</a>
+        {{#  } }}
         {{#  if(d.status === 'finished' || d.status === null){ }}
-        <a class="layui-btn layui-btn-xs" lay-event="del">删除</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
         {{#  } }}
         {% endverbatim %}
     </script>
@@ -94,8 +98,62 @@
             let form = layui.form;
             let $ = layui.$;
             let layer = layui.layer;
+            let upload = layui.upload;
             {# 左侧菜单展开 #}
             let expand = layui.sessionData('expand').expand;
+
+            function setSelectCSS() {
+                {#设置select样式#}
+                $(".layui-table-body, .layui-table-box, td[data-field='node']>.layui-table-cell").css('overflow', 'visible');
+                $("td[data-field='node'] .layui-form-select").css({
+                    'margin-top': '-10px',
+                    'margin-left': '-15px',
+                    'margin-right': '-15px'
+                });
+                $(".layui-table-body, .layui-table-box, td[data-field='tests']>.layui-table-cell").css('overflow', 'visible');
+                $("td[data-field='tests'] .layui-form-select").css({
+                    'margin-top': '-10px',
+                    'margin-left': '-15px',
+                    'margin-right': '-15px'
+                });
+            }
+
+            function renderUpload(upload) {
+                {# 上传 #}
+                let ds_name = '';
+                upload.render({
+                    elem: '.update_ds'
+                    , url: '/autotest/datasource/update/'
+                    , data: {
+                        'ds_name': function () {
+                            return ds_name;
+                        }
+                    }
+                    , headers: {'X-CSRFToken': $("#csrf").val()}
+                    , accept: 'file'
+                    {#, acceptMime: 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/vnd.yaml'#}
+                    , exts: 'xls|xlsx|yaml'
+                    , size: 2048
+                    , before: function (obj) {
+                        let thisRow = this.item;
+                        ds_name = thisRow.attr('id');
+                        layer.load(1);
+                    }
+                    , done: function (res) {
+                        console.log(res);
+                        layer.open({
+                            content: '<div style="padding: 20px 100px;">' + res.msg + '</div>'
+                            , type: 1
+                            , title: '提示'
+                            , time: 5000
+                            , btn: '确定'
+                            , yes: function () {
+                                layer.closeAll();
+                            }
+                        });
+                    }
+                });
+            }
 
             let jobs = table.render(
                 {
@@ -110,9 +168,9 @@
                     }
                     , even: true
                     , cols: [[
-                        {field: 'group', title: 'TestGroup', width: '10%', sort: true, align: 'center'}
-                        , {field: 'suite', title: 'TestSuit', width: '10%', sort: true, align: 'center'}
-                        , {field: 'funct', title: 'NodeRPCFunction', minWidth: 200, sort: true, align: 'center'}
+                        {field: 'group', title: 'TestGroup', width: '8%', sort: false, align: 'center'}
+                        , {field: 'suite', title: 'TestSuit', width: '8%', sort: false, align: 'center'}
+                        , {field: 'funct', title: 'NodeRPCFunction', minWidth: 180, sort: false, align: 'center'}
                         {#, {field: 'mthd', title: 'TestMethod', sort: true, align: 'center'}#}
                         , {
                             field: 'tests', title: 'TestMethod', templet(d) {
@@ -143,7 +201,7 @@
                                 return beg + opt + end;
                             }
                         }
-                        , {field: 'ds_range', title: 'Range', sort: true, edit: 'text', align: 'center'}
+                        , {field: 'ds_range', title: 'Range', sort: false, edit: 'text', align: 'center'}
                         , {field: 'comment', title: 'Comment', edit: 'text'}
                         {#, {field: 'node', title: 'Node', templet: '#selectNode'}#}
                         , {
@@ -164,27 +222,18 @@
                                 return beg + opt + end;
                             }
                         }
-                        , {field: 'status', title: 'Status', align: 'center'}
-                        , {field: '', title: 'Action', align: 'center', toolbar: '#operations', minWidth: 100}
+                        , {field: 'status', title: 'Status', align: 'center', minWidth: 80}
+                        , {field: '', title: 'Action', align: 'center', toolbar: '#operations', minWidth: 230}
                     ]]
                     , done: function (res, curr, count) {
                         {#设置select样式#}
-                        $(".layui-table-body, .layui-table-box, td[data-field='node']>.layui-table-cell").css('overflow', 'visible');
-                        $("td[data-field='node'] .layui-form-select").css({
-                            'margin-top': '-10px',
-                            'margin-left': '-15px',
-                            'margin-right': '-15px'
-                        });
-                        $(".layui-table-body, .layui-table-box, td[data-field='tests']>.layui-table-cell").css('overflow', 'visible');
-                        $("td[data-field='tests'] .layui-form-select").css({
-                            'margin-top': '-10px',
-                            'margin-left': '-15px',
-                            'margin-right': '-15px'
-                        });
+                        setSelectCSS($);
                         let exp = res.expand;
                         if ('' !== exp && exp != null) {
                             $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                         }
+                        {# 上传 #}
+                        renderUpload(upload);
                     }
                 }
             );
@@ -207,22 +256,13 @@
                         }
                         , done: function (res, curr, count) {
                             {#设置select样式#}
-                            $(".layui-table-body, .layui-table-box, td[data-field='node']>.layui-table-cell").css('overflow', 'visible');
-                            $("td[data-field='node'] .layui-form-select").css({
-                                'margin-top': '-10px',
-                                'margin-left': '-15px',
-                                'margin-right': '-15px'
-                            });
-                            $(".layui-table-body, .layui-table-box, td[data-field='tests']>.layui-table-cell").css('overflow', 'visible');
-                            $("td[data-field='tests'] .layui-form-select").css({
-                                'margin-top': '-10px',
-                                'margin-left': '-15px',
-                                'margin-right': '-15px'
-                            });
+                            setSelectCSS();
                             let exp = res.expand;
                             if (exp !== '' && exp != null) {
                                 $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
                             }
+                            {# 上传 #}
+                            renderUpload(upload);
                         }
                     });
                 }
@@ -279,6 +319,7 @@
                         } else {
                             {#禁止重复提交#}
                             $(tr).find("a[lay-event='exec']").addClass("layui-btn-disabled");
+                            layer.load(1);
                             {#执行#}
                             $.ajax({
                                 url: "/autotest/job/exec/"
@@ -286,7 +327,8 @@
                                 , beforeSend: function (xhr) {
                                     xhr.setRequestHeader("X-CSRFToken", csrf);
                                 }
-                                , data: {func: func, mthd: mthd, ds_range: ds_range, node: node, comment: comment}
+                                , contentType: 'application/json; charset=utf-8'
+                                , data: JSON.stringify({func: func, mthd: mthd, ds_range: ds_range, node: node, comment: comment})
                                 , success: function (data, textStatus) {
                                     {#console.log(data);#}
                                     layer.open({
@@ -307,6 +349,7 @@
                     } else if (layEvent === 'del') {
                         {#禁止重复提交#}
                         $(tr).find("a[lay-event='del']").addClass("layui-btn-disabled");
+                        layer.load(1);
                         {#删除#}
                         $.ajax({
                             url: "/autotest/job/del/"
@@ -314,7 +357,8 @@
                             , beforeSend: function (xhr) {
                                 xhr.setRequestHeader("X-CSRFToken", csrf);
                             }
-                            , data: {func: func, mthd: mthd, ds_range: ds_range, node: node, comment: comment}
+                            , contentType: 'application/json; charset=utf-8'
+                            , data: JSON.stringify({func: func, mthd: mthd, ds_range: ds_range, node: node, comment: comment})
                             , success: function (data, textStatus) {
                                 console.log(data);
                                 layer.open({
@@ -335,13 +379,12 @@
                 }
             );
             {# 新建 #}
-
             $('#new').on('click', function () {
                 $.get('/autotest/job/new_layer/', {}, function (str) {
                     let new_layer = layer.open({
                         title: '新建任务'
                         , type: 1
-                        , area: ['500px', '360px']
+                        , area: ['500px', '450px']
                         {# 注意，如果str是object，那么需要字符拼接。 #}
                         , content: str
                         , scrollbar: false
@@ -359,7 +402,8 @@
                                 , beforeSend: function (xhr) {
                                     xhr.setRequestHeader("X-CSRFToken", new_job_csrf);
                                 }
-                                , data: {func: new_func, mthd: new_method, ds_range: new_ds_range, comment: new_comment}
+                                , contentType: 'application/json; charset=utf-8'
+                                , data: JSON.stringify({func: new_func, mthd: new_method, ds_range: new_ds_range, comment: new_comment})
                                 , success: function (data, textStatus) {
                                     {#console.log(data.msg);#}
                                     layer.open({
@@ -394,4 +438,12 @@
         }()
     </script>
 
+{% endblock %}
+{% load static %}
+{% block statics %}
+    <style type="text/css">
+        .update_ds {
+            margin-right: 10px;
+         }
+    </style>
 {% endblock %}

@@ -23,12 +23,12 @@ class NodesV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     context_object_name = 'options'
     parent_menu = PARENT_MENU
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context = get_personal(self.request, context)
-        context['menus'] = self.request.session.get('menus', [])
-        context['expand'] = PARENT_MENU
-        return context
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context = get_personal(self.request, context)
+    #     context['menus'] = self.request.session.get('menus', [])
+    #     context['expand'] = PARENT_MENU
+    #     return context
 
     def get_queryset(self, **kwargs):
         tags = Node.objects.values('tag').distinct()
@@ -44,8 +44,8 @@ class NodesV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         return context
 
 
-@login_required
 @auth_check
+@login_required
 def get_nodes(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
@@ -60,8 +60,8 @@ def get_nodes(request):
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
 
 
-@login_required
 @auth_check
+@login_required
 def stop_node(request):
     req = json.loads(request.body)
     ip_port = req.get('ip_port', '#').strip()
@@ -82,8 +82,8 @@ def stop_node(request):
     return JsonResponse({"msg": msg})
 
 
-@login_required
 @auth_check
+@login_required
 @require_http_methods(['POST'])
 def update_node(request):
     req = json.loads(request.body)
@@ -104,8 +104,8 @@ def update_node(request):
     return JsonResponse({"msg": msg})
 
 
-@login_required
 @auth_check
+@login_required
 @require_http_methods(['POST'])
 def del_node(request):
     req = json.loads(request.body)
@@ -126,12 +126,12 @@ class SysConfV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     context_object_name = 'options'
     parent_menu = PARENT_MENU
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context = get_personal(self.request, context)
-        context['menus'] = self.request.session.get('menus', [])
-        context['expand'] = PARENT_MENU
-        return context
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context = get_personal(self.request, context)
+    #     context['menus'] = self.request.session.get('menus', [])
+    #     context['expand'] = PARENT_MENU
+    #     return context
 
     def get_queryset(self, **kwargs):
         keys = Sys_Config.objects.values('dict_key').distinct()
@@ -143,8 +143,8 @@ class SysConfV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         return context
 
 
-@login_required
 @auth_check
+@login_required
 def get_sys_conf(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')

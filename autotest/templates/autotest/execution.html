@@ -99,8 +99,8 @@
             let $ = layui.$;
             let layer = layui.layer;
             let upload = layui.upload;
-            {# 左侧菜单展开 #}
-            let expand = layui.sessionData('expand').expand;
+            {# 左侧菜单展开 废弃 改在base中 #}
+            {#let expand = layui.sessionData('expand').expand;#}
 
             function setSelectCSS() {
                 {#设置select样式#}
@@ -228,10 +228,10 @@
                     , done: function (res, curr, count) {
                         {#设置select样式#}
                         setSelectCSS($);
-                        let exp = res.expand;
-                        if ('' !== exp && exp != null) {
-                            $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
-                        }
+                        {#let exp = res.expand;#}
+                        {#if ('' !== exp && exp != null) {#}
+                        {#    $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");#}
+                        {# } #}
                         {# 上传 #}
                         renderUpload(upload);
                     }
@@ -243,7 +243,7 @@
                     const group = $('#group').val();
                     const suite = $('#suite').val();
                     const func = $('#func').val();
-                    const expand = layui.sessionData('expand').expand;
+                    {#const expand = layui.sessionData('expand').expand;#}
                     jobs.reload({
                         page: {
                             curr: 1 //重新从第 1 页开始
@@ -252,15 +252,15 @@
                             group: group,
                             suite: suite,
                             func: func,
-                            expand: expand
+                            {#expand: expand#}
                         }
                         , done: function (res, curr, count) {
                             {#设置select样式#}
                             setSelectCSS();
-                            let exp = res.expand;
-                            if (exp !== '' && exp != null) {
-                                $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
-                            }
+                            {#let exp = res.expand;#}
+                            {#if (exp !== '' && exp != null) {#}
+                            {#    $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");#}
+                            {# } #}
                             {# 上传 #}
                             renderUpload(upload);
                         }

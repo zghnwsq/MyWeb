@@ -14,7 +14,7 @@ from Utils.CustomView import ListViewWithMenu
 from Utils.Paginator import *
 from Utils.hightchart import group_count_and_result_series
 # from .models import *
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, FileResponse
 # from django.template.context_processors import csrf
 from .datasource import update_datasource
 from .exec_test import *
@@ -75,7 +75,7 @@ def get_run_his(request):
         beg=request.GET.get('beg', None),
         end=request.GET.get('end', None)
     ).values(
-        'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
+        'id', 'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'comment', 'create_time')
     count = len(run_his)
     data_list = paginator(run_his, int(page), int(limit))
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
@@ -84,17 +84,33 @@ def get_run_his(request):
 @auth_check
 @login_required
 def get_report(request):
-    file_path = request.GET.get('path', None)
+    runhis_id = request.GET.get('id', None)
+    file_path = RunHis.objects.filter(id=runhis_id)
     if file_path:
         # HtmlTestReport
-        if '.html' in file_path:
-            return render(request, file_path, {})
+        if '.html' in file_path[0].report:
+            return render(request, file_path[0].report, {})
         # Pytest html report
         else:
             return HttpResponseRedirect('/static/' + file_path.replace('\\', '/') + '/index.html')
     else:
         report = '<h2>Can not get the report.</h2>'
         return render(request, 'autotest/report.html', {'report': report})
+
+
+@auth_check
+@login_required
+def update_runhis_comment(request):
+    print(request.body)
+    req = json.loads(request.body)
+    run_his = RunHis.objects.filter(group=req.get('group', ''), suite=req.get('suite', ''), case=req.get('case', ''),
+                                    title=req.get('title', ''), report=req.get('report', ''),
+                                    create_time=req.get('create_time', '').replace('T', ' '))
+    if run_his:
+        run_his.update(comment=req.get('comment', ''))
+        return JsonResponse({'msg': '备注更新成功!'}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse({'msg': '测试历史记录不存在!'}, json_dumps_params={'ensure_ascii': False})
 
 
 class RunCountV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
@@ -505,8 +521,45 @@ def update_ds(request):
     return JsonResponse({"msg": msg}, json_dumps_params={'ensure_ascii': False})
 
 
+class DataSourceV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
+    template_name = 'autotest/datasource.html'
+    context_object_name = 'options'
+    parent_menu = PARENT_MENU
+
+    def get_queryset(self, **kwargs):
+        csrf_token = self.request.COOKIES.get('csrftoken')
+        context = {
+            'csrf_token': csrf_token,
+        }
+        return context
 
 
+@auth_check
+@login_required()
+def get_ds(request):
+    ds_name = request.GET.get('ds_name', '')
+    page = request.GET.get('page', '0')
+    limit = request.GET.get('limit', '30')
+    exist_ds = DataSource.objects.filter(ds_name__contains=ds_name.strip()).values('ds_name', 'update_time').order_by(
+        'update_time')
+    if len(exist_ds) > 0:
+        data_list = paginator(exist_ds, int(page), int(limit))
+    else:
+        data_list = {}
+    return JsonResponse({"code": 0, "msg": "", "count": len(exist_ds), "data": data_list})
+
+
+@auth_check
+@login_required()
+@require_http_methods(['POST'])
+def download_ds(request):
+    ds_name = request.POST.get('ds_name', '')
+    exist_ds = DataSource.objects.filter(ds_name=ds_name.strip())
+    if exist_ds:
+        file_path = os.path.join(settings.DATA_SOURCE_ROOT, exist_ds[0].file_path)
+        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=exist_ds[0].file_name)
+    else:
+        return JsonResponse({"msg": '数据源不存在!'}, json_dumps_params={'ensure_ascii': False})
 
 
 

@@ -84,6 +84,7 @@ class JobQueue(models.Model):
 class DataSource(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     ds_name = models.CharField(max_length=64, null=False)
+    file_name = models.CharField(max_length=128, null=False)
     file_path = models.FilePathField(path=settings.DATA_SOURCE_ROOT, max_length=256, null=False)
     update_time = models.DateTimeField(auto_created=False, null=True)
 

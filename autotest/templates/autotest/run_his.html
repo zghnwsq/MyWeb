@@ -78,13 +78,19 @@
 
 {% load static %}
 {% block script %}
+        <script type="text/html" id="actions">
+        {% verbatim %}
+        <a lay-event="update_comment" class="layui-btn layui-btn-xs layui-btn-normal">保存</a>
+        <a target="_blank" class="layui-btn layui-btn-xs" href="report/?id={{ d.id }}">报告</a>
+        {% endverbatim %}
+    </script>
     <script>
         !function () {
             let table = layui.table;
             let form = layui.form;
             let laydate = layui.laydate;
             let $ = layui.$;
-            let expand = layui.sessionData('expand').expand;
+            {#let expand = layui.sessionData('expand').expand;#}
             let tester = $('#tester').val();
             let group = $('#group').val();
             let suite = $('#suite').val();
@@ -138,7 +144,7 @@
             let run_his = table.render({
                     elem: '#run_his'
                     , height: 'full'
-                    , url: '/autotest/run_his/get/' //数据接口
+                    , url: '/autotest/run_his/get/' {# //数据接口 #}
                     , where: {
                         tester: tester,
                         group: group,
@@ -147,14 +153,14 @@
                         result: result,
                         beg: beg,
                         end: end,
-                        expand: expand
+                        {#expand: expand#}
                     }
                     , page: {
                         curr: 1,
                         limit: 10
                     } //开启分页
-                    , even: true //奇偶行背景
-                    , cols: [[ //表头
+                    , even: true {# //奇偶行背景 #}
+                    , cols: [[ {# //表头 #}
                         {field: 'group', title: 'TestGroup', width: '10%', sort: true, fixed: 'left', align: 'center'}
                         , {field: 'suite', title: 'TestSuit', width: '10%', sort: true, align: 'center'}
                         , {field: 'case', title: 'TestCase', minWidth: 100, sort: true, align: 'center'}
@@ -173,21 +179,61 @@
                                 }
                             }
                         }
-                        , {field: 'create_time', title: 'Time', width: '15%', sort: true, align: 'center'}
+                        , {field: 'comment', title: 'Comment', edit: 'text', align: 'center'}
                         , {
-                            field: 'report', title: 'Report', width: '8%', align: 'center', templet: function (d) {
-                                return '<a target="_blank" class="layui-btn layui-btn-xs" href="report\\?path=' + d.report + '">查看报告</a>'
+                            field: 'create_time', title: 'Time', width: '13%', sort: true, align: 'center', templet(d) {
+                                return d.create_time.replace('T', ' ');
                             }
+                        }
+                        , {
+                            field: '', title: 'Action', width: '9%', align: 'center', toolbar: '#actions'
                         }
                     ]]
                     , done: function (res, curr, count) {
-                        let exp = res.expand;
-                        if (exp !== '' && exp != null) {
-                            $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
-                        }
+                        {#let exp = res.expand;#}
+                        {#if (exp !== '' && exp != null) {#}
+                        {#    $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");#}
+                        {# } #}
                     }
-                })
-            ;
+                });
+
+            table.on('tool(run_his)', function (obj) {
+                {#获得当前行数据#}
+                let data = obj.data;
+                {#获得 lay-event 对应的值#}
+                let layEvent = obj.event;
+                {#当前行tr的DOM对象#}
+                let tr = obj.tr;
+                if (layEvent === 'update_comment') {
+                    {#更新备注#}
+                    const csrf = $("[name='csrfmiddlewaretoken']").val();
+                    console.log(csrf);
+                    $.ajax({
+                        url: "/autotest/run_his/comment/"
+                        ,type: "POST"
+                        , beforeSend: function (xhr) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf);
+                        }
+                        , contentType: 'application/json; charset=utf-8'
+                        , data: JSON.stringify(data)
+                        , success: function (data, textStatus) {
+                            {#console.log(data);#}
+                            layer.open({
+                                content: '<div style="padding: 20px 100px;">' + data.msg + '</div>'
+                                , type: 1
+                                , title: '提示'
+                                , time: 5000
+                                , btn: '确定'
+                                , yes: function () {
+                                    layer.closeAll();
+                                }
+                            });
+                            {# 不刷新 保持当前页 #}
+                            {#active['reload'].call(this);#}
+                        }
+                    });
+                }
+            });
 
             let active = {
                 reload: function () {
@@ -196,11 +242,11 @@
                     let suite = $('#suite').val();
                     let testcase = $('#testcase').val();
                     let result = $('#result').val();
-                    let expand = layui.sessionData('expand').expand;
+                    {#let expand = layui.sessionData('expand').expand;#}
                     {#console.log(group);#}
                     run_his.reload({
                         page: {
-                            curr: 1 //重新从第 1 页开始
+                            curr: 1 {# //重新从第 1 页开始 #}
                         }
                         , where: {
                             tester: tester,
@@ -210,7 +256,7 @@
                             result: result,
                             beg: beg,
                             end: end,
-                            expand: expand
+                            {#expand: expand#}
                         }
                         , done: function (res, curr, count) {
                             let exp = res.expand;

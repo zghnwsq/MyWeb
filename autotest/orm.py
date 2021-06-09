@@ -39,8 +39,8 @@ def filter_run_his(tester=None, group=None, suite=None, testcase=None, result=No
         run_his = run_his.filter(create_time__lte=edge)
     # 时间转字符串函数仅支持sqlite3
     run_his = run_his.extra(
-        select={'result': 'select description from res_dict where res_dict.result=run_his.result'}).extra(
-        select={'create_time': "DATE_FORMAT(create_time, %s)"}, select_params=['%Y-%m-%d %H:%i:%s'])
+        select={'result': 'select description from res_dict where res_dict.result=run_his.result'})
+    # .extra(select={'create_time': "DATE_FORMAT(create_time, %s)"}, select_params=['%Y-%m-%d %H:%i:%s'])
     return run_his
 
 
@@ -83,9 +83,9 @@ def result_count(group=None, beg=None, end=None):
     error_count = len(run_his.filter(result='2'))
     total = pass_count + fail_count + error_count
     if total > 0:
-        pass_pec = pass_count/total
-        fail_pec = fail_count/total
-        error_pec = error_count/total
+        pass_pec = pass_count / total
+        fail_pec = fail_count / total
+        error_pec = error_count / total
     else:
         pass_pec, fail_pec, error_pec = 0.0, 0.0, 0.0
     return {'pass': pass_count, 'fail': fail_count, 'error': error_count, 'pass_pec': pass_pec, 'fail_pec': fail_pec,
@@ -116,16 +116,10 @@ def get_node_options(data_list):
     tmp_list = copy.deepcopy(data_list)
     for data in tmp_list:
         nodes = list(RegisterFunction.objects.filter(func=data['funct'],
-                                                     node__in=Node.objects.exclude(status='off').values('ip_port')).extra(
+                                                     node__in=Node.objects.exclude(status='off').values(
+                                                         'ip_port')).extra(
             select={
                 'tag': 'select tag from autotest_node where ip_port=autotest_registerfunction.node limit 1'}).values(
             'node', 'tag').distinct())
         data['nodes'] = nodes
     return tmp_list
-
-
-
-
-
-
-

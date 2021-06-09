@@ -29,7 +29,7 @@ def run_by_node(func, mthd, ds_range, node, comment, tester):
         # 2021.6.4 增加更新数据源
         ds = DataSource.objects.filter(ds_name=func)
         if len(ds) == 1:
-            file_path = ds[0].file_path
+            file_path = os.path.join(settings.DATA_SOURCE_ROOT, ds[0].file_path)
             if os.path.isfile(file_path):
                 with open(file_path, 'rb') as ds_file:
                     bin_data = Binary(ds_file.read())

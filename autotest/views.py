@@ -4,15 +4,17 @@ import uuid
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.files.storage import FileSystemStorage
+# from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
 # from django.views import generic
 # from django.db.models import Q
 # from MyWeb import settings
 from django.views.decorators.http import require_http_methods
+from django.views.generic import ListView
 from Utils.CustomView import ListViewWithMenu
 from Utils.Paginator import *
 from Utils.hightchart import group_count_and_result_series
+from Utils.ReadExcel import *
 # from .models import *
 from django.http import JsonResponse, HttpResponseRedirect, FileResponse
 # from django.template.context_processors import csrf
@@ -556,11 +558,36 @@ def download_ds(request):
     ds_name = request.POST.get('ds_name', '')
     exist_ds = DataSource.objects.filter(ds_name=ds_name.strip())
     if exist_ds:
-        file_path = os.path.join(settings.DATA_SOURCE_ROOT, exist_ds[0].file_path)
-        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=exist_ds[0].file_name)
+        f_path = os.path.join(settings.DATA_SOURCE_ROOT, exist_ds[0].file_path)
+        return FileResponse(open(f_path, 'rb'), as_attachment=True, filename=exist_ds[0].file_name)
     else:
         return JsonResponse({"msg": '数据源不存在!'}, json_dumps_params={'ensure_ascii': False})
 
 
+class DataSourcePreviewV(LoginRequiredMixin, URIPermissionMixin, ListView):
+    template_name = 'autotest/datasource_preview.html'
+    context_object_name = 'data'
+
+    def get_queryset(self, **kwargs):
+        ds_name = self.request.GET.get('ds_name', '')
+        exist_ds = DataSource.objects.filter(ds_name=ds_name.strip())
+        context = {}
+        if exist_ds:
+            f_path = os.path.join(settings.DATA_SOURCE_ROOT, exist_ds[0].file_path)
+            if 'xls' in str(f_path.split('.')[-1]):
+                sheetnames, excel = read_all_data(f_path)
+                context['sheetnames'] = sheetnames
+                context['excel'] = excel
+            else:
+                yaml = ''
+                with open(f_path, encoding='utf-8') as file:
+                    while True:
+                        line = file.readline()
+                        if line:
+                            yaml += line
+                        else:
+                            break
+                context['yaml'] = yaml
+        return context
 
 

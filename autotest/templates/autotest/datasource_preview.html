@@ -1,0 +1,79 @@
+{% if data.excel %}
+    <div class="layui-tab">
+    <ul class="layui-tab-title">
+        {% for title in data.sheetnames %}
+            {% if forloop.first %}
+                <li class="layui-this">{{ title }}</li>
+            {% else %}
+                <li>{{ title }}</li>
+            {% endif %}
+        {% endfor %}
+        {#            <li class="layui-this">网站设置</li>#}
+    </ul>
+    <div class="layui-tab-content">
+        {% for k, v in data.excel.items %}
+            {% if forloop.counter == 1 %}
+                <div class="layui-tab-item layui-show">
+            {% else %}
+                <div class="layui-tab-item">
+            {% endif %}
+            <table lay-filter="{{ k }}">
+                <thead>
+                <tr>
+                    {% for col in v.1 %}
+                        <th lay-data="{field:'a_{{ forloop.counter }}'}">{{ forloop.counter }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in v %}
+                    <tr>
+                        {% for col in row %}
+                            <td>{{ col }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+        {#            <div class="layui-tab-item layui-show">内容1</div>#}
+        </div>
+    </div>
+{% endif %}
+{% if data.yaml %}
+    <pre class="layui-code">
+        {{ data.yaml }}
+    </pre>
+{% endif %}
+
+{% load static %}
+<script>
+    !function () {
+        layui.use('element', function () {
+            let element = layui.element;
+        });
+        let table = layui.table;
+        {% if data.excel %}
+            {% for title in data.sheetnames %}
+                table.init('{{title}}', {
+                    even: true
+                });
+            {% endfor %}
+        {% endif %}
+        {% if data.yaml %}
+            layui.use('code', function () {
+                layui.code();
+            });
+        {% endif %}
+    }();
+</script>
+
+
+
+
+
+
+
+
+

@@ -25,6 +25,7 @@ urlpatterns = [
     path('datasource/', views.DataSourceV.as_view(), name='datasource'),
     path('datasource/get/', views.get_ds, name='get_ds'),
     path('datasource/download/', views.download_ds, name='download_ds'),
+    path('datasource/preview/', views.DataSourcePreviewV.as_view(), name='ds_preview'),
 ]
 
 # 随项目启动运行

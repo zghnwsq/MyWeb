@@ -36,6 +36,7 @@ def run_by_node(func, mthd, ds_range, node, comment, tester):
                     # print(bin_data)
                     update_ds_func = getattr(s, 'replace_datasource')
                     update_res = update_ds_func(func, bin_data)
+                    print(f'Replace datasource result: {update_res}')
                     if 'Error' in update_res:
                         raise Exception(update_res)
         # 2021.5.25 改为通用调用方法

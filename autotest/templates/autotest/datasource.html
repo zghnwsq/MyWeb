@@ -21,7 +21,7 @@
     </div>
     <form id="download_form" action="{% url 'autotest:download_ds' %}" method="post">
         {% csrf_token %}
-        <input class="ds_name" type="hidden" name="ds_name" />
+        <input class="ds_name" type="hidden" name="ds_name"/>
     </form>
     <table id="ds_table" lay-filter="ds_table">
         <input style="display: none" id="csrf" value={{ options.csrf_token }}>
@@ -32,8 +32,9 @@
 {% block script %}
     <script type="text/html" id="actions">
         {% verbatim %}
+        <a lay-event="preview_ds" class="layui-btn layui-btn-warm layui-btn-xs">查看</a>
         <a lay-event="get_ds" class="layui-btn layui-btn-xs">下载</a>
-        <a lay-event="update_ds" class="layui-btn layui-btn-xs layui-btn-normal update_ds" id="{{ d.ds_name }}">更新</a>
+        <a lay-event="update_ds" class="layui-btn layui-btn-xs layui-btn-normal update_ds" id="{{ d.ds_name }}">上传更新</a>
         {% endverbatim %}
     </script>
     <script>
@@ -96,11 +97,17 @@
                 }
                 , even: true
                 , cols: [[
-                    {field: 'no', title: 'No', sort: false, align: 'center', templet(d) {
-                        return d.LAY_INDEX;}}
+                    {
+                        field: 'no', title: 'No', sort: false, align: 'center', templet(d) {
+                            return d.LAY_INDEX;
+                        }
+                    }
                     , {field: 'ds_name', title: 'Datasource Name', sort: false, align: 'center'}
-                    , {field: 'update_time', title: 'Update Time', sort: true, align: 'center', templet(d) {
-                        return d.update_time.replace('T', ' ');}}
+                    , {
+                        field: 'update_time', title: 'Update Time', sort: true, align: 'center', templet(d) {
+                            return d.update_time.replace('T', ' ');
+                        }
+                    }
                     , {
                         field: 'actions', title: 'Actions', align: 'center', toolbar: '#actions'
                     }
@@ -126,6 +133,28 @@
                     form.children("input.ds_name").attr('value', data.ds_name);
                     form.submit();
                     {#node_table.reload();#}
+                } else if (layEvent === 'preview_ds') {
+                    console.log(data.ds_name)
+                    let url = "/autotest/datasource/preview/"
+                    let title = '数据源预览: ' + data.ds_name
+                    $.ajax({
+                        url: url
+                        , type: "GET"
+                        , data: {ds_name: data.ds_name}
+                        , success: function (data) {
+                            {#console.log(data);#}
+                            layer.open({
+                                content: data
+                                , type: 1
+                                , title: title
+                                , area: '800px'
+                                , btn: '关闭'
+                                , yes: function () {
+                                    layer.closeAll();
+                                }
+                            });
+                        }
+                    });
                 }
             });
 

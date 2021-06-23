@@ -162,8 +162,8 @@ def get_sys_conf(request):
 @require_http_methods(['POST'])
 def modify_sys_conf(request):
     req = json.loads(request.body)
-    key = req.get('key', None).strip()
-    value = req.get('value', None).strip()
+    key = req.get('key', '').strip()
+    value = req.get('value', '').strip()
     if not key or not value:
         msg = 'Key 或 Value不能为空!'
     else:

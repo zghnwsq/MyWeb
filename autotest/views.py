@@ -1,6 +1,5 @@
 import base64
 import json
-import uuid
 from django.contrib.auth.decorators import login_required
 # from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,7 +12,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import ListView
 from Utils.CustomView import ListViewWithMenu
 from Utils.Paginator import *
-from Utils.hightchart import group_count_and_result_series
+from Utils.hightchart import group_count_and_result_series, result_count_series
 from Utils.ReadExcel import *
 # from .models import *
 from django.http import JsonResponse, HttpResponseRedirect, FileResponse
@@ -87,14 +86,14 @@ def get_run_his(request):
 @login_required
 def get_report(request):
     runhis_id = request.GET.get('id', None)
-    file_path = RunHis.objects.filter(id=runhis_id)
-    if file_path:
+    f_path = RunHis.objects.filter(id=runhis_id)
+    if f_path:
         # HtmlTestReport
-        if '.html' in file_path[0].report:
-            return render(request, file_path[0].report, {})
+        if '.html' in f_path[0].report:
+            return render(request, f_path[0].report, {})
         # Pytest html report
         else:
-            return HttpResponseRedirect('/static/' + file_path.replace('\\', '/') + '/index.html')
+            return HttpResponseRedirect('/static/' + f_path.replace('\\', '/') + '/index.html')
     else:
         report = '<h2>Can not get the report.</h2>'
         return render(request, 'autotest/report.html', {'report': report})
@@ -214,11 +213,14 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     #     return context
 
     def get_queryset(self, **kwargs):
-        run_his = count_by_group()
+        recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
+        run_his = count_by_group(beg=recent_90_days)
         series = group_count_and_result_series(run_his)
+        summary = result_count_series(count_by_result(beg=recent_90_days))
         group = RunHis.objects.values('group').distinct()
         context = {
             'series': series,
+            'summary': summary,
             'group': group
         }
         return context
@@ -233,7 +235,10 @@ def get_run_his_chart_data(request):
         end=request.GET.get('end', None)
     )
     series = group_count_and_result_series(run_his)
-    return JsonResponse({'data': series})
+    summary = result_count_series(count_by_result(group=request.GET.get('group', None),
+                                                  beg=request.GET.get('beg', None),
+                                                  end=request.GET.get('end', None)))
+    return JsonResponse({'data': series, 'summary': summary})
 
 
 class ExecutionV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):

@@ -1,5 +1,5 @@
 import datetime
-from django.db.models import Min, Count, CharField, F
+from django.db.models import Min, Count, CharField, F, Q
 from django.db.models.functions import TruncDate, Cast
 # from pytz import utc
 from .models import *
@@ -53,7 +53,7 @@ def get_suite_total(group=None, suite=None):
     return suite_total
 
 
-def count_by_group(group=None, beg=None, end=None):
+def filter_runhis_by_group_and_time(group=None, beg=None, end=None):
     run_his = RunHis.objects.all()
     if group:
         run_his = run_his.filter(group=group)
@@ -63,21 +63,39 @@ def count_by_group(group=None, beg=None, end=None):
     if end:
         edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
         run_his = run_his.filter(create_time__lte=edge)
+    return run_his
+
+
+def count_by_group(group=None, beg=None, end=None):
+    run_his = filter_runhis_by_group_and_time(group=group, beg=beg, end=end)
     run_his = run_his.values('group').annotate(
         time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
     return run_his
 
 
+def count_by_result(group=None, beg=None, end=None):
+    """
+        根据查询条件，按执行结果、日期分组统计次数
+    :param group:
+    :param beg:
+    :param end:
+    :return:
+    """
+    run_his = filter_runhis_by_group_and_time(group=group, beg=beg, end=end)
+    run_his_extra = run_his.annotate(time=Cast(TruncDate('create_time'), output_field=CharField())).extra(
+        select={'res_text': 'select description from res_dict where res_dict.result=run_his.result'})
+    # 确保每个日期都有成功、失败、错误三类,
+    # res_text=通过,增加succ数据
+    # res_text=失败,增加fail
+    # res_text=错误,增加error
+    run_his = run_his_extra.values('result', 'time', 'res_text').annotate(succ=Count('result', Q(result='0')),
+                                                                          fail=Count('result', Q(result='1')),
+                                                                          error=Count('result', Q(result='2')))
+    return run_his
+
+
 def result_count(group=None, beg=None, end=None):
-    run_his = RunHis.objects.all()
-    if group:
-        run_his = run_his.filter(group=group)
-    if beg:
-        edge = datetime.datetime.strptime(f'{beg} 00:00:00', '%Y-%m-%d %H:%M:%S')
-        run_his = run_his.filter(create_time__gte=edge)
-    if end:
-        edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
-        run_his = run_his.filter(create_time__lte=edge)
+    run_his = filter_runhis_by_group_and_time(group=group, beg=beg, end=end)
     pass_count = len(run_his.filter(result='0'))
     fail_count = len(run_his.filter(result='1'))
     error_count = len(run_his.filter(result='2'))

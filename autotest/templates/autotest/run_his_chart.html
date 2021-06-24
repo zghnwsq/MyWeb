@@ -43,7 +43,8 @@
             </div>
         </div>
     </div>
-    <div id="chart"></div>
+    <div id="summary" style="width: 95%"></div>
+    <div id="chart" style="width: 95%"></div>
 {% endblock %}
 {% load static %}
 {% block script %}
@@ -52,26 +53,95 @@
     <script src="{% static 'modules/offline-exporting.js' %}"></script>
     <script src="{% static 'highcharts-zh_CN.js' %}"></script>
     <script>
+        const time_offset = new Date().getTimezoneOffset() * 60 * 1000; {# 与UTC相差毫秒, 分钟*60*1000 #}
+
+        function add_chart_series(chart, seri){
+            for (let i in seri) {
+                {#console.log(seri[i]);#}
+                let points = [];
+                if(seri.hasOwnProperty(i)) {
+                    let item = seri[i];
+                    for (let j in item['data']) {
+                        if(item['data'].hasOwnProperty(j)) {
+                            let time = new Date(j).getTime();
+                            {# 与UTC相差毫秒, 分钟*60*1000 #}
+                            let bjt = new Date(time + time_offset).getTime();
+                            {# 北京时间毫秒时间戳 #}
+                            let count = parseInt(item['data'][j]);
+                            points.push([bjt, count]);
+                        }
+                    }
+                    {#console.log(item);#}
+                    {#console.log(points);#}
+                    if (item.name.includes('pass')) {
+                        chart.addSeries({
+                            name: item.name,
+                            color: '#22ed7c',
+                            yAxis: 1,
+                            type: 'column',
+                            data: points
+                        });
+                    } else if (item.name.includes('fail')) {
+                        chart.addSeries({
+                            name: item.name,
+                            color: '#f47a75',
+                            yAxis: 1,
+                            type: 'column',
+                            data: points
+                        });
+                    } else {
+                        chart.addSeries({name: item.name, yAxis: 0, type: 'spline', data: points});
+                    }
+                }
+            }
+        }
+        function add_summary_series(chart, seri){
+            {#console.log(seri);#}
+            let succ = {'name': '成功', 'data': []};
+            let fail = {'name': '失败', 'data': []};
+            let error = {'name': '错误', 'data': []};
+            for (let i in seri) {
+                if (seri.hasOwnProperty(i)) {
+                    for (let j in seri[i]['data']) {
+                        if (seri[i]['data'].hasOwnProperty(j)) {
+                            if (seri[i]['name'] === '成功') {
+                                succ['data'].push([new Date(new Date(j).getTime() + time_offset).getTime(), parseInt(seri[i]['data'][j])]);
+                            } else if (seri[i]['name'] === '失败') {
+                                fail['data'].push([new Date(new Date(j).getTime() + time_offset).getTime(), parseInt(seri[i]['data'][j])]);
+                            } else {
+                                error['data'].push([new Date(new Date(j).getTime() + time_offset).getTime(), parseInt(seri[i]['data'][j])]);
+                            }
+                        }
+                    }
+                }
+            }
+            chart.addSeries({name: succ['name'], data: succ['data']});
+            chart.addSeries({name: fail['name'], data: fail['data']});
+            chart.addSeries({name: error['name'], data: error['data']});
+        }
+
         !function () {
             let $ = layui.$;
             let laydate = layui.laydate;
             let form = layui.form;
             {#let expand = layui.sessionData('expand').expand;#}
-            let beg = '';
-            let end = '';
             let group = '';
+            let _90DaysBefore = new Date().getTime() - 90 * 24 * 60 * 60 * 1000;
 
             laydate.render({
                 elem: '#from'
                 , max: 0
+                , value: new Date(_90DaysBefore)
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    beg = value;
-                    if (end !== '' && beg !== '') {
+                    let end = $("#to").val();
+                    if (end !== '' && value !== '') {
                         let end_date = new Date(end);
-                        let beg_date = new Date(beg);
+                        let beg_date = new Date(value);
                         if (beg_date > end_date) {
-                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
+                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000});
+                            $("#from").val("");
+                            $("#from").reset();
                         }
                     }
                 }
@@ -80,52 +150,119 @@
             laydate.render({
                 elem: '#to'
                 , max: 0
+                , value: new Date()
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    end = value;
-                    if (end !== '' && beg !== '') {
-                        let end_date = new Date(end);
+                    let beg = $("#from").val();
+                    if (value !== '' && beg !== '') {
+                        let end_date = new Date(value);
                         let beg_date = new Date(beg);
                         if (beg_date > end_date) {
-                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
+                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000});
+                            $("#to").val("");
+                            $("#to").reset();
                         }
                     }
                 }
             });
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+
+            let succ = {'name': '成功', 'data': {}};
+            let fail = {'name': '失败', 'data': {}};
+            let error = {'name': '错误', 'data': {}};
+            {% if data %}
+                {% for item in data.summary %}
+                    {% if item.name == '成功' %}
+                        {% for k, v in item.data.items %}
+                            succ.data['{{ k }}'] = '{{ v }}';
+                        {% endfor %}
+                    {% elif item.name == '失败'%}
+                        {% for k, v in item.data.items %}
+                            fail.data['{{ k }}'] = '{{ v }}';
+                        {% endfor %}
+                    {% else %}
+                        {% for k, v in item.data.items %}
+                            error.data['{{ k }}'] = '{{ v }}';
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            let summarySeri = [succ, fail, error];
+            let summary = Highcharts.chart('summary', {
+                chart: {
+                    type: 'area'
+                },
+                title: {
+                    text: '自动化执行概览'
+                },
+                subtitle: {
+                    text: '默认最近90天'
+                },
+                credits: {
+                    enabled: false // 禁用版权信息
+                },
+                colors: ['#22ed7c', '#f47a75', '#fdd845',],
+                xAxis: {
+                    tickmarkPlacement: 'on',
+                    type: 'datetime',
+                    title: {
+                        text: null
+                     },
+                    dateTimeLabelFormats: {
+                        week: '%Y-%m-%d'
+                     },
+                    alternateGridColor: '#f1f5f8',
+                    gridLineWidth: 1
+                },
+                yAxis: {
+                    title: {
+                        text: '执行次数'
+                    },
+                },
+                tooltip: {
+                    split: true,
+                    {#valueSuffix: ' 次',#}
+                    headerFormat: '',
+                    pointFormat: '{point.x:%Y/%m/%d}: {series.name} {point.y} 次',
+                },
+                plotOptions: {
+                    area: {
+                        stacking: 'normal',
+                    }
+                },
+                series: []
+            });
+            add_summary_series(summary, summarySeri);
 
             let seri = [
                 {% if data %}
                     {% for se in data.series %}
                         {
                             'name': '{{ se.name }}',
-                            'data': [
-                                {% for points in se.data %}
-                                    [
-                                        {% for point in points %}
-                                            '{{ point }}',
-                                        {% endfor %}
-                                    ],
-                                {% endfor %}
-                            ]
+                            'data': {
+                                    {% for k, v in se.data.items %}
+                                        '{{ k }}': '{{ v }}',
+                                    {% endfor %}
+                            }
                         },
                     {% endfor %}
                 {% endif %}
             ];
-            Highcharts.setOptions({
-                global: {
-                    useUTC: false
-                }
-            });
+
             let chart = Highcharts.chart('chart', {
                 chart: {
                     {#type: 'spline'#}
                     {#zoomType: 'xy'#}
                 },
                 title: {
-                    text: '自动化执行情况'
+                    text: '用例组执行情况'
                 },
                 subtitle: {
-                    text: ''
+                    text: '默认最近90天'
                 },
                 credits: {
                     enabled: false // 禁用版权信息
@@ -137,19 +274,21 @@
                     },
                     dateTimeLabelFormats: {
                         week: '%Y-%m-%d'
-                    }
+                    },
+                    alternateGridColor: '#f1f5f8',
+                    gridLineWidth: 1
                 },
                 colors: ['#05f8d6', '#0082fc', '#fdd845', '#09b0d3', '#7cd6cf', '#1d27c9', '#f9e264', '#f47a75', '#009db2', '#024b51', '#0780cf', '#22ed7c'],
                 yAxis: [
                     {
                         title: {
-                            text: '次数'
+                            text: '执行次数'
                         },
                         min: 0
                     },
                     {
                         title: {
-                            text: '成功/失败数'
+                            text: '成功/失败次数'
                         },
                         min: 0,
                         opposite: true
@@ -170,7 +309,7 @@
                             formatter: function () {
                                 return this.x + "   " + this.y;
                             },
-                            format: "{x:%Y/%m/%d}:      {y}"
+                            format: "{x:%Y/%m/%d}:    {y}"
                         }
                     },
                     column: {
@@ -181,42 +320,7 @@
                 series: []
             });
             {#console.log(seri);#}
-            for (let i in seri) {
-                {#console.log(seri[i]);#}
-                let points = [];
-                let item = seri[i];
-                for (let j in item['data']) {
-                    let it = item['data'][j];
-                    {#let split_time = it[0].split('-');#}
-                    {#console.log(split_time);#}
-                    {#let time = Date.UTC(parseInt(split_time[0]), parseInt(split_time[1])-1, parseInt(split_time[2]));#}
-                    {#console.log(new Date(it[0]||' 00:00:00 CCT'));#}
-                    let time = new Date(it[0]).getTime();
-                    const time_offset = new Date().getTimezoneOffset() * 60 * 1000; {# 与UTC相差毫秒, 分钟*60*1000 #}
-                    let bjt = new Date(time + time_offset).getTime(); {# 北京时间毫秒时间戳 #}
-                    let count = parseInt(it[1]);
-                    points.push([bjt, count]);
-                }
-                if (item.name.includes('pass')) {
-                    chart.addSeries({
-                        name: item.name,
-                        color: '#00ff00',
-                        yAxis: 1,
-                        type: 'column',
-                        data: points
-                    });
-                } else if (item.name.includes('fail')) {
-                    chart.addSeries({
-                        name: item.name,
-                        color: '#ff0000',
-                        yAxis: 1,
-                        type: 'column',
-                        data: points
-                    });
-                } else {
-                    chart.addSeries({name: item.name, yAxis: 0, type: 'spline', data: points});
-                }
-            }
+            add_chart_series(chart, seri);
 
             $('#reset').on('click', function () {
                 form.val('search', {
@@ -224,13 +328,11 @@
                     , "from": ""
                     , "to": ""
                 });
-                beg = '';
-                end = '';
             });
 
             $('#search').on('click', function () {
-                beg = $('#from').val();
-                end = $('#to').val();
+                let beg = $('#from').val();
+                let end = $('#to').val();
                 group = $('#group').val();
                 $.ajax({
                     url: '/autotest/run_his_chart/data',
@@ -246,36 +348,15 @@
                         }
                         seri = []
                         seri = data.data;
-                        for (let j in seri) {
-                            let points = [];
-                            let item = seri[j];
-                            for (let k in item['data']) {
-                                let it = item['data'][k];
-                                let time = new Date(it[0] || ' 00:00:00 CCT').getTime();
-                                let count = parseInt(it[1]);
-                                points.push([time, count]);
-                            }
-                            if (item.name.includes('pass')) {
-                                chart.addSeries({
-                                    name: item.name,
-                                    color: '#00ff00',
-                                    yAxis: 1,
-                                    type: 'column',
-                                    data: points
-                                });
-                            } else if (item.name.includes('fail')) {
-                                chart.addSeries({
-                                    name: item.name,
-                                    color: '#ff0000',
-                                    yAxis: 1,
-                                    type: 'column',
-                                    data: points
-                                });
-                            } else {
-                                chart.addSeries({name: item.name, yAxis: 0, type: 'spline', data: points});
-                            }
-                        }
+                        add_chart_series(chart, seri);
                         chart.redraw();
+                        while (summary.series.length > 0) {
+                            summary.series[0].remove(true);
+                        }
+                        summarySeri = []
+                        summarySeri = data.summary;
+                        add_summary_series(summary, summarySeri);
+                        summary.redraw();
                     }
                 });
             });

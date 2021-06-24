@@ -81,20 +81,22 @@
             let group = $('#group').val();
             let suite = $('#suite').val();
             let tester = $('#tester').val();
-            let beg = '';
-            let end = '';
+            let _90DaysBefore = new Date().getTime() - 90 * 24 * 60 * 60 * 1000;
 
             laydate.render({
                 elem: '#from'
                 , max: 0
+                , value: new Date(_90DaysBefore)
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    beg = value;
-                    if(end!=='' && beg!==''){
-                        let end_date = new Date(end).getDate();
-                        let beg_date = new Date(beg).getDate();
+                    let end = $("#to").val();
+                    if(end!=='' && value!==''){
+                        let end_date = new Date(end);
+                        let beg_date = new Date(value);
                         if (beg_date>end_date){
-                            layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000})
+                            layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000});
+                            $("#from").val("");
+                            $("#from").reset();
                         }
                     }
                 }
@@ -103,14 +105,17 @@
             laydate.render({
                 elem: '#to'
                 , max: 0
+                , value: new Date()
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    end = value;
-                    if(end!=='' && beg!==''){
-                        let end_date = new Date(end).getDate();
-                        let beg_date = new Date(beg).getDate();
+                    let beg = $("#from").val();
+                    if(value!=='' && beg!==''){
+                        let end_date = new Date(value);
+                        let beg_date = new Date(beg);
                         if (beg_date>end_date){
-                            layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000})
+                            layer.msg('开始日期不能大于结束日期!', {offset:'25%', time:2000});
+                            $("#to").val("");
+                            $("#to").reset();
                         }
                     }
                 }
@@ -123,8 +128,8 @@
                     , where: {
                         group: group,
                         suite: suite,
-                        beg: beg,
-                        end: end,
+                        beg: $("#from").val(),
+                        end: $("#to").val(),
                         tester: tester,
                         {#expand: expand#}
                     }
@@ -147,7 +152,7 @@
                         {#let exp = res.expand;#}
                         {#if (exp !== '' && exp != null) {#}
                         {#    $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");#}
-                        {#}#}
+                        {# } #}
                         {# 统计去掉小数 #}
                         let divArr = $(".layui-table-total div.layui-table-cell");
                         $.each(divArr, function (index, item) {
@@ -174,8 +179,8 @@
                         , where: {
                             group: group,
                             suite: suite,
-                            beg: beg,
-                            end: end,
+                            beg: $("#from").val(),
+                            end: $("#to").val(),
                             tester: tester,
                             {#expand: expand#}
                         }
@@ -210,8 +215,6 @@
                     ,"to": ""
                     ,"tester": 1
                 });
-                beg = '';
-                end = '';
             });
 
         }();

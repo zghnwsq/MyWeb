@@ -67,13 +67,14 @@ def get_run_his(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
     # expand = request.GET.get('expand', 'none')
+    recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
     run_his = filter_run_his(
         tester=request.GET.get('tester', None),
         group=request.GET.get('group', None),
         suite=request.GET.get('suite', None),
         testcase=request.GET.get('testcase', None),
         result=request.GET.get('result', None),
-        beg=request.GET.get('beg', None),
+        beg=request.GET.get('beg', None) or recent_90_days,
         end=request.GET.get('end', None)
     ).values(
         'id', 'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'comment', 'create_time')
@@ -153,11 +154,12 @@ def get_run_count(request):
     # expand = ''
     # if 'expand' in request.GET:
     #     expand = request.GET['expand']
+    recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
     run_his = filter_run_his(
         group=request.GET.get('group', None),
         suite=request.GET.get('suite', None),
         tester=request.GET.get('tester', None),
-        beg=request.GET.get('beg', None),
+        beg=request.GET.get('beg', None) or recent_90_days,
         end=request.GET.get('end', None)
     ).values(
         'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
@@ -229,14 +231,16 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
 @auth_check
 @login_required
 def get_run_his_chart_data(request):
+    # 不带任何条件也默认最近90天
+    recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
     run_his = count_by_group(
         group=request.GET.get('group', None),
-        beg=request.GET.get('beg', None),
+        beg=request.GET.get('beg', None) or recent_90_days,
         end=request.GET.get('end', None)
     )
     series = group_count_and_result_series(run_his)
     summary = result_count_series(count_by_result(group=request.GET.get('group', None),
-                                                  beg=request.GET.get('beg', None),
+                                                  beg=request.GET.get('beg', None) or recent_90_days,
                                                   end=request.GET.get('end', None)))
     return JsonResponse({'data': series, 'summary': summary})
 
@@ -325,14 +329,15 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     :return: json msg
     """
     # 校验是否存在
-    func_count = len(RegisterFunction.objects.filter(func=func))
+    exist_func = RegisterFunction.objects.filter(func=func, node=node)
     execution = Execution.objects.exclude(status='running').filter(method=mthd, func__func=func)
     execution_count = len(execution)
-    get_node = Node.objects.filter(ip_port=node, status='on')
-    node_count = len(get_node)
-    if func_count > 0 and execution_count == 1 and node_count > 0:
+    free_node = Node.objects.filter(ip_port=node, status='on')
+    if len(exist_func) > 0 and execution_count == 1 and len(free_node) > 0:
+        # 更新关联关系
+        execution.update(func=exist_func[0].id)
         # 占用节点
-        for row in get_node:
+        for row in free_node:
             row.status = 'running'
             row.save()
         # 更新任务状态 任务不允许重复
@@ -343,7 +348,9 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
         if 'Error' in status:
             execution.update(status=status)
         return {"msg": "提交成功!"}
-    elif func_count > 0 and execution_count == 1:
+    elif len(exist_func) > 0 and execution_count == 1:
+        # 更新关联关系
+        execution.update(func=exist_func[0].id)
         # 加入队列
         is_in_queue = len(JobQueue.objects.filter(executioin=execution[0], node=node, status='new'))
         if is_in_queue < 1:

@@ -63,15 +63,16 @@
                     let item = seri[i];
                     for (let j in item['data']) {
                         if(item['data'].hasOwnProperty(j)) {
-                            let it = item['data'][j];
-                            let time = new Date(it[0]).getTime();
+                            let time = new Date(j).getTime();
                             {# 与UTC相差毫秒, 分钟*60*1000 #}
                             let bjt = new Date(time + time_offset).getTime();
                             {# 北京时间毫秒时间戳 #}
-                            let count = parseInt(it[1]);
+                            let count = parseInt(item['data'][j]);
                             points.push([bjt, count]);
                         }
                     }
+                    {#console.log(item);#}
+                    {#console.log(points);#}
                     if (item.name.includes('pass')) {
                         chart.addSeries({
                             name: item.name,
@@ -95,7 +96,7 @@
             }
         }
         function add_summary_series(chart, seri){
-            console.log(seri);
+            {#console.log(seri);#}
             let succ = {'name': '成功', 'data': []};
             let fail = {'name': '失败', 'data': []};
             let error = {'name': '错误', 'data': []};
@@ -124,21 +125,23 @@
             let laydate = layui.laydate;
             let form = layui.form;
             {#let expand = layui.sessionData('expand').expand;#}
-            let beg = '';
-            let end = '';
             let group = '';
+            let _90DaysBefore = new Date().getTime() - 90 * 24 * 60 * 60 * 1000;
 
             laydate.render({
                 elem: '#from'
                 , max: 0
+                , value: new Date(_90DaysBefore)
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    beg = value;
-                    if (end !== '' && beg !== '') {
+                    let end = $("#to").val();
+                    if (end !== '' && value !== '') {
                         let end_date = new Date(end);
-                        let beg_date = new Date(beg);
+                        let beg_date = new Date(value);
                         if (beg_date > end_date) {
-                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
+                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000});
+                            $("#from").val("");
+                            $("#from").reset();
                         }
                     }
                 }
@@ -147,16 +150,24 @@
             laydate.render({
                 elem: '#to'
                 , max: 0
+                , value: new Date()
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    end = value;
-                    if (end !== '' && beg !== '') {
-                        let end_date = new Date(end);
+                    let beg = $("#from").val();
+                    if (value !== '' && beg !== '') {
+                        let end_date = new Date(value);
                         let beg_date = new Date(beg);
                         if (beg_date > end_date) {
-                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000})
+                            layer.msg('开始日期不能大于结束日期!', {offset: '25%', time: 2000});
+                            $("#to").val("");
+                            $("#to").reset();
                         }
                     }
+                }
+            });
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
                 }
             });
 
@@ -232,31 +243,23 @@
                     {% for se in data.series %}
                         {
                             'name': '{{ se.name }}',
-                            'data': [
-                                {% for points in se.data %}
-                                    [
-                                        {% for point in points %}
-                                            '{{ point }}',
-                                        {% endfor %}
-                                    ],
-                                {% endfor %}
-                            ]
+                            'data': {
+                                    {% for k, v in se.data.items %}
+                                        '{{ k }}': '{{ v }}',
+                                    {% endfor %}
+                            }
                         },
                     {% endfor %}
                 {% endif %}
             ];
-            Highcharts.setOptions({
-                global: {
-                    useUTC: false
-                }
-            });
+
             let chart = Highcharts.chart('chart', {
                 chart: {
                     {#type: 'spline'#}
                     {#zoomType: 'xy'#}
                 },
                 title: {
-                    text: '自动化用例组执行情况'
+                    text: '用例组执行情况'
                 },
                 subtitle: {
                     text: '默认最近90天'
@@ -306,7 +309,7 @@
                             formatter: function () {
                                 return this.x + "   " + this.y;
                             },
-                            format: "{x:%Y/%m/%d}:      {y}"
+                            format: "{x:%Y/%m/%d}:    {y}"
                         }
                     },
                     column: {
@@ -325,13 +328,11 @@
                     , "from": ""
                     , "to": ""
                 });
-                beg = '';
-                end = '';
             });
 
             $('#search').on('click', function () {
-                beg = $('#from').val();
-                end = $('#to').val();
+                let beg = $('#from').val();
+                let end = $('#to').val();
                 group = $('#group').val();
                 $.ajax({
                     url: '/autotest/run_his_chart/data',

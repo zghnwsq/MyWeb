@@ -106,7 +106,7 @@ DATABASES = {
         'NAME': 'myweb',
         'USER': environ.get('MYSQL_USER'),
         'PASSWORD': environ.get('MYSQL_PWD'),
-        'CONN_MAX_AGE': 2*60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
+        'CONN_MAX_AGE': 30*60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
         # 'OPTIONS': {
         #     'default-character-set': 'utf8'
         # },

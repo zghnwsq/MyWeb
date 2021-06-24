@@ -96,24 +96,25 @@
             let suite = $('#suite').val();
             let testcase = $('#testcase').val();
             let result = $('#result').val();
-            let beg = '';
-            let end = '';
+            let _90DaysBefore = new Date().getTime() - 90 * 24 * 60 * 60 * 1000;
 
             laydate.render({
                 elem: '#from'
                 , max: 1
                 , type: 'datetime'
                 , format: 'yyyy-MM-dd HH:mm:ss'
+                , value: new Date(_90DaysBefore)
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    beg = value;
-                    if (end !== '' && beg !== '') {
+                    let end = $("#to").val();
+                    if (end !== '' && value !== '') {
                         {#let end_date = new Date(end).getDate();#}
                         {#let beg_date = new Date(beg).getDate();#}
                         let end_date = new Date(end);
-                        let beg_date = new Date(beg);
+                        let beg_date = new Date(value);
                         if (beg_date > end_date) {
                             layer.msg('开始时间不能大于结束时间!', {offset: '15%', time: 2000});
+                            $("#from").val("");
                             $("#from").reset();
                         }
                     }
@@ -125,16 +126,18 @@
                 , max: 1
                 , type: 'datetime'
                 , format: 'yyyy-MM-dd HH:mm:ss'
+                , value: new Date()
                 , done: function (value, date, endDate) {
                     {#console.log(value); //得到日期生成的值，如：2017-08-18#}
-                    end = value;
-                    if(end!=='' && beg!==''){
+                    let beg = $("#from").val();
+                    if(value!=='' && beg!==''){
                         {#let end_date = new Date(end).getDate();#}
                         {#let beg_date = new Date(beg).getDate();#}
-                        let end_date = new Date(end);
+                        let end_date = new Date(value);
                         let beg_date = new Date(beg);
                         if (beg_date>end_date){
-                            layer.msg('开始时间不能大于结束时间!', {offset:'15%', time:2000});
+                            layer.msg('开始时间不能大于结束时间!', {offset: '15%', time: 2000});
+                            $("#to").val("");
                             $("#to").reset();
                         }
                     }
@@ -151,8 +154,8 @@
                         suite: suite,
                         testcase: testcase,
                         result: result,
-                        beg: beg,
-                        end: end,
+                        beg: $("#from").val(),
+                        end: $("#to").val(),
                         {#expand: expand#}
                     }
                     , page: {
@@ -254,15 +257,15 @@
                             suite: suite,
                             testcase: testcase,
                             result: result,
-                            beg: beg,
-                            end: end,
+                            beg: $("#from").val(),
+                            end: $("#to").val(),
                             {#expand: expand#}
                         }
                         , done: function (res, curr, count) {
-                            let exp = res.expand;
-                            if (exp !== '' && exp != null) {
-                                $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
-                            }
+                            {#let exp = res.expand;#}
+                            {#if (exp !== '' && exp != null) {#}
+                            {#    $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");#}
+                            {# } #}
                         }
                     });
                 }
@@ -283,8 +286,6 @@
                     ,"from": ""
                     ,"to": ""
                 });
-                beg = '';
-                end = '';
             });
         }();
     </script>

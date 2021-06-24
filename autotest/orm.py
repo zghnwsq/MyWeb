@@ -111,22 +111,22 @@ def result_count(group=None, beg=None, end=None):
 
 
 def filter_jobs(group=None, suite=None, func=None):
-    jobs = Execution.objects.all().annotate(group=F('func__group'),
-                                            suite=F('func__suite'),
-                                            funct=F('func__func'),
-                                            mthd=F('method'),
-                                            tests=F('func__tests')
-                                            ).values('group', 'suite',
-                                                     'mthd', 'ds_range',
-                                                     'funct', 'comment',
-                                                     'status', 'tests')
+    jobs = Execution.objects.all()
     if group:
         jobs = jobs.filter(func__group=group)
     if suite:
         jobs = jobs.filter(func__suite=suite)
     if func:
         jobs = jobs.filter(func__func=func)
-    jobs = jobs.order_by('group', 'suite')
+    jobs = jobs.annotate(group=F('func__group'),
+                         suite=F('func__suite'),
+                         funct=F('func__func'),
+                         mthd=F('method'),
+                         tests=F('func__tests')
+                         ).values('group', 'suite',
+                                  'mthd', 'ds_range',
+                                  'funct', 'comment',
+                                  'status', 'tests').order_by('group', 'suite')
     return jobs
 
 

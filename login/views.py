@@ -46,7 +46,7 @@ class LoginV(LoginView):
             upassword = request.POST['password']
             user = authenticate(request, username=uname, password=upassword)
             if user is not None:
-                clear_logged_session(user)
+                # clear_logged_session(user)
                 if user.is_active:
                     login(request, user)
                     user_name = user.username

@@ -126,7 +126,7 @@ def filter_jobs(group=None, suite=None, func=None):
                          ).values('group', 'suite',
                                   'mthd', 'ds_range',
                                   'funct', 'comment',
-                                  'status', 'tests').order_by('group', 'suite')
+                                  'status', 'tests', 'id').order_by('group', 'suite')
     return jobs
 
 

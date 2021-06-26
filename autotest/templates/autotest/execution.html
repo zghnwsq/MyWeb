@@ -294,13 +294,16 @@
                     {#console.log('tr: ' + tr);#}
                     {#console.log(tr.attr('data-index')); //行序号#}
                     {#console.log($(tr).find("a[lay-event='exec']")); //获取行内子元素#}
+                    let jobId = data.id;
                     let func = data.funct;
-                    let mthd = data.mthd;
+                    {#let mthd =data.tests;#}
                     let ds_range = data.ds_range;
                     let comment = data.comment;
                     let index = tr.attr('data-index');
-                    let locator = "tr[data-index= '" + index.toString() + "'] select#node";
-                    let node = $(locator).val();
+                    let nodeLocator = "tr[data-index= '" + index.toString() + "'] select#node";
+                    let node = $(nodeLocator).val();
+                    let testsLocator = "tr[data-index= '" + index.toString() + "'] select#mthd";
+                    let selectedTest = $(testsLocator).val();
                     const csrf = $("#csrf").val();
                     {#console.log(mthd);#}
                     if (layEvent === 'exec') {
@@ -328,7 +331,7 @@
                                     xhr.setRequestHeader("X-CSRFToken", csrf);
                                 }
                                 , contentType: 'application/json; charset=utf-8'
-                                , data: JSON.stringify({func: func, mthd: mthd, ds_range: ds_range, node: node, comment: comment})
+                                , data: JSON.stringify({job_id: jobId, func: func, mthd: selectedTest, ds_range: ds_range, node: node, comment: comment})
                                 , success: function (data, textStatus) {
                                     {#console.log(data);#}
                                     layer.open({
@@ -358,7 +361,7 @@
                                 xhr.setRequestHeader("X-CSRFToken", csrf);
                             }
                             , contentType: 'application/json; charset=utf-8'
-                            , data: JSON.stringify({func: func, mthd: mthd, ds_range: ds_range, node: node, comment: comment})
+                            , data: JSON.stringify({job_id: jobId, func: func, mthd: selectedTest, ds_range: ds_range, node: node, comment: comment})
                             , success: function (data, textStatus) {
                                 console.log(data);
                                 layer.open({

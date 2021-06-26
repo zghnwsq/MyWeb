@@ -3,6 +3,7 @@ from django import forms
 
 class ExecutionForm(forms.Form):
     # error_message并未使用
+    job_id = forms.IntegerField(required=True)
     func = forms.CharField(max_length=64, required=True, error_messages={'required': '节点注册方法和测试方法不能为空'})
     mthd = forms.CharField(max_length=64, required=True, error_messages={'required': '节点注册方法和测试方法不能为空'})
     ds_range = forms.CharField(max_length=64, required=False, initial=None)

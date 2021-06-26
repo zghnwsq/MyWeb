@@ -87,14 +87,14 @@ def get_run_his(request):
 @login_required
 def get_report(request):
     runhis_id = request.GET.get('id', None)
-    f_path = RunHis.objects.filter(id=runhis_id)
-    if f_path:
+    run_his = RunHis.objects.filter(id=runhis_id)
+    if run_his:
         # HtmlTestReport
-        if '.html' in f_path[0].report:
-            return render(request, f_path[0].report, {})
+        if '.html' in run_his[0].report:
+            return render(request, run_his[0].report, {})
         # Pytest html report
         else:
-            return HttpResponseRedirect('/static/' + f_path.replace('\\', '/') + '/index.html')
+            return HttpResponseRedirect('/static/' + run_his[0].report.replace('\\', '/') + '/index.html')
     else:
         report = '<h2>Can not get the report.</h2>'
         return render(request, 'autotest/report.html', {'report': report})
@@ -305,21 +305,23 @@ def exec_job(request):
     req = json.loads(request.body)
     form = ExecutionForm(req)
     if form.is_valid():
+        job_id = form.cleaned_data.get('job_id', '#')
         func = form.cleaned_data.get('func', '#').strip()
         mthd = form.cleaned_data.get('mthd', '#').strip()
         ds_range = form.cleaned_data.get('ds_range', '#').strip()
         node = form.cleaned_data.get('node', '#').strip()
         comment = form.cleaned_data.get('comment', '#').strip()
         tester = request.session['user_name']
-        res = execute_job_asyn(func, mthd, ds_range, node, comment, tester)
+        res = execute_job_asyn(job_id, func, mthd, ds_range, node, comment, tester)
         return JsonResponse(res)
     else:
         return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
 
 
-def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
+def execute_job_asyn(job_id, func, mthd, ds_range, node, comment, tester):
     """
        异步调用RPC执行测试用例的方法
+    :param job_id: 任务主键id
     :param func: 对应用例组，测试类
     :param mthd: 对应测试方法
     :param ds_range: 参数范围
@@ -330,7 +332,7 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
     """
     # 校验是否存在
     exist_func = RegisterFunction.objects.filter(func=func, node=node)
-    execution = Execution.objects.exclude(status='running').filter(method=mthd, func__func=func)
+    execution = Execution.objects.exclude(status='running').filter(id=job_id, func__func=func)
     execution_count = len(execution)
     free_node = Node.objects.filter(ip_port=node, status='on')
     if len(exist_func) > 0 and execution_count == 1 and len(free_node) > 0:
@@ -341,9 +343,9 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
             row.status = 'running'
             row.save()
         # 更新任务状态 任务不允许重复
-        execution.update(status='running', ds_range=ds_range, comment=comment)
+        execution.update(status='running', method=mthd, ds_range=ds_range, comment=comment)
         # 多线程异步执行
-        status = job_run(func, mthd, ds_range, node, comment, get_node, tester)
+        status = job_run(func, mthd, ds_range, node, comment, free_node, tester)
         # 线程异常，更新任务状态
         if 'Error' in status:
             execution.update(status=status)
@@ -355,7 +357,7 @@ def execute_job_asyn(func, mthd, ds_range, node, comment, tester):
         is_in_queue = len(JobQueue.objects.filter(executioin=execution[0], node=node, status='new'))
         if is_in_queue < 1:
             # 更新信息
-            execution.update(status='in job queue', ds_range=ds_range, comment=comment)
+            execution.update(status='in job queue', method=mthd, ds_range=ds_range, comment=comment)
             JobQueue(executioin=execution[0], node=node, status='new', tester=tester,
                      create_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())).save()
             return {"msg": "提交队列成功!"}
@@ -372,7 +374,7 @@ def new_job_html(request):
         新建任务的弹出层html
     """
     func = RegisterFunction.objects.distinct().values('group', 'suite', 'func').order_by('group', 'suite',
-                                                                                         'func').distinct()
+                                                                                         'func')
     # print(func)
     return render(request, 'autotest/new_job.html', {'func': func})
 
@@ -414,9 +416,9 @@ def del_job(request):
     req = json.loads(request.body)
     form = ExecutionForm(req)
     if form.is_valid():
+        job_id = form.cleaned_data.get('job_id', '#')
         func = form.cleaned_data.get('func', '#').strip()
-        mthd = form.cleaned_data.get('mthd', '#').strip()
-        execution = Execution.objects.filter(method=mthd, func__func=func)
+        execution = Execution.objects.filter(id=job_id, func__func=func)
         if len(execution) > 0:
             if len(execution.filter(status='running')) > 0:
                 return JsonResponse({"msg": "ERROR: 任务执行中,不能删除!"})
@@ -460,7 +462,7 @@ def regsiter_node(request):
 def update_node(req_json):
     if 'host_ip' in req_json.keys() and 'tag' in req_json.keys() and 'func' in req_json.keys():
         host_ip = req_json['host_ip'].strip()
-        tag = req_json['host_ip']
+        tag = req_json['tag']
         func = req_json['func']
         exist_node = Node.objects.filter(ip_port=host_ip)
         if exist_node:

@@ -45,7 +45,7 @@
             let table = layui.table;
             let form = layui.form;
             let $ = layui.$;
-            let expand = layui.sessionData('expand').expand;
+            {#let expand = layui.sessionData('expand').expand;#}
             let key = $('#key').val();
             let desc = $('#desc').val();
             let sys_conf_table = table.render({
@@ -126,7 +126,7 @@
                         , where: {
                             key: key,
                             desc: desc,
-                            expand: expand
+                            {#expand: expand#}
                         }
                         , done: function (res, curr, count) {
                             {#let exp = res.expand;#}

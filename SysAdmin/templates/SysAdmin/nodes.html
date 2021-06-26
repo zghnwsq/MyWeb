@@ -73,7 +73,7 @@
             let table = layui.table;
             let form = layui.form;
             let $ = layui.$;
-            let expand = layui.sessionData('expand').expand;
+            {#let expand = layui.sessionData('expand').expand;#}
             let tag = $('#tag').val();
             let status = $('#status').val();
             let ip_port = $('#ip_port').val();
@@ -101,10 +101,10 @@
                     }
                 ]]
                 , done: function (res, curr, count) {
-                    let exp = res.expand;
-                    if (exp !== '' && exp != null) {
-                        $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
-                    }
+                    {#let exp = res.expand;#}
+                    {#if (exp !== '' && exp != null) {#}
+                    {#    $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");#}
+                    {# } #}
                 }
             });
 
@@ -213,13 +213,13 @@
                             tag: tag,
                             status: status,
                             ip_port: ip_port,
-                            expand: expand
+                            {#expand: expand#}
                         }
                         , done: function (res, curr, count) {
-                            let exp = res.expand;
-                            if (exp !== '' && exp != null) {
-                                $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
-                            }
+                            {#let exp = res.expand;#}
+                            {#if (exp !== '' && exp != null) {#}
+                            {#    $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");#}
+                            {# } #}
                         }
                     });
                 }

@@ -466,7 +466,7 @@ def update_node(req_json):
         func = req_json['func']
         exist_node = Node.objects.filter(ip_port=host_ip)
         if exist_node:
-            exist_node.update(status='on')
+            exist_node.update(status='on', tag=tag)
         else:
             Node(ip_port=host_ip, tag=tag, status='on').save()
         for mthd_name in func.keys():

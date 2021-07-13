@@ -1,0 +1,183 @@
+{% extends "base1.html" %}
+{% block content %}
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>API测试任务</legend>
+    </fieldset>
+    <div class="layui-form layui-form-pane" lay-filter="search">
+        {% csrf_token %}
+        <div class="layui-form-item">
+            <div class="search">
+                <div class="layui-inline">
+                    <label class="layui-form-label ">Group：</label>
+                    <div class="layui-input-inline">
+                        <select name="group" id="group" lay-search>
+                            <option value=""></option>
+                            {% if options.group %}
+                                {% for grp in options.group %}
+                                    <option value="{{ grp.group }}">{{ grp.group }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label ">Suite：</label>
+                    <div class="layui-input-inline">
+                        <select name="suite" id="suite" lay-search>
+                            <option value=""></option>
+                            {% if options.suite %}
+                                {% for s in options.suite %}
+                                    <option value="{{ s.suite }}">{{ s.suite }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="layui-input-inline" style="">
+                        <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
+                        <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                <div class="layui-input-inline" style="margin-left: 10em">
+                    <button class="layui-btn layui-inline layui-btn-normal" id="exec">
+                        <i class="layui-icon layui-icon-add-circle-fine"></i>
+                        执行选中用例
+                    </button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <table id="case_table" lay-filter="case_table">
+        <input style="display: none" id="csrf" value={{ options.csrf_token }}>
+    </table>
+{% endblock %}
+{% load static %}
+{% block script %}
+    <script type="text/html" id="myBar">
+        <div>
+            Debug: <input type="checkbox" name="debug" lay-filter="debug" lay-skin="switch" lay-text="ON|OFF">
+        </div>
+    </script>
+    <script>
+        !function () {
+            let table = layui.table;
+            let form = layui.form;
+            let $ = layui.$;
+            let layer = layui.layer;
+            let debug_switch = 'False';
+
+            let cases = table.render({
+                elem: '#case_table'
+                , id: 'case_table'
+                , height: 'full'
+                , url: '/apitest/cases/get/'
+                , page: {
+                    curr: 1,
+                    limit: 10
+                }
+                , even: true
+                , toolbar: '#myBar'
+                , cols: [[
+                    {type: 'checkbox', fixed: 'left'},
+                    {field: 'group__group', title: 'Test Group', sort: true, align: 'center'},
+                    {field: 'suite', title: 'Suite', align: 'center', edit: 'text', sort: true},
+                    {field: 'title', title: 'Title', align: 'center', edit: 'text', sort: true},
+                    {field: 'author__username', title: 'Author', align: 'center', sort: true},
+                ]]
+            });
+            let active = {
+                reload: function () {
+                    const group = $('#group').val();
+                    const suite = $('#suite').val();
+                    cases.reload({
+                        page: {
+                            curr: 1
+                        }
+                        , where: {
+                            group: group,
+                            suite: suite
+                        }
+                        , done: function (res, curr, count) {
+                        }
+                    });
+                    debug_switch = 'False';
+                }
+            }
+            {#搜索按钮触发#}
+            $('#search').on('click', function () {
+                let type = $(this).data('type');
+                active[type] ? active[type].call(this) : '';
+            });
+            {#重置按钮触发#}
+            $('#reset').on('click', function () {
+                form.val('search', {
+                    "group": 1,
+                    "suite": 1
+                })
+            });
+            {# debug开关#}
+            form.on('switch(debug)', function (data){
+                if(data.elem.checked){
+                    debug_switch = 'True';
+                }else{
+                    debug_switch = 'False';
+                }
+            })
+            {# 执行任务 #}
+            $('#exec').on('click', function () {
+                let checkStatus = table.checkStatus('case_table');
+                let cases = checkStatus.data;
+                const csrf = $("#csrf").val();
+                {#console.log(cases);#}
+                if(cases.length < 1){
+                    layer.open({
+                        content: '<div style="padding: 20px 2em;">请选择用例!</div>'
+                        , type: 1
+                        , title: '提示'
+                        , time: 5000
+                        , btn: '确定'
+                        , yes: function (index) {
+                            layer.close(index);
+                        }
+                    });
+                }else {
+                    $.ajax({
+                        url: "/apitest/job/exec/"
+                        , type: "POST"
+                        , contentType: 'application/json; charset=utf-8'
+                        , beforeSend: function (xhr) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf);
+                        }
+                        , data: JSON.stringify({cases: cases, debug: debug_switch})
+                        , success: function (data) {
+                            layer.open({
+                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                , type: 1
+                                , title: '提示'
+                                , time: 5000
+                                , btn: '确定'
+                                , yes: function (index) {
+                                    layer.close(index);
+                                }
+                            });
+                            {#active['reload'].call(this);#}
+                        }
+                    });
+                }
+            });
+
+        }()
+    </script>
+{% endblock %}
+
+
+
+
+
+
+
+

@@ -1,0 +1,37 @@
+<div class="layui-form  layui-form-pane" lay-filter="new_case" style="padding: 20px 5em;">
+    {% csrf_token %}
+    <div class="new_case"  style="min-width: 70%">
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="min-width: 40%"><span style="color: red">*</span>Group：</label>
+            <div class="layui-input-inline">
+                <select name="case_group" id="case_group" lay-verify="required" lay-filter="group">
+                    <option value="">请选择用例组</option>
+                    {% if group %}
+                        {% for opt in group %}
+                            <option value="{{ opt.id }}">{{ opt.group }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="min-width: 40%"><span style="color: red">*</span>Suite：</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" name="case_suite" id="case_suite" autocomplete="off">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="min-width: 40%"><span style="color: red">*</span>Title：</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" name="case_title" id="case_title" autocomplete="off">
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    {#弹出层需要重新渲染#}
+    layui.use('form', function () {
+        let fm = layui.form;
+        fm.render(null, 'new_case');
+    });
+</script>

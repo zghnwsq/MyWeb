@@ -1,0 +1,359 @@
+import json
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
+from MyWeb import settings
+from Utils.CustomView import ListViewWithMenu
+from Utils.MyMixin import URIPermissionMixin
+from Utils.Paginator import paginator
+from Utils.decorators import auth_check
+from .JobRunner import api_job_run
+from .form import *
+from .models import *
+from Utils.JsonEncoder import DateEncoder
+
+PARENT_MENU = '接口自动化测试'
+
+
+class ApiGroupV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
+    template_name = 'ApiTest/api_group.html'
+    context_object_name = 'options'
+    parent_menu = PARENT_MENU
+
+    def get_queryset(self, **kwargs):
+        group = ApiGroup.objects.values('group').distinct()
+        csrf_token = self.request.COOKIES.get('csrftoken')
+        context = {
+            'group': group,
+            'csrf_token': csrf_token,
+        }
+        return context
+
+
+@auth_check
+@login_required
+def get_groups(request):
+    page = request.GET.get('page', '0')
+    limit = request.GET.get('limit', '30')
+    groups = ApiGroup.objects.filter(status='1').values('id', 'group', 'author__username')
+    if len(groups) > 0:
+        data_list = paginator(groups, int(page), int(limit))
+    else:
+        data_list = {}
+    return JsonResponse({"code": 0, "msg": "", "count": len(groups), "data": data_list})
+
+
+@auth_check
+@login_required
+def update_group(request):
+    req_json = json.loads(request.body)
+    group_id = req_json.get('group_id', None)
+    group = req_json.get('group', '')
+    if isinstance(group_id, int) and group:
+        if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session['user_group'] in settings.MNAGER_GROUPS:
+            res = ApiGroup.objects.filter(id=group_id).update(group=group)
+            msg = f'成功更新{res}条记录.'
+        else:
+            msg = 'ERROR: 当前用户没有更新此用例组权限.'
+    else:
+        msg = 'ERROR: 请求内容有误'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def del_group(request):
+    req_json = json.loads(request.body)
+    group_id = req_json.get('group_id', None)
+    if isinstance(group_id, int):
+        has_case = ApiCase.objects.filter(group__id=group_id)
+        if len(has_case) > 1:
+            msg = f'用例组下存在{len(has_case)}条用例,请删除后重试.'
+        else:
+            if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session['user_group'] in settings.MNAGER_GROUPS:
+                res = ApiGroup.objects.filter(id=group_id).update(status='0')
+                msg = f'成功删除{res[0]}条记录.'
+            else:
+                msg = 'ERROR: 当前用户没有删除此用例组权限.'
+    else:
+        msg = 'ERROR: 请求内容有误.'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def new_group(request):
+    if request.method == 'GET':
+        return render(request, 'ApiTest/new_group.html')
+    if request.method == 'POST':
+        req_json = json.loads(request.body)
+        group = req_json.get('group', None)
+        if group:
+            ApiGroup(group=group, author=request.user, status='1').save()
+            msg = '创建成功'
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+
+
+class ApiCaseV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
+    template_name = 'ApiTest/api_case.html'
+    context_object_name = 'options'
+    parent_menu = PARENT_MENU
+
+    def get_queryset(self, **kwargs):
+        group = ApiGroup.objects.values('group').distinct()
+        suite = ApiCase.objects.values('suite').distinct()
+        csrf_token = self.request.COOKIES.get('csrftoken')
+        context = {
+            'group': group,
+            'suite': suite,
+            'csrf_token': csrf_token,
+        }
+        return context
+
+
+@auth_check
+@login_required
+def get_cases(request):
+    page = request.GET.get('page', '0')
+    limit = request.GET.get('limit', '30')
+    group = request.GET.get('group', None)
+    suite = request.GET.get('suite', None)
+    cases = ApiCase.objects.all()
+    if group:
+        cases = cases.filter(group__group=group)
+    if suite:
+        cases = cases.filter(suite=suite)
+    cases = cases.values('id', 'group__group', 'suite', 'title', 'author__username').order_by('group__group', 'suite')
+    if len(cases) > 0:
+        data_list = paginator(cases, int(page), int(limit))
+    else:
+        data_list = {}
+    return JsonResponse({"code": 0, "msg": "", "count": len(cases), "data": data_list})
+
+
+@auth_check
+@login_required
+@require_http_methods(['POST'])
+def update_case(request):
+    req_json = json.loads(request.body)
+    form = CaseForm(req_json)
+    if form.is_valid():
+        case_id = form.cleaned_data.get('case_id')
+        suite = form.cleaned_data.get('suite')
+        title = form.cleaned_data.get('title')
+        if not suite or not title:
+            msg = 'ERROR: suite或title不能为空.'
+        else:
+            if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MNAGER_GROUPS:
+                ApiCase.objects.filter(id=case_id).update(suite=suite, title=title)
+                msg = '更新成功.'
+            else:
+                msg = 'ERROR: 当前用户没有更新此用例权限.'
+    else:
+        msg = 'ERROR: 请求数据有误.'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def del_case(request):
+    req_json = json.loads(request.body)
+    form = CaseForm(req_json)
+    if form.is_valid():
+        case_id = form.cleaned_data.get('case_id')
+        if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MNAGER_GROUPS:
+            ApiCase.objects.get(id=case_id).delete()
+            msg = '更新成功.'
+        else:
+            msg = 'ERROR: 当前用户没有删除此用例权限.'
+    else:
+        msg = 'ERROR: 请求数据有误.'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def new_case(request):
+    if request.method == 'GET':
+        group = ApiGroup.objects.filter(status='1')
+        return render(request, 'ApiTest/new_case.html', {'group': group})
+    if request.method == 'POST':
+        req_json = json.loads(request.body)
+        group = req_json.get('group', None)
+        suite = req_json.get('suite', None)
+        title = req_json.get('title', None)
+        has_group = ApiGroup.objects.filter(id=group)
+        if suite and title and len(has_group) > 0:
+            ApiCase(group=has_group[0], suite=suite, title=title, author=request.user).save()
+            msg = '创建成功'
+        else:
+            msg = 'ERROR: 请求内容有误或不存在该用例组.'
+        return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def edit_case(request):
+    # step edit layer
+    if request.method == 'GET':
+        case_id = request.GET.get('case_id', '')
+        if case_id:
+            case = ApiCase.objects.filter(id=case_id)
+            if len(case) == 1:
+                steps = ApiCaseStep.objects.filter(case__id=case_id).order_by('step_order').values('id', 'step_action',
+                                                                                                   'step_p1',
+                                                                                                   'step_p2', 'step_p3',
+                                                                                                   'case', 'title',
+                                                                                                   'step_order')
+                keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description')
+                return render(request, 'ApiTest/api_case_steps.html',
+                              {'case_id': case_id, 'title': case[0].title, 'data': json.dumps(list(steps)),
+                               'keywords': json.dumps(list(keywords))})
+            else:
+                msg = 'ERROR: 没有此用例.'
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+    # save steps
+    if request.method == 'POST':
+        req_json = json.loads(request.body)
+        case_id = req_json.get('case_id', None)
+        data = req_json.get('data', None)
+        if case_id and data:
+            has_case = ApiCase.objects.filter(id=int(case_id))
+            if has_case:
+                # 清空
+                ApiCaseStep.objects.filter(case=has_case[0]).delete()
+                batch = []
+                for step in data:
+                    if step:
+                        batch.append(ApiCaseStep(case=has_case[0], step_action=step['step_action'], step_p1=step['step_p1'],
+                                                 step_p2=step['step_p2'], step_p3=step['step_p3'], title=step['title'],
+                                                 step_order=step['LAY_TABLE_INDEX']))
+                res = ApiCaseStep.objects.bulk_create(batch)
+                msg = f'保存成功,更新{len(res)}条.'
+            else:
+                msg = 'ERROR: 用例不存在.'
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def get_steps(request):
+    case_id = request.GET.get('case_id', '')
+    # 前台分页
+    # page = request.GET.get('page', '1')
+    # limit = request.GET.get('limit', '30')
+    steps = ApiCaseStep.objects.filter(case__id=case_id).order_by('step_order').values('id', 'step_action', 'step_p1',
+                                                                                       'step_p2', 'step_p3', 'case',
+                                                                                       'step_order', 'title')
+    keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description')
+    # if len(steps) > 0:
+    #     data_list = paginator(steps, int(page), int(limit))
+    # else:
+    #     data_list = []
+    return JsonResponse({"code": 0, "msg": "", "count": len(steps), "data": list(steps), "keywords": list(keywords)})
+
+
+class ApiJobV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
+    template_name = 'ApiTest/api_job.html'
+    context_object_name = 'options'
+    parent_menu = PARENT_MENU
+
+    def get_queryset(self, **kwargs):
+        group = ApiGroup.objects.values('group').distinct()
+        suite = ApiCase.objects.values('suite').distinct()
+        csrf_token = self.request.COOKIES.get('csrftoken')
+        context = {
+            'group': group,
+            'suite': suite,
+            'csrf_token': csrf_token,
+        }
+        return context
+
+
+@auth_check
+@login_required
+@require_http_methods(['POST'])
+def exec_job(request):
+    req_json = json.loads(request.body)
+    print(req_json)
+    if 'cases' in req_json.keys():
+        cases = req_json['cases']
+        tester = request.user
+        debug = True if req_json.get('debug', 'False') == 'True' else False
+        api_job_run(cases, tester, debug)
+        msg = '任务提交成功!'
+    else:
+        msg = '请求内容不正确!'
+    return JsonResponse({'msg': msg})
+
+
+class ApiResultV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
+    template_name = 'ApiTest/api_result.html'
+    context_object_name = 'options'
+    parent_menu = PARENT_MENU
+
+    def get_queryset(self, **kwargs):
+        group = ApiGroup.objects.values('group').distinct()
+        suite = ApiCase.objects.values('suite').distinct()
+        context = {
+            'group': group,
+            'suite': suite,
+        }
+        return context
+
+
+@auth_check
+@login_required
+def get_result(request):
+    page = request.GET.get('page', '0')
+    limit = request.GET.get('limit', '30')
+    group = request.GET.get('group', None)
+    suite = request.GET.get('suite', None)
+    batch = ApiTestBatch.objects.all().values('id', 'tester__username', 'status', 'create_time').order_by('-create_time')
+    if group:
+        batch = batch.filter(apicaseresult__case__group=group)
+    if suite:
+        batch = batch.filter(apicaseresult__case__suite=suite)
+    if len(batch) > 0:
+        data_list = paginator(batch, int(page), int(limit))
+    else:
+        data_list = {}
+    return JsonResponse({"code": 0, "msg": "", "count": len(batch), "data": data_list})
+
+
+@auth_check
+@login_required
+def get_case_result(request):
+    batch_id = request.GET.get('batch', None)
+    if batch_id:
+        case_result = ApiCaseResult.objects.filter(batch=batch_id).values('id', 'batch', 'case__title', 'status', 'info',
+                                                                          'create_time').order_by('id')
+        return JsonResponse({"code": 0, "msg": "", "count": len(case_result), "data": list(case_result)})
+    else:
+        return JsonResponse({"code": 0, "msg": "缺少批次号!", "count": 0, "data": []})
+
+
+@auth_check
+@login_required
+def get_steps_result(request):
+    case_result_id = request.GET.get('case_result_id', None)
+    if case_result_id:
+        step_result = ApiStepResult.objects.filter(case=case_result_id).values('batch', 'case__case__title',
+                                                                                        'step__step_action',
+                                                                                        'step__title',
+                                                                                        'status', 'info',
+                                                                                        'create_time').order_by('id')
+        return render(request, 'ApiTest/api_step_result.html', {'steps': json.dumps(list(step_result), cls=DateEncoder)})
+    else:
+        return JsonResponse({"code": 0, "msg": "请求参数不正确!", "count": 0, "data": []})
+
+
+

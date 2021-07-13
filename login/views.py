@@ -47,6 +47,8 @@ class LoginV(LoginView):
             user = authenticate(request, username=uname, password=upassword)
             if user is not None:
                 # clear_logged_session(user)
+                # 清过期session
+                request.session.clear_expired()
                 if user.is_active:
                     login(request, user)
                     user_name = user.username

@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.150', '192.168.50.211']
 # Application definition
 
 INSTALLED_APPS = [
+    'ApiTest.apps.ApitestConfig',
     'SysAdmin.apps.SysadminConfig',
     'autotest.apps.AutotestConfig',
     'login.apps.LoginConfig',
@@ -245,4 +246,5 @@ LOGGING = {
 # 自定义参数
 APSCHEDULER = 'off'
 DATA_SOURCE_ROOT = os.path.join(BASE_DIR, 'Upload', 'DS')
+MNAGER_GROUPS = ['管理员']
 

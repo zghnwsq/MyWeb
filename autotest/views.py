@@ -35,13 +35,6 @@ class RunHisV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     context_object_name = 'options'
     parent_menu = PARENT_MENU
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context = get_personal(self.request, context)
-    #     context['menus'] = self.request.session.get('menus', [])
-    #     context['expand'] = PARENT_MENU
-    #     return context
-
     def get_queryset(self, **kwargs):
         group = RunHis.objects.values('group').distinct()
         suite = RunHis.objects.values('suite').distinct()
@@ -119,13 +112,6 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     template_name = 'autotest/run_count.html'
     context_object_name = 'options'
     parent_menu = PARENT_MENU
-
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context = get_personal(self.request, context)
-    #     context['menus'] = self.request.session.get('menus', [])
-    #     context['expand'] = PARENT_MENU
-    #     return context
 
     def get_queryset(self, **kwargs):
         group = RunHis.objects.values('group').distinct()
@@ -207,13 +193,6 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     context_object_name = 'data'
     parent_menu = PARENT_MENU
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context = get_personal(self.request, context)
-    #     context['menus'] = self.request.session.get('menus', [])
-    #     context['expand'] = PARENT_MENU
-    #     return context
-
     def get_queryset(self, **kwargs):
         recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
         run_his = count_by_group(beg=recent_90_days)
@@ -250,13 +229,6 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     context_object_name = 'options'
     parent_menu = PARENT_MENU
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context = get_personal(self.request, context)
-    #     context['menus'] = self.request.session.get('menus', [])
-    #     context['expand'] = PARENT_MENU
-    #     return context
-
     def get_queryset(self, **kwargs):
         nodes = Node.objects.filter(status='on')
         # functions = RegisterFunction.objects.all()
@@ -279,7 +251,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
 
 
 @auth_check
-@login_required()
+@login_required
 def get_jobs(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
@@ -289,17 +261,16 @@ def get_jobs(request):
         suite=request.GET.get('suite', None),
         func=request.GET.get('func', None)
     )
-    count = jobs.count()
-    if count > 0:
+    if len(jobs) > 0:
         data_list = paginator(jobs, int(page), int(limit))
     else:
         data_list = {}
     data_list = get_node_options(data_list)
-    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
+    return JsonResponse({"code": 0, "msg": "", "count": len(jobs), "data": data_list})
 
 
-@login_required()
 @auth_check
+@login_required
 @require_http_methods(['POST'])
 def exec_job(request):
     req = json.loads(request.body)
@@ -368,7 +339,7 @@ def execute_job_asyn(job_id, func, mthd, ds_range, node, comment, tester):
 
 
 @auth_check
-@login_required()
+@login_required
 def new_job_html(request):
     """
         新建任务的弹出层html
@@ -380,7 +351,7 @@ def new_job_html(request):
 
 
 @auth_check
-@login_required()
+@login_required
 @require_http_methods(['POST'])
 def save_new_job(request):
     """
@@ -410,7 +381,7 @@ def save_new_job(request):
 
 
 @auth_check
-@login_required()
+@login_required
 @require_http_methods(['POST'])
 def del_job(request):
     req = json.loads(request.body)
@@ -524,7 +495,7 @@ def update_suite_cases_count(request):
 
 
 @auth_check
-@login_required()
+@login_required
 @require_http_methods(['POST'])
 def update_ds(request):
     form = DataSourceForm(request.POST, request.FILES)
@@ -551,7 +522,7 @@ class DataSourceV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
 
 
 @auth_check
-@login_required()
+@login_required
 def get_ds(request):
     ds_name = request.GET.get('ds_name', '')
     page = request.GET.get('page', '0')
@@ -566,7 +537,7 @@ def get_ds(request):
 
 
 @auth_check
-@login_required()
+@login_required
 @require_http_methods(['POST'])
 def download_ds(request):
     ds_name = request.POST.get('ds_name', '')

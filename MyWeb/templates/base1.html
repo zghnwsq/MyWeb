@@ -99,6 +99,12 @@
 <script src="{% static 'layui.js' %} "></script>
 <script>
     !function () {
+        layui.config({
+            base: '/static/ext/',
+            version: 'v1.6.2'
+        }).extend({
+            soulTable: 'soulTable',
+        });
         let layer = layui.layer;
         let $ = layui.jquery;
         let element = layui.element;

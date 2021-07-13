@@ -1,9 +1,6 @@
-import os
-
 from django.db import models
-
-# Create your models here.
 from MyWeb import settings
+# Create your models here.
 
 
 class RunHis(models.Model):

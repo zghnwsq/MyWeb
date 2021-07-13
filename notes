@@ -101,8 +101,8 @@ comment
 # layui和django模板语言标记符冲突
 前后加上{% verbatim %}{% endverbatim %},django就不会解析
 
-# todo
-# 内网和公网通讯问题
+
+# 内网和公网通讯问题解决方案(未实现)
 web服务在公网，节点注册时，还是插入数据库；
 当测试任务排入队列时：
     1.验证选择的节点是否在线，任务是否存在
@@ -111,4 +111,25 @@ web服务在公网，节点注册时，还是插入数据库；
 如果有本节点的任务，则更新节点状态为执行中，调用本机RPC方法，执行测试；
 测试执行完成，调用web服务接口，回传json结果，回传报告压缩文件，web系统接收压缩文件，解压到目录，并插入执行结果
 
+# API Test Codeless
+
+api_group
+group_id group author status
+1        api    ted   1
+
+api_case
+case_id group	suite	case_title	author
+1       1	    login	no token	ted
+
+api_case_step
+step_id	case_id	step_action	step_P1	step_P2	step_P3 step_order
+1	    1	    baseurl	    xxx
+
+api_test_batch
+batch_id tester  status  create_time
+1        ted    pass    xxx
+
+api_test_result
+result_id  batch_id  case_id	step_id	status	information	create_time
+1          1         1	        1	    pass	xxx	         xxx
 

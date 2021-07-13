@@ -2,7 +2,8 @@
     {% csrf_token %}
     <div class="new_job"  style="min-width: 70%">
         <div class="layui-form-item">
-            <label class="layui-form-label" style="min-width: 40%">RPC Function：</label>
+            <label class="layui-form-label" style="min-width: 40%"><span style="color: red">*</span>RPC
+                Function：</label>
             <div class="layui-input-inline">
                 <select name="new_func" id="new_func" lay-verify="required" lay-filter="new_func">
                     <option value="">请选择注册测试类</option>

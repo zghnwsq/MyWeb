@@ -1,0 +1,222 @@
+{% extends "base1.html" %}
+{% block content %}
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>API测试结果</legend>
+    </fieldset>
+    <div class="layui-form layui-form-pane" lay-filter="search">
+        {% csrf_token %}
+        <div class="layui-form-item">
+            <div class="search">
+                <div class="layui-inline">
+                    <label class="layui-form-label ">Group：</label>
+                    <div class="layui-input-inline">
+                        <select name="group" id="group" lay-search>
+                            <option value=""></option>
+                            {% if options.group %}
+                                {% for grp in options.group %}
+                                    <option value="{{ grp.group }}">{{ grp.group }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label ">Suite：</label>
+                    <div class="layui-input-inline">
+                        <select name="suite" id="suite" lay-search>
+                            <option value=""></option>
+                            {% if options.suite %}
+                                {% for s in options.suite %}
+                                    <option value="{{ s.suite }}">{{ s.suite }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="layui-input-inline" style="">
+                        <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
+                        <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table id="result_table" lay-filter="result_table"></table>
+{% endblock %}
+{% load static %}
+{% block script %}
+    <script type="text/html" id="childBar">
+        <a class="layui-btn layui-btn-xs" lay-event="detail">详细</a>
+    </script>
+    <script>
+        layui.use(['form', 'table', 'soulTable', 'layer'], function () {
+            layui.soulTable.config({
+                fixTotal: false,
+                drag: false,
+                rowDrag: true,
+                overflow: true,
+            });
+            let table = layui.table;
+            let form = layui.form;
+            let $ = layui.$;
+            let layer = layui.layer;
+            let soulTable = layui.soulTable;
+
+            let results = table.render({
+                elem: '#result_table'
+                , id: 'result_table'
+                , height: 'full'
+                , url: '/apitest/result/get/'
+                , page: {
+                    curr: 1,
+                    limit: 10
+                }
+                , even: true
+                , cols: [[
+                    {title: '#', width: 50, childTitle: false, collapse: true, children: function(row) {
+                        return [{
+                            url: '/apitest/result/case/',
+                            where: {batch: row.id},
+                            page: false,
+                            cols: [[
+                                {field: 'case__title', title: 'Title', align: 'center'},
+                                {field: 'info', title: 'Info', align: 'center'},
+                                {
+                                    field: 'status', title: 'Result', align: 'center', templet(d) {
+                                        if (d.status === '0') {
+                                            return '<span style="color: green">通过</span>';
+                                        } else if (d.status === '1') {
+                                            return '<span style="color: red">失败</span>';
+                                        } else {
+                                            return '<span style="color: brown">N/A</span>';
+                                        }
+                                    }
+                                },
+                                {
+                                    field: 'create_time', title: 'Create Time', templet(d) {
+                                        return d.create_time.replace('T', ' ');
+                                    }
+                                },
+                                {title: 'Action', align: 'center', templet: '#childBar'}
+                            ]],
+                            toolEvent: function (obj, pobj) {
+                                let data = obj.data;
+                                switch (obj.event) {
+                                    case 'detail':
+                                        $.ajax({
+                                            url: "/apitest/result/steps/"
+                                            , type: "GET"
+                                            , data: {case_result_id: data.id}
+                                            , success: function (ret) {
+                                                if (ret.indexOf('ERROR') === -1) {
+                                                    layer.open({
+                                                        type: 1
+                                                        , title: '详细结果: ' + data.case__title
+                                                        , content: ret
+                                                        , area: ['1200px', '600px']
+                                                        , maxmin: true
+                                                        , resizing: function (layero) {
+                                                            {# 监听窗口拉伸 #}
+                                                            table.resize('step_result_table');
+                                                        }
+                                                        , full: function (layero) {
+                                                            {# 监听窗口最大化 #}
+                                                            table.resize('step_result_table');
+                                                        }
+                                                        , restore: function (layero) {
+                                                            {# 监听窗口还原 #}
+                                                            table.resize('step_result_table');
+                                                        }
+                                                        , btn: ['关闭']
+                                                        , yes: function (index) {
+                                                            layer.close(index);
+                                                        }
+                                                    });
+                                                } else {
+                                                    layer.open({
+                                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                                        , type: 1
+                                                        , title: '提示'
+                                                        , time: 5000
+                                                        , btn: '确定'
+                                                        , yes: function (index) {
+                                                            layer.close(index);
+                                                        }
+                                                    });
+                                                }
+
+                                            }
+                                        });
+                                        break;
+                                }
+                            },
+                            done: function () {
+                                soulTable.render(this);
+                            }
+                        }]
+                        }},
+                    {field: 'id', title: 'Batch No', sort: true, align: 'center'},
+                    {field: 'tester__username', title: 'Tester', align: 'center', sort: true},
+                    {field: 'status', title: 'Result', align: 'center', sort: true, templet(d){
+                            if (d.status === '0') {
+                                return '<span style="color: green">通过</span>';
+                            } else if (d.status === '1') {
+                                return '<span style="color: red">失败</span>';
+                            } else {
+                                return '<span style="color: brown">N/A</span>';
+                            }
+                        }},
+                    {
+                        field: 'create_time', title: 'Create Time', align: 'center', sort: true, templet(d) {
+                            return d.create_time.replace('T', ' ');
+                        }
+                    }
+                ]]
+                , done: function () {
+                    soulTable.render(this);
+                }
+            });
+            let active = {
+                reload: function () {
+                    const group = $('#group').val();
+                    const suite = $('#suite').val();
+                    results.reload({
+                        page: {
+                            curr: 1
+                        }
+                        , where: {
+                            group: group,
+                            suite: suite
+                        }
+                        , done: function (res, curr, count) {
+                        }
+                    });
+                }
+            }
+            {#搜索按钮触发#}
+            $('#search').on('click', function () {
+                let type = $(this).data('type');
+                active[type] ? active[type].call(this) : '';
+            });
+            {#重置按钮触发#}
+            $('#reset').on('click', function () {
+                form.val('search', {
+                    "group": 1,
+                    "suite": 1
+                })
+            });
+
+
+        });
+    </script>
+{% endblock %}
+
+
+
+
+
+
+
+

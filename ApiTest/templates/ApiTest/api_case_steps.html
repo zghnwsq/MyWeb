@@ -1,0 +1,216 @@
+{#<fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">#}
+{#    <legend>编辑用例步骤: {{ title }}</legend>#}
+{#</fieldset>#}
+<div class="layui-form  layui-form-pane" lay-filter="steps" style="padding-top: 1em;">
+    {% csrf_token %}
+    <div class="layui-form-item">
+        <div class="layui-row">
+            <div class="layui-col-md3 layui-col-md-offset9">
+                <button class="layui-btn" id="new_step" lay-filter="new_step">新增步骤</button>
+                <button lay-submit class="layui-btn layui-btn-normal" id="save_case" lay-filter="save_case">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+<table id="step_table" lay-filter="step_table">
+{#    <input style="display: none" id="csrf" value={{ csrf_token }}>#}
+    <input style="display: none" id="case_id" value={{ case_id }}>
+</table>
+<script type="text/html" id="myBar">
+    <div>
+        行拖拽: <input type="checkbox" lay-skin="switch" lay-filter="rowDragSwitch" lay-text="启用|暂停" checked>
+        <i style="margin-left: 2em; color: red; font-size: small">*切换分页前请保存</i>
+    </div>
+</script>
+<script type="text/html" id="row_tool">
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script>
+function reload_data($, case_id, tb) {
+    let new_data;
+    let options;
+    $.ajax({
+        url: "/apitest/case/steps/"
+        , type: "GET"
+        , data: {case_id: case_id}
+        , success: function (data) {
+            new_data = data.data;
+            options = data.keywords;
+            for(let index in new_data){
+                if (!new_data.hasOwnProperty(index)) continue;
+                new_data[index]['keywords'] = options;
+            }
+            tb.reload("step_table", {
+                data: new_data
+            });
+            setSelectCSS();
+            return new_data;
+        }
+    });
+    return new_data;
+}
+function setSelectCSS() {
+    $(".layui-table-body, .layui-table-box, td[data-field='step_action']>.layui-table-cell").css('overflow', 'visible');
+    $("td[data-field='step_action'] .layui-form-select").css({
+        'margin-top': '-10px',
+        'margin-left': '-16px',
+        'margin-right': '-15px'
+     });
+}
+
+layui.use(['form', 'table', 'soulTable', 'layer'], function () {
+    layui.soulTable.config({
+        fixTotal: false,
+        drag: false,
+        rowDrag: true,
+        overflow: true,
+    });
+    let tb = layui.table,
+        fm = layui.form,
+        soulTable = layui.soulTable,
+        $ = layui.$,
+        msg = layui.layer;
+    fm.render(null, 'steps');
+    let table_data = [];
+    let keywords = [];
+    {% if keywords %}
+        keywords = {{ keywords | safe }};
+    {% endif %}
+    {% if data %}
+        table_data = {{ data | safe }};
+    {% endif %}
+    for(let index in table_data){
+        if (!table_data.hasOwnProperty(index)) continue;
+        table_data[index]['keywords'] = keywords;
+    }
+
+    let step_table = tb.render({
+        elem: '#step_table',
+        id: 'step_table',
+        data: table_data,
+        {#limit: 100,#}
+        {#url: '/apitest/case/steps/',#}
+        page: {
+            curr: 1,
+            limit: 30
+        },
+        {#where: {'case_id': {{case_id}} },#}
+        even: true,
+        toolbar: '#myBar',
+        rowDrag: {/*trigger: 'row',*/ done: function (obj) {
+                {#// 完成时（松开时）触发#}
+                {#// 如果拖动前和拖动后无变化，则不会触发此方法#}
+                {#console.log(obj.row); // 当前行数据#}
+                {#console.log(obj.cache); // 改动后全表数据#}
+                table_data = obj.cache;
+                {#console.log(obj.oldIndex); // 原来的数据索引#}
+                {#console.log(obj.newIndex); // 改动后数据索引#}
+            }
+        },
+        cols: [[
+            {type: 'numbers', title: '序号', fixed: 'left'},
+            {#{field: 'step_order', title: 'Order', align: 'center'},#}
+            {field: 'title', title: 'Title', align: 'center', edit: 'text'},
+            {#{field: 'step_action', title: 'Action', align: 'center', edit: 'text'},#}
+            {field: 'step_action', title: 'Action', align: 'center', templet(d) {
+                    const beg = '<select name="step_action" lay-filter="step_action" id="step_action" required lay-verify="required">\n' +
+                        '<option value="none">---</option>\n';
+                    const end = '</select>';
+                    let options = ''
+                    let keywords = d.keywords;
+                    for(let index in keywords){
+                        if (!keywords.hasOwnProperty(index)) continue;
+                        if(keywords[index]['keyword'] === d.step_action){
+                            options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '---' + keywords[index]['description'] + '</option>';
+                        }else{
+                            options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '---' + keywords[index]['description'] + '</option>';
+                        }
+                    }
+                    return beg + options + end;
+                }},
+            {field: 'step_p1', title: 'Param 1', align: 'center', edit: 'text'},
+            {field: 'step_p2', title: 'Param 2', align: 'center', edit: 'text'},
+            {field: '', title: 'Operation', align: 'center', toolbar: '#row_tool'}
+        ]],
+        done: function (res) {
+            soulTable.render(this);
+            table_data = res.data;
+            setSelectCSS();
+        }
+    });
+    tb.on('tool(step_table)', function (obj) {
+        {#let data = obj.data;#}
+        let layEvent = obj.event;
+        if (layEvent === 'del') {
+            msg.confirm('是否确定删除?', function (index) {
+                obj.del();
+                msg.close(index);
+            });
+        }
+    });
+    {#监听修改update到表格中#}
+    fm.on('select(step_action)', function (data) {
+        let elem = $(data.elem);
+        let trElem = elem.parents('tr');
+        {#table id#}
+        let tableData = tb.cache['step_table'];
+        {#更新到表格的缓存数据中，才能在获得选中行等等其他的方法中得到更新之后的值#}
+        tableData[trElem.data('index')][elem.attr('name')] = data.value;
+        table_data = tableData;
+    });
+    fm.on('switch(rowDragSwitch)', function (data) {
+        soulTable.suspend('step_table', 'rowDrag', !data.elem.checked)
+    });
+    fm.on('submit(save_case)', function () {
+        const steps_csrf = $("div[lay-filter='steps']>input[name='csrfmiddlewaretoken']").val();
+        const case_id = $("#case_id").val();
+        $.ajax({
+            url: "/apitest/case/edit/"
+            , type: "POST"
+            , contentType: 'application/json; charset=utf-8'
+            , beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", steps_csrf);
+            }
+            , data: JSON.stringify({case_id: case_id, data: table_data})
+            , success: function (data) {
+                msg.open({
+                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                    , type: 1
+                    , title: '提示'
+                    , time: 5000
+                    , btn: '确定'
+                    , yes: function (index) {
+                        msg.close(index);
+                    }
+                });
+                {# 重载表格 #}
+                reload_data($, case_id, tb);
+            }
+        });
+    });
+    $("#new_step").on('click', function () {
+        table_data.push({
+            'step_order': '',
+            'step_action': '',
+            'step_p1': '',
+            'step_p2': '',
+            'step_p3': '',
+            'title': '',
+            'keywords': keywords
+        });
+        {# 将新数据重新载入表格 #}
+        tb.reload("step_table", {
+            data: table_data
+        });
+    });
+
+    });
+</script>
+
+
+
+
+
+
+

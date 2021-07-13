@@ -1,0 +1,18 @@
+<div class="layui-form  layui-form-pane" lay-filter="new_group" style="padding: 20px 5em;">
+    {% csrf_token %}
+    <div class="new_group"  style="min-width: 70%">
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="min-width: 40%"><span style="color: red">*</span>Group：</label>
+            <div class="layui-input-inline">
+                <input class="layui-input" name="new_group" id="new_group" autocomplete="off">
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    {#弹出层需要重新渲染#}
+    layui.use('form', function () {
+        let fm = layui.form;
+        fm.render(null, 'new_group');
+    });
+</script>

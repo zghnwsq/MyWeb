@@ -3,6 +3,7 @@ from functools import wraps
 from django.http import JsonResponse
 # from django.shortcuts import render
 # from django.urls import reverse
+from MyWeb import settings
 from login.models import *
 
 
@@ -25,6 +26,8 @@ def auth_check(func):
                 return JsonResponse({"code": 403, "msg": "Permission Denied!"})
             else:
                 return JsonResponse({"code": 403, "msg": "Login Required! Permission Denied!"})
+        # 刷新session过期时间
+        request.session.set_expiry(settings.SESSION_COOKIE_AGE)
         return func(request, *args, **kwargs)
     return check
 

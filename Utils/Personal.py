@@ -1,16 +1,25 @@
 from django.contrib.sessions.models import Session
+from django.shortcuts import render
 from django.utils import timezone
 
 from login.models import UserMenu, Menu
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 
 
 def get_personal(request, context):
-    user_name = request.session['user_name']
-    user_group = request.session['user_group']
-    context['user_name'] = user_name
-    context['user_group'] = user_group
-    # context['message'] = ''
+    if 'user_name' in request.session.keys() and 'user_group' in request.session.keys():
+        user_name = request.session['user_name']
+        user_group = request.session['user_group']
+        context['user_name'] = user_name
+        context['user_group'] = user_group
+        # context['message'] = ''
+    else:
+        user_name = request.user.username
+        user_group = Group.objects.filter(user__username=request.user.username)[0].name
+        request.session['user_name'] = user_name
+        request.session['user_group'] = user_group
+        context['user_name'] = user_name
+        context['user_group'] = user_group
     return context
 
 
@@ -47,6 +56,7 @@ def get_menu(context):
 
 
 def clear_logged_session(user):
+    # 废弃
     valid_session_obj_list = Session.objects.filter(expire_date__gt=timezone.now())
     logged_user_list = []
     for session_obj in valid_session_obj_list:

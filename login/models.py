@@ -26,8 +26,8 @@ class Menu(models.Model):
 
 class UserMenu(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    user = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE)
-    menu = models.ForeignKey(Menu, blank=True, null=True, on_delete=models.CASCADE)  # This field type is a guess.
+    user = models.ForeignKey(User, blank=False, null=False, on_delete=models.CASCADE)
+    menu = models.ForeignKey(Menu, blank=False, null=False, on_delete=models.CASCADE)  # This field type is a guess.
 
     class Meta:
         db_table = 'user_menu'

@@ -36,22 +36,22 @@ class RunnerThread(threading.Thread):
                         func = getattr(api, step.step_action)
                         res, info = func(*(step.step_p1, step.step_p2))
                         case_result = case_result and res
-                        status = '0' if res else '1'
-                        ApiStepResult(batch=self.batch, case=case_res, step=step, status=status, info=info,
+                        result = '0' if res else '1'
+                        ApiStepResult(batch=self.batch, case=case_res, step=step, result=result, info=info,
                                       create_time=datetime.datetime.now()).save()
                     except Exception as e:
                         error = e.__str__()[:2047] if len(e.__str__()) > 2048 else e.__str__()
                         case_result = False
-                        ApiStepResult(batch=self.batch, case=case_res, step=step, status='1',
+                        ApiStepResult(batch=self.batch, case=case_res, step=step, result='1',
                                       info=error, create_time=datetime.datetime.now()).save()
                 else:
                     case_result = False
-                    ApiStepResult(batch=self.batch, case=case_res, step=step, status='1', info='No such keyword.',
+                    ApiStepResult(batch=self.batch, case=case_res, step=step, result='1', info='No such keyword.',
                                   create_time=datetime.datetime.now()).save()
-            case_res.status = '0' if case_result else '1'
+            case_res.result = '0' if case_result else '1'
             case_res.save()
             batch_result = batch_result and case_result
-        self.batch.status = '0' if batch_result else '1'
+        self.batch.result = '0' if batch_result else '1'
         self.batch.save()
 
 

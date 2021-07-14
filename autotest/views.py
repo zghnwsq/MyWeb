@@ -1,33 +1,24 @@
 import base64
 import json
 from django.contrib.auth.decorators import login_required
-# from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.mixins import LoginRequiredMixin
-# from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
-# from django.views import generic
-# from django.db.models import Q
-# from MyWeb import settings
 from django.views.decorators.http import require_http_methods
 from django.views.generic import ListView
 from Utils.CustomView import ListViewWithMenu
 from Utils.Paginator import *
-from Utils.hightchart import group_count_and_result_series, result_count_series
 from Utils.ReadExcel import *
-# from .models import *
 from django.http import JsonResponse, HttpResponseRedirect, FileResponse
-# from django.template.context_processors import csrf
 from .datasource import update_datasource
 from .exec_test import *
 from Utils.MyMixin import URIPermissionMixin
 from Utils.decorators import auth_check
-# import pytz
 from .form import DataSourceForm, ExecutionForm
 from .orm import *
 from django.views.decorators.csrf import csrf_exempt
 from SysAdmin.models import Sys_Config
 
-PARENT_MENU = '自动化测试'
+PARENT_MENU = r'自动化测试\\(Code\\)'
 
 
 class RunHisV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
@@ -68,7 +59,9 @@ def get_run_his(request):
         testcase=request.GET.get('testcase', None),
         result=request.GET.get('result', None),
         beg=request.GET.get('beg', None) or recent_90_days,
-        end=request.GET.get('end', None)
+        end=request.GET.get('end', None),
+        order=True,
+        eval_result=True
     ).values(
         'id', 'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'comment', 'create_time')
     count = len(run_his)
@@ -108,122 +101,6 @@ def update_runhis_comment(request):
         return JsonResponse({'msg': '测试历史记录不存在!'}, json_dumps_params={'ensure_ascii': False})
 
 
-class RunCountV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
-    template_name = 'autotest/run_count.html'
-    context_object_name = 'options'
-    parent_menu = PARENT_MENU
-
-    def get_queryset(self, **kwargs):
-        group = RunHis.objects.values('group').distinct()
-        suite = RunHis.objects.values('suite').distinct()
-        tester = RunHis.objects.values('tester').distinct()
-        context = {
-            'group': group,
-            'suite': suite,
-            'tester': tester
-        }
-        return context
-
-
-@auth_check
-@login_required
-def get_run_count(request):
-    # default get params: page=1 limit=10
-    # {
-    #     "code": 0,
-    #     "msg": "",
-    #     "count": "",
-    #     "data": "[]"
-    # }
-    page = request.GET['page'] or '0'
-    limit = request.GET['limit'] or '30'
-    # expand = ''
-    # if 'expand' in request.GET:
-    #     expand = request.GET['expand']
-    recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
-    run_his = filter_run_his(
-        group=request.GET.get('group', None),
-        suite=request.GET.get('suite', None),
-        tester=request.GET.get('tester', None),
-        beg=request.GET.get('beg', None) or recent_90_days,
-        end=request.GET.get('end', None)
-    ).values(
-        'group', 'suite', 'case', 'title', 'tester', 'result', 'report', 'create_time')
-    suite_total = get_suite_total(
-        group=request.GET.get('group', None),
-        suite=request.GET.get('suite', None)
-    )
-    run_his = run_his.values('group', 'suite', 'case', res=Min('result'))
-    suite_list = [line for line in suite_total]
-    count = len(suite_list)
-    data_table = []
-    for line in suite_list:
-        run = len(run_his.filter(group=line.group, suite=line.suite).values('case').distinct())
-        if line.count != 0:
-            executed_ratio = '%.1f%%' % (run / line.count * 100)
-            if run > line.count:
-                executed_ratio = '100.0%'
-        else:
-            executed_ratio = 'error'
-        pass_count = int(
-            run_his.filter(group=line.group, suite=line.suite).filter(res='0').values('case').distinct().count())
-        if line.count > 0 and pass_count <= line.count:
-            pass_ratio = '%.1f%%' % (pass_count / line.count * 100)
-        elif run >= pass_count > line.count:
-            pass_ratio = '100.0%'
-        elif pass_count > run:
-            pass_ratio = 'error'
-        else:
-            pass_ratio = '0.0%'
-        data_table.append({
-            'group': line.group,
-            'suite': line.suite,
-            'total': line.count,
-            'executed': run,
-            'executed_ratio': executed_ratio,
-            'pass': pass_count,
-            'pass_ratio': pass_ratio}
-        )
-    data_list = paginator(data_table, int(page), int(limit))
-    return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
-
-
-class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
-    template_name = 'autotest/run_his_chart.html'
-    context_object_name = 'data'
-    parent_menu = PARENT_MENU
-
-    def get_queryset(self, **kwargs):
-        recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
-        run_his = count_by_group(beg=recent_90_days)
-        series = group_count_and_result_series(run_his)
-        summary = result_count_series(count_by_result(beg=recent_90_days))
-        group = RunHis.objects.values('group').distinct()
-        context = {
-            'series': series,
-            'summary': summary,
-            'group': group
-        }
-        return context
-
-
-@auth_check
-@login_required
-def get_run_his_chart_data(request):
-    # 不带任何条件也默认最近90天
-    recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
-    run_his = count_by_group(
-        group=request.GET.get('group', None),
-        beg=request.GET.get('beg', None) or recent_90_days,
-        end=request.GET.get('end', None)
-    )
-    series = group_count_and_result_series(run_his)
-    summary = result_count_series(count_by_result(group=request.GET.get('group', None),
-                                                  beg=request.GET.get('beg', None) or recent_90_days,
-                                                  end=request.GET.get('end', None)))
-    return JsonResponse({'data': series, 'summary': summary})
-
-
 class ExecutionV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
     template_name = 'autotest/execution.html'
     context_object_name = 'options'
@@ -236,7 +113,7 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         suite = RegisterFunction.objects.values('suite').distinct()
         function = RegisterFunction.objects.values('func').distinct()
         # executions = Execution.objects.all().values('function__group', 'function__suite', 'method', 'ds_range',
-        #                                             'function__function', 'comment', 'status')
+        #                                             'function__function', 'comment', 'result')
         # csrf
         # csrf_token = csrf(self.request)
         csrf_token = self.request.COOKIES.get('csrftoken')

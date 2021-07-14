@@ -2,7 +2,7 @@
 from json import JSONDecodeError
 import requests
 from requests.cookies import RequestsCookieJar
-from requests.utils import dict_from_cookiejar, cookiejar_from_dict
+from requests.utils import cookiejar_from_dict
 import json
 import jsonpath
 import lxml.etree as etree

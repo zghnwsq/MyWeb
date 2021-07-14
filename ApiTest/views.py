@@ -13,8 +13,9 @@ from .JobRunner import api_job_run
 from .form import *
 from .models import *
 from Utils.JsonEncoder import DateEncoder
+from django.db import transaction
 
-PARENT_MENU = '接口自动化测试'
+PARENT_MENU = r'接口自动化\\(Codeless\\)'
 
 
 class ApiGroupV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
@@ -166,8 +167,15 @@ def del_case(request):
     if form.is_valid():
         case_id = form.cleaned_data.get('case_id')
         if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MNAGER_GROUPS:
-            ApiCase.objects.get(id=case_id).delete()
-            msg = '更新成功.'
+            case = ApiCase.objects.filter(id=case_id)
+            if case:
+                case_steps = ApiCaseStep.objects.filter(case=case[0])
+                if case_steps:
+                    case_steps.delete()
+                case.delete()
+                msg = '删除成功.'
+            else:
+                msg = '用例不存在.'
         else:
             msg = 'ERROR: 当前用户没有删除此用例权限.'
     else:
@@ -245,6 +253,49 @@ def edit_case(request):
 
 @auth_check
 @login_required
+@require_http_methods(['POST'])
+def duplicate_case(request):
+    req_json = json.loads(request.body)
+    print(req_json)
+    if 'cases' in req_json.keys():
+        cases = req_json['cases']
+        tester = request.user
+        with transaction.atomic():
+            # 事务回滚点
+            save_id = transaction.savepoint()
+            try:
+                count = 0
+                for case in cases:
+                    target_case = ApiCase.objects.filter(id=case['id'])
+                    if target_case:
+                        copy_case = ApiCase(group=target_case[0].group, suite=target_case[0].suite,
+                                            title=target_case[0].title + ' 复写', author=tester)
+                        copy_case.save()
+                        target_case_step = ApiCaseStep.objects.filter(case=target_case[0]).order_by('step_order')
+                        if target_case_step:
+                            steps = []
+                            for step in target_case_step:
+                                steps.append(ApiCaseStep(case=copy_case, step_action=step.step_action, step_p1=step.step_p1,
+                                                         step_p2=step.step_p2, step_p3=step.step_p3,
+                                                         step_order=step.step_order,
+                                                         title=step.title))
+                            res = ApiCaseStep.objects.bulk_create(steps)
+                            count += len(res)
+                info = f'共复写{len(cases)}条用例, {count}行测试步骤.'
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                msg = '复写用例失败! ' + e.__str__()
+            else:
+                # 提交事务
+                transaction.savepoint_commit(save_id)
+                msg = '复写用例成功!' + info
+    else:
+        msg = '请求内容不正确!'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
 def get_steps(request):
     case_id = request.GET.get('case_id', '')
     # 前台分页
@@ -317,7 +368,7 @@ def get_result(request):
     limit = request.GET.get('limit', '30')
     group = request.GET.get('group', None)
     suite = request.GET.get('suite', None)
-    batch = ApiTestBatch.objects.all().values('id', 'tester__username', 'status', 'create_time').order_by('-create_time')
+    batch = ApiTestBatch.objects.all().values('id', 'tester__username', 'result', 'create_time').order_by('-create_time')
     if group:
         batch = batch.filter(apicaseresult__case__group=group)
     if suite:
@@ -334,7 +385,7 @@ def get_result(request):
 def get_case_result(request):
     batch_id = request.GET.get('batch', None)
     if batch_id:
-        case_result = ApiCaseResult.objects.filter(batch=batch_id).values('id', 'batch', 'case__title', 'status', 'info',
+        case_result = ApiCaseResult.objects.filter(batch=batch_id).values('id', 'batch', 'case__title', 'result', 'info',
                                                                           'create_time').order_by('id')
         return JsonResponse({"code": 0, "msg": "", "count": len(case_result), "data": list(case_result)})
     else:
@@ -349,7 +400,7 @@ def get_steps_result(request):
         step_result = ApiStepResult.objects.filter(case=case_result_id).values('batch', 'case__case__title',
                                                                                         'step__step_action',
                                                                                         'step__title',
-                                                                                        'status', 'info',
+                                                                                        'result', 'info',
                                                                                         'create_time').order_by('id')
         return render(request, 'ApiTest/api_step_result.html', {'steps': json.dumps(list(step_result), cls=DateEncoder)})
     else:

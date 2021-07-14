@@ -40,13 +40,19 @@
                     </div>
                 </div>
                 <div class="layui-inline">
-                <div class="layui-input-inline" style="margin-left: 10em">
-                    <button class="layui-btn layui-inline layui-btn-normal" id="new">
-                        <i class="layui-icon layui-icon-add-circle-fine"></i>
-                        新增用例
-                    </button>
+                    <div class="layui-input-inline" style="margin-left: 2em">
+                        <button class="layui-btn layui-inline layui-btn-normal" id="new">
+                            <i class="layui-icon layui-icon-add-circle-fine"></i>
+                            新增用例
+                        </button>
+                    </div>
+                    <div class="layui-input-inline" style="margin-left: 0">
+                        <button class="layui-btn layui-inline layui-btn-normal" id="duplicate">
+                            <i class="layui-icon layui-icon-add-circle-fine"></i>
+                            复制选中用例
+                        </button>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
     </div>
@@ -96,6 +102,7 @@
                 }
                 , even: true
                 , cols: [[
+                    {type: 'checkbox', fixed: 'left'},
                     {field: 'group__group', title: 'Test Group', sort: true, align: 'center'},
                     {field: 'suite', title: 'Suite', align: 'center', edit: 'text', sort: true},
                     {field: 'title', title: 'Title', align: 'center', edit: 'text', sort: true},
@@ -139,7 +146,7 @@
                 switch (layEvent){
                     case 'update':
                         $.ajax({
-                            url: "/apitest/job/exec/"
+                            url: "/apitest/case/update/"
                             , type: "POST"
                             , contentType: 'application/json; charset=utf-8'
                             , beforeSend: function (xhr) {
@@ -162,26 +169,38 @@
                         });
                         break;
                     case 'del':
-                        $.ajax({
-                            url: "/apitest/case/del/"
-                            , type: "POST"
-                            , contentType: 'application/json; charset=utf-8'
-                            , beforeSend: function (xhr) {
-                                xhr.setRequestHeader("X-CSRFToken", csrf);
-                            }
-                            , data: JSON.stringify({case_id: data.id})
-                            , success: function (data) {
-                                layer.open({
-                                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                    , type: 1
-                                    , title: '提示'
-                                    , time: 5000
-                                    , btn: '确定'
-                                    , yes: function (index) {
-                                        layer.close(index);
+                        layer.open({
+                            content: '<div style="padding: 20px 2em;">是否确认删除?</div>'
+                            , type: 1
+                            , title: '提示'
+                            , btn: ['确定', '返回']
+                            , yes: function (index) {
+                                $.ajax({
+                                    url: "/apitest/case/del/"
+                                    , type: "POST"
+                                    , contentType: 'application/json; charset=utf-8'
+                                    , beforeSend: function (xhr) {
+                                        xhr.setRequestHeader("X-CSRFToken", csrf);
+                                    }
+                                    , data: JSON.stringify({case_id: data.id})
+                                    , success: function (data) {
+                                        layer.open({
+                                            content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                            , type: 1
+                                            , title: '提示'
+                                            , time: 5000
+                                            , btn: '确定'
+                                            , yes: function (idx) {
+                                                layer.close(idx);
+                                            }
+                                        });
+                                        active['reload'].call(this);
                                     }
                                 });
-                                active['reload'].call(this);
+                                layer.close(index);
+                            }
+                            , btn2: function (index) {
+                                layer.close(index);
                             }
                         });
                         break;
@@ -295,6 +314,47 @@
                         }
                     });
                 });
+            });
+            {# 复写 #}
+            $('#duplicate').on('click', function () {
+                let checkStatus = table.checkStatus('case_table');
+                let cases = checkStatus.data;
+                const csrf = $("#csrf").val();
+                if(cases.length < 1){
+                    layer.open({
+                        content: '<div style="padding: 20px 2em;">请选择用例!</div>'
+                        , type: 1
+                        , title: '提示'
+                        , time: 5000
+                        , btn: '确定'
+                        , yes: function (index) {
+                            layer.close(index);
+                        }
+                    });
+                }else {
+                    $.ajax({
+                        url: "/apitest/case/duplicate/"
+                        , type: "POST"
+                        , contentType: 'application/json; charset=utf-8'
+                        , beforeSend: function (xhr) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf);
+                        }
+                        , data: JSON.stringify({cases: cases})
+                        , success: function (data) {
+                            layer.open({
+                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                , type: 1
+                                , title: '提示'
+                                , time: 5000
+                                , btn: '确定'
+                                , yes: function (index) {
+                                    layer.close(index);
+                                }
+                            });
+                            active['reload'].call(this);
+                        }
+                    });
+                }
             });
 
         }()

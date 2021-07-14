@@ -1,5 +1,4 @@
 from django.urls import path
-from MyWeb import settings
 from . import views
 
 app_name = 'ApiTest'
@@ -11,6 +10,7 @@ urlpatterns = [
     path('group/new/', views.new_group, name='new_group'),
     path('cases/', views.ApiCaseV.as_view(), name='api_case'),
     path('cases/get/', views.get_cases, name='get_case'),
+    path('case/duplicate/', views.duplicate_case, name='duplicate_case'),
     path('case/update/', views.update_case, name='update_case'),
     path('case/del/', views.del_case, name='del_case'),
     path('case/new/', views.new_case, name='new_case'),

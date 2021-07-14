@@ -3,15 +3,13 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
 from django.contrib.auth.views import LoginView
 from django.views import generic
+from DataPanel.orm import count_by_group, result_count, count_api_by_group
 from Utils.CustomView import ListViewWithMenu
 from Utils.MyMixin import URIPermissionMixin
 from Utils.hightchart import group_count_series
-from autotest.orm import count_by_group, result_count
 from .form import LoginForm, PersonalInfoForm, ChangePasswordFrom
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -136,9 +134,11 @@ class IndexV(LoginRequiredMixin, generic.ListView):
         today = datetime.datetime.now().strftime('%Y-%m-%d')
         seven_day = (datetime.datetime.now()+datetime.timedelta(days=-6)).strftime('%Y-%m-%d')
         run_his = count_by_group(beg=seven_day, end=today)
+        api_run_his = count_api_by_group(beg=seven_day, end=today).values('group', 'time', 'count')
         series = group_count_series(run_his)
+        api_series = group_count_series(api_run_his)
         res_count = result_count(beg=seven_day, end=today)
-        context['data'] = {'series': series, 'result': res_count}
+        context['data'] = {'series': series + api_series, 'result': res_count}
         return context
 
     def get_queryset(self, **kwargs):

@@ -166,8 +166,8 @@
                     , cols: [[ {# //表头 #}
                         {field: 'group', title: 'TestGroup', width: '10%', sort: true, fixed: 'left', align: 'center'}
                         , {field: 'suite', title: 'TestSuit', width: '10%', sort: true, align: 'center'}
-                        , {field: 'case', title: 'TestCase', minWidth: 100, sort: true, align: 'center'}
-                        , {field: 'title', title: 'Title', minWidth: 280, align: 'center'}
+                        , {field: 'case', title: 'TestCase', minWidth: 200, sort: true, align: 'center'}
+                        , {field: 'title', title: 'Title', minWidth: 240, align: 'center'}
                         , {field: 'tester', title: 'Tester', width: '6%', align: 'center'}
                         , {
                             field: 'result', title: 'Result', width: '7%', sort: true, align: 'center', templet: function (d) {
@@ -189,7 +189,7 @@
                             }
                         }
                         , {
-                            field: '', title: 'Action', width: '9%', align: 'center', toolbar: '#actions'
+                            field: '', title: 'Action', width: '9%', align: 'center', toolbar: '#actions', fixed: 'right'
                         }
                     ]]
                     , done: function (res, curr, count) {

@@ -12,6 +12,12 @@
         .layui-nav {
             border-radius: 0;
         }
+        .layui-nav-tree .layui-nav-more {
+            right: 10px;
+        }
+        .layui-nav-tree .layui-nav-item>a {
+            padding-left: 10px;
+        }
     </style>
 </head>
 <body class="layui-layout-body">
@@ -85,7 +91,7 @@
 
     {#<!-- body -->#}
     {# 修改原始样式,不出现滚动条,和footer配合 #}
-    <div class="layui-body" style="bottom: 20px">
+    <div class="layui-body" style="bottom: 20px;">
         {% block content %}
         {% endblock %}
     </div>

@@ -1,13 +1,14 @@
 import datetime
-from django.db.models import Min, Count, CharField, F, Q
-from django.db.models.functions import TruncDate, Cast
-# from pytz import utc
+from django.db.models import F
 from .models import *
 import copy
 
 
-def filter_run_his(tester=None, group=None, suite=None, testcase=None, result=None, beg=None, end=None):
-    run_his = RunHis.objects.all().order_by('-create_time')
+def filter_run_his(tester=None, group=None, suite=None, testcase=None, result=None, beg=None, end=None, eval_result=None, order=None):
+    if order:
+        run_his = RunHis.objects.all().order_by('-create_time')
+    else:
+        run_his = RunHis.objects.all()
     if tester:
         tester = str(tester).strip()
         run_his = run_his.filter(tester=tester)
@@ -38,22 +39,15 @@ def filter_run_his(tester=None, group=None, suite=None, testcase=None, result=No
             edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
         run_his = run_his.filter(create_time__lte=edge)
     # 时间转字符串函数仅支持sqlite3
-    run_his = run_his.extra(
-        select={'result': 'select description from res_dict where res_dict.result=run_his.result'})
+    if eval_result:
+        run_his = run_his.extra(
+            select={'result': 'select description from res_dict where res_dict.result=run_his.result'})
     # .extra(select={'create_time': "DATE_FORMAT(create_time, %s)"}, select_params=['%Y-%m-%d %H:%i:%s'])
     return run_his
 
 
-def get_suite_total(group=None, suite=None):
-    suite_total = SuiteCount.objects.all().order_by('group', 'suite')
-    if group:
-        suite_total = suite_total.filter(group=group)
-    if suite:
-        suite_total = suite_total.filter(suite=suite)
-    return suite_total
-
-
 def filter_runhis_by_group_and_time(group=None, beg=None, end=None):
+    # 废弃
     run_his = RunHis.objects.all()
     if group:
         run_his = run_his.filter(group=group)
@@ -64,50 +58,6 @@ def filter_runhis_by_group_and_time(group=None, beg=None, end=None):
         edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
         run_his = run_his.filter(create_time__lte=edge)
     return run_his
-
-
-def count_by_group(group=None, beg=None, end=None):
-    run_his = filter_runhis_by_group_and_time(group=group, beg=beg, end=end)
-    run_his = run_his.values('group').annotate(
-        time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
-    return run_his
-
-
-def count_by_result(group=None, beg=None, end=None):
-    """
-        根据查询条件，按执行结果、日期分组统计次数
-    :param group:
-    :param beg:
-    :param end:
-    :return:
-    """
-    run_his = filter_runhis_by_group_and_time(group=group, beg=beg, end=end)
-    run_his_extra = run_his.annotate(time=Cast(TruncDate('create_time'), output_field=CharField())).extra(
-        select={'res_text': 'select description from res_dict where res_dict.result=run_his.result'})
-    # 确保每个日期都有成功、失败、错误三类,
-    # res_text=通过,增加succ数据
-    # res_text=失败,增加fail
-    # res_text=错误,增加error
-    run_his = run_his_extra.values('result', 'time', 'res_text').annotate(succ=Count('result', Q(result='0')),
-                                                                          fail=Count('result', Q(result='1')),
-                                                                          error=Count('result', Q(result='2')))
-    return run_his
-
-
-def result_count(group=None, beg=None, end=None):
-    run_his = filter_runhis_by_group_and_time(group=group, beg=beg, end=end)
-    pass_count = len(run_his.filter(result='0'))
-    fail_count = len(run_his.filter(result='1'))
-    error_count = len(run_his.filter(result='2'))
-    total = pass_count + fail_count + error_count
-    if total > 0:
-        pass_pec = pass_count / total
-        fail_pec = fail_count / total
-        error_pec = error_count / total
-    else:
-        pass_pec, fail_pec, error_pec = 0.0, 0.0, 0.0
-    return {'pass': pass_count, 'fail': fail_count, 'error': error_count, 'pass_pec': pass_pec, 'fail_pec': fail_pec,
-            'error_pec': error_pec}
 
 
 def filter_jobs(group=None, suite=None, func=None):

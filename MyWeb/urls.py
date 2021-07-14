@@ -25,4 +25,5 @@ urlpatterns = [
     path('autotest/', include('autotest.urls', namespace='autotest')),
     path('sysadmin/', include('SysAdmin.urls', namespace='sysadmin')),
     path('apitest/', include('ApiTest.urls', namespace='apitest')),
+    path('datapanel/', include('DataPanel.urls', namespace='datapanel')),
 ]

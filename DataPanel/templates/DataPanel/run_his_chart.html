@@ -43,15 +43,15 @@
             </div>
         </div>
     </div>
-    <div id="summary" style="width: 95%"></div>
-    <div id="chart" style="width: 95%"></div>
+    <div id="summary" style="width: 98%"></div>
+    <div id="chart" style="width: 98%"></div>
 {% endblock %}
 {% load static %}
 {% block script %}
-    <script src="{% static 'highcharts.js' %}"></script>
+    <script src="{% static 'hightcharts/highcharts.js' %}"></script>
     <script src="{% static 'modules/exporting.js' %}"></script>
     <script src="{% static 'modules/offline-exporting.js' %}"></script>
-    <script src="{% static 'highcharts-zh_CN.js' %}"></script>
+    <script src="{% static 'hightcharts/highcharts-zh_CN.js' %}"></script>
     <script>
         const time_offset = new Date().getTimezoneOffset() * 60 * 1000; {# 与UTC相差毫秒, 分钟*60*1000 #}
 
@@ -335,7 +335,7 @@
                 let end = $('#to').val();
                 group = $('#group').val();
                 $.ajax({
-                    url: '/autotest/run_his_chart/data',
+                    url: '/datapanel/run_his_chart/data',
                     type: 'GET',
                     data: {
                         group: group,

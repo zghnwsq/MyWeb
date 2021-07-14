@@ -50,7 +50,7 @@ class ApiCaseStep(models.Model):
 class ApiTestBatch(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     tester = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
-    status = models.CharField(max_length=1, null=True)
+    result = models.CharField(max_length=1, null=True)
     create_time = models.DateTimeField(auto_created=True)
 
     class Meta:
@@ -61,7 +61,7 @@ class ApiCaseResult(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     batch = models.ForeignKey(ApiTestBatch, null=False, on_delete=models.CASCADE)
     case = models.ForeignKey(ApiCase, null=False, on_delete=models.CASCADE)
-    status = models.CharField(max_length=1, null=True)
+    result = models.CharField(max_length=1, null=True)
     info = models.CharField(max_length=512, null=True)
     create_time = models.DateTimeField(auto_created=True)
 
@@ -74,7 +74,7 @@ class ApiStepResult(models.Model):
     batch = models.ForeignKey(ApiTestBatch, null=False, on_delete=models.CASCADE)
     case = models.ForeignKey(ApiCaseResult, null=False, on_delete=models.CASCADE)
     step = models.ForeignKey(ApiCaseStep, null=False, on_delete=models.CASCADE)
-    status = models.CharField(max_length=1)
+    result = models.CharField(max_length=1)
     info = models.CharField(max_length=2048, null=True)
     create_time = models.DateTimeField(auto_created=True)
 

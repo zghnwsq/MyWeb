@@ -11,7 +11,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label ">Group：</label>
                     <div class="layui-input-inline">
-                        <select name="group" id="group">
+                        <select name="group" id="group" lay-search="">
                             <option value=""></option>
                             {% if data.group %}
                                 {% for grp in data.group %}
@@ -323,10 +323,13 @@
             add_chart_series(chart, seri);
 
             $('#reset').on('click', function () {
+                let _90DaysBefore = new Date().getTime() - 90 * 24 * 60 * 60 * 1000;
+                const now = new Date();
+                const _90Before= new Date(_90DaysBefore);
                 form.val('search', {
                     "group": 1
-                    , "from": ""
-                    , "to": ""
+                    , "from": _90Before.toLocaleDateString().replaceAll("/", "-")
+                    , "to": now.toLocaleDateString().replaceAll("/", "-")
                 });
             });
 

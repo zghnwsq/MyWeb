@@ -28,7 +28,7 @@ class RunnerThread(threading.Thread):
             steps = ApiCaseStep.objects.filter(case__id=api_case[0].id).order_by('step_order')
             if not steps or not case:
                 continue
-            case_res = ApiCaseResult(batch=self.batch, case=api_case[0], create_time=datetime.datetime.now())
+            case_res = ApiCaseResult(batch=self.batch, case=api_case[0], create_time=datetime.datetime.now(), result='9')
             case_res.save()
             for step in steps:
                 if hasattr(api, step.step_action):
@@ -56,7 +56,7 @@ class RunnerThread(threading.Thread):
 
 
 def api_job_run(cases, tester, debug=False):
-    batch = ApiTestBatch(tester=tester, create_time=datetime.datetime.now())
+    batch = ApiTestBatch(tester=tester, create_time=datetime.datetime.now(), result='9')
     batch.save()
     thd = RunnerThread(cases, batch, debug=debug)
     thd.start()

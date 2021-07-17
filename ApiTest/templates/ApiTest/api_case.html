@@ -10,7 +10,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label ">Group：</label>
                     <div class="layui-input-inline">
-                        <select name="group" id="group" lay-search>
+                        <select name="group" id="group" lay-search="">
                             <option value=""></option>
                             {% if options.group %}
                                 {% for grp in options.group %}
@@ -19,11 +19,9 @@
                             {% endif %}
                         </select>
                     </div>
-                </div>
-                <div class="layui-inline">
                     <label class="layui-form-label ">Suite：</label>
                     <div class="layui-input-inline">
-                        <select name="suite" id="suite" lay-search>
+                        <select name="suite" id="suite" lay-search="">
                             <option value=""></option>
                             {% if options.suite %}
                                 {% for s in options.suite %}
@@ -34,22 +32,14 @@
                     </div>
                 </div>
                 <div class="layui-inline">
-                    <div class="layui-input-inline" style="">
+                    <div class="layui-input-inline">
                         <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
                         <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
                     </div>
-                </div>
-                <div class="layui-inline">
-                    <div class="layui-input-inline" style="margin-left: 2em">
+                    <div class="layui-input-inline">
                         <button class="layui-btn layui-inline layui-btn-normal" id="new">
                             <i class="layui-icon layui-icon-add-circle-fine"></i>
                             新增用例
-                        </button>
-                    </div>
-                    <div class="layui-input-inline" style="margin-left: 0">
-                        <button class="layui-btn layui-inline layui-btn-normal" id="duplicate">
-                            <i class="layui-icon layui-icon-add-circle-fine"></i>
-                            复制选中用例
                         </button>
                     </div>
                 </div>
@@ -67,6 +57,16 @@
         <a class="layui-btn layui-btn-xs" lay-event="update">更新</a>
         <a class="layui-btn layui-btn-xs" lay-event="edit">编辑步骤</a>
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+    <script type="text/html" id="myBar">
+        <div>
+            <button type="button" lay-submit class="layui-btn layui-btn-sm" lay-filter="duplicate"><i
+                    class="layui-icon layui-icon-add-circle-fine"></i>复制选中用例
+            </button>
+            <button type="button" lay-submit class="layui-btn layui-btn-danger layui-btn-sm" lay-filter="batch_delete">
+                <i class="layui-icon layui-icon-delete"></i>批量删除
+            </button>
+        </div>
     </script>
     <script>
         function confirmAgain(layer, active, that) {
@@ -101,11 +101,12 @@
                     limit: 10
                 }
                 , even: true
+                , toolbar: '#myBar'
                 , cols: [[
                     {type: 'checkbox', fixed: 'left'},
                     {field: 'group__group', title: 'Test Group', sort: true, align: 'center'},
                     {field: 'suite', title: 'Suite', align: 'center', edit: 'text', sort: true},
-                    {field: 'title', title: 'Title', align: 'center', edit: 'text', sort: true},
+                    {field: 'title', title: 'Case Title', align: 'center', edit: 'text', minWidth: 400, sort: true},
                     {field: 'author__username', title: 'Author', align: 'center', sort: true},
                     {field: '', title: 'Action', align: 'center', toolbar: '#operations'}
                 ]]
@@ -123,6 +124,44 @@
                             suite: suite
                         }
                         , done: function (res, curr, count) {
+                        }
+                    });
+                },
+                del_cases: function (csrf, cases) {
+                    layer.open({
+                        content: '<div style="padding: 20px 2em;">是否确认删除?</div>'
+                        , type: 1
+                        , title: '提示'
+                        , btn: ['确定', '返回']
+                        , yes: function (index) {
+                            let loading = layer.load(1);
+                            $.ajax({
+                                url: "/apitest/case/del/"
+                                , type: "POST"
+                                , contentType: 'application/json; charset=utf-8'
+                                , beforeSend: function (xhr) {
+                                    xhr.setRequestHeader("X-CSRFToken", csrf);
+                                }
+                                , data: JSON.stringify({cases: cases})
+                                , success: function (data) {
+                                    layer.close(loading);
+                                    layer.open({
+                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                        , type: 1
+                                        , title: '提示'
+                                        , time: 5000
+                                        , btn: '确定'
+                                        , yes: function (idx) {
+                                            layer.close(idx);
+                                        }
+                                    });
+                                    active['reload'].call(this);
+                                }
+                            });
+                            layer.close(index);
+                        }
+                        , btn2: function (index) {
+                            layer.close(index);
                         }
                     });
                 }
@@ -152,7 +191,7 @@
                             , beforeSend: function (xhr) {
                                 xhr.setRequestHeader("X-CSRFToken", csrf);
                             }
-                            , data: JSON.stringify({case_id: data.id, suite: data.suite, title: data.title})
+                            , data: JSON.stringify({id: data.id, suite: data.suite, title: data.title})
                             , success: function (data) {
                                 layer.open({
                                     content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
@@ -169,51 +208,19 @@
                         });
                         break;
                     case 'del':
-                        layer.open({
-                            content: '<div style="padding: 20px 2em;">是否确认删除?</div>'
-                            , type: 1
-                            , title: '提示'
-                            , btn: ['确定', '返回']
-                            , yes: function (index) {
-                                $.ajax({
-                                    url: "/apitest/case/del/"
-                                    , type: "POST"
-                                    , contentType: 'application/json; charset=utf-8'
-                                    , beforeSend: function (xhr) {
-                                        xhr.setRequestHeader("X-CSRFToken", csrf);
-                                    }
-                                    , data: JSON.stringify({case_id: data.id})
-                                    , success: function (data) {
-                                        layer.open({
-                                            content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                            , type: 1
-                                            , title: '提示'
-                                            , time: 5000
-                                            , btn: '确定'
-                                            , yes: function (idx) {
-                                                layer.close(idx);
-                                            }
-                                        });
-                                        active['reload'].call(this);
-                                    }
-                                });
-                                layer.close(index);
-                            }
-                            , btn2: function (index) {
-                                layer.close(index);
-                            }
-                        });
+                        active['del_cases'].call(this, csrf, [{id: data.id}]);
+                        {#active['reload'].call(this);#}
                         break;
-                        case 'edit':
-                            $.ajax({
+                    case 'edit':
+                        $.ajax({
                             url: "/apitest/case/edit/"
                             , type: "GET"
                             , data: {case_id: data.id}
                             , success: function (ret) {
-                                if(ret.indexOf('ERROR') === -1) {
+                                if (ret.indexOf('ERROR') === -1) {
                                     layer.open({
                                         type: 1
-                                        , title: '编辑测试步骤: ' + data.title
+                                        , title: ['编辑测试步骤: ' + data.title, 'font-size:18px;']
                                         , content: ret
                                         , area: ['1000px', '600px']
                                         , maxmin: true
@@ -243,17 +250,17 @@
                                             return false;
                                         }
                                     });
-                                }else {
+                                } else {
                                     layer.open({
-                                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                    , type: 1
-                                    , title: '提示'
-                                    , time: 5000
-                                    , btn: '确定'
-                                    , yes: function (index) {
-                                        layer.close(index);
-                                    }
-                                });
+                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                        , type: 1
+                                        , title: '提示'
+                                        , time: 5000
+                                        , btn: '确定'
+                                        , yes: function (index) {
+                                            layer.close(index);
+                                        }
+                                    });
                                 }
                             }
                         });
@@ -286,7 +293,6 @@
                                 , contentType: 'application/json; charset=utf-8'
                                 , data: JSON.stringify({group: group, suite: case_suite, title: title})
                                 , success: function (data, textStatus) {
-                                    {#console.log(data.msg);#}
                                     layer.open({
                                         content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
                                         , type: 1
@@ -309,14 +315,12 @@
                         , btn2: function (index, layero) {
                             {# 关闭按钮回调 #}
                             layer.close(index);
-                            {# 表格重载 刷新结果 #}
-                            {#active['reload'].call(this);#}
                         }
                     });
                 });
             });
             {# 复写 #}
-            $('#duplicate').on('click', function () {
+            form.on('submit(duplicate)', function () {
                 let checkStatus = table.checkStatus('case_table');
                 let cases = checkStatus.data;
                 const csrf = $("#csrf").val();
@@ -332,6 +336,7 @@
                         }
                     });
                 }else {
+                    let loading = layer.load(1);
                     $.ajax({
                         url: "/apitest/case/duplicate/"
                         , type: "POST"
@@ -341,6 +346,7 @@
                         }
                         , data: JSON.stringify({cases: cases})
                         , success: function (data) {
+                            layer.close(loading);
                             layer.open({
                                 content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
                                 , type: 1
@@ -356,6 +362,27 @@
                     });
                 }
             });
+            {#  批量删除  #}
+            form.on('submit(batch_delete)', function () {
+                let checkStatus = table.checkStatus('case_table');
+                let cases = checkStatus.data;
+                const csrf = $("#csrf").val();
+                console.log(cases);
+                if(cases.length < 1){
+                    layer.open({
+                        content: '<div style="padding: 20px 2em;">请选择用例!</div>'
+                        , type: 1
+                        , title: '提示'
+                        , time: 5000
+                        , btn: '确定'
+                        , yes: function (index) {
+                            layer.close(index);
+                        }
+                    });
+                } else {
+                    active['del_cases'].call(this, csrf, cases);
+                }
+            })
 
         }()
     </script>

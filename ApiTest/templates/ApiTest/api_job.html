@@ -10,7 +10,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label ">Group：</label>
                     <div class="layui-input-inline">
-                        <select name="group" id="group" lay-search>
+                        <select name="group" id="group" lay-search="">
                             <option value=""></option>
                             {% if options.group %}
                                 {% for grp in options.group %}
@@ -23,7 +23,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label ">Suite：</label>
                     <div class="layui-input-inline">
-                        <select name="suite" id="suite" lay-search>
+                        <select name="suite" id="suite" lay-search="">
                             <option value=""></option>
                             {% if options.suite %}
                                 {% for s in options.suite %}
@@ -84,8 +84,8 @@
                 , cols: [[
                     {type: 'checkbox', fixed: 'left'},
                     {field: 'group__group', title: 'Test Group', sort: true, align: 'center'},
-                    {field: 'suite', title: 'Suite', align: 'center', edit: 'text', sort: true},
-                    {field: 'title', title: 'Title', align: 'center', edit: 'text', sort: true},
+                    {field: 'suite', title: 'Suite', align: 'center', sort: true},
+                    {field: 'title', title: 'Title', align: 'center', sort: true},
                     {field: 'author__username', title: 'Author', align: 'center', sort: true},
                 ]]
             });

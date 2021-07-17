@@ -1,4 +1,6 @@
+import datetime
 import json
+import time
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
@@ -143,7 +145,7 @@ def update_case(request):
     req_json = json.loads(request.body)
     form = CaseForm(req_json)
     if form.is_valid():
-        case_id = form.cleaned_data.get('case_id')
+        case_id = form.cleaned_data.get('id')
         suite = form.cleaned_data.get('suite')
         title = form.cleaned_data.get('title')
         if not suite or not title:
@@ -163,23 +165,40 @@ def update_case(request):
 @login_required
 def del_case(request):
     req_json = json.loads(request.body)
-    form = CaseForm(req_json)
-    if form.is_valid():
-        case_id = form.cleaned_data.get('case_id')
-        if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MNAGER_GROUPS:
-            case = ApiCase.objects.filter(id=case_id)
-            if case:
-                case_steps = ApiCaseStep.objects.filter(case=case[0])
-                if case_steps:
-                    case_steps.delete()
-                case.delete()
-                msg = '删除成功.'
-            else:
-                msg = '用例不存在.'
-        else:
-            msg = 'ERROR: 当前用户没有删除此用例权限.'
+    msg = ''
+    print(req_json)
+    beg = time.time()
+    if 'cases' in req_json.keys():
+        succ = []
+        not_exists = []
+        no_right = []
+        for case in req_json['cases']:
+            form = CaseForm(case)
+            if form.is_valid():
+                case_id = form.cleaned_data.get('id')
+                if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MNAGER_GROUPS:
+                    case = ApiCase.objects.filter(id=case_id)
+                    if case:
+                        # on_delete=models.CASCADE 自动删除关联记录
+                        # case_steps = ApiCaseStep.objects.filter(case=case[0])
+                        # if case_steps:
+                        #     case_steps.delete()
+                        case.delete()
+                        succ.append(case_id)
+                    else:
+                        not_exists.append(case_id)
+                else:
+                    no_right.append(case_id)
+        if succ:
+            msg += f'Case_id: {succ}  删除成功. '
+        if not_exists:
+            msg += f'Case_id: {not_exists}  用例不存在. '
+        if no_right:
+            msg += f'ERROR: 当前用户没有删除此用例权限, case_id: {no_right}. '
     else:
         msg = 'ERROR: 请求数据有误.'
+    end = time.time()
+    print(f'删除用时: {end - beg} s.')
     return JsonResponse({'msg': msg})
 
 
@@ -257,6 +276,7 @@ def edit_case(request):
 def duplicate_case(request):
     req_json = json.loads(request.body)
     print(req_json)
+    beg = time.time()
     if 'cases' in req_json.keys():
         cases = req_json['cases']
         tester = request.user
@@ -271,14 +291,17 @@ def duplicate_case(request):
                         copy_case = ApiCase(group=target_case[0].group, suite=target_case[0].suite,
                                             title=target_case[0].title + ' 复写', author=tester)
                         copy_case.save()
-                        target_case_step = ApiCaseStep.objects.filter(case=target_case[0]).order_by('step_order')
+                        target_case_step = ApiCaseStep.objects.filter(case=target_case[0]).values('step_action',
+                                                                                                  'step_p1', 'step_p2',
+                                                                                                  'step_p3',
+                                                                                                  'step_order', 'title')
                         if target_case_step:
                             steps = []
                             for step in target_case_step:
-                                steps.append(ApiCaseStep(case=copy_case, step_action=step.step_action, step_p1=step.step_p1,
-                                                         step_p2=step.step_p2, step_p3=step.step_p3,
-                                                         step_order=step.step_order,
-                                                         title=step.title))
+                                steps.append(ApiCaseStep(case=copy_case, step_action=step['step_action'], step_p1=step['step_p1'],
+                                                         step_p2=step['step_p2'], step_p3=step['step_p3'],
+                                                         step_order=step['step_order'],
+                                                         title=step['title']))
                             res = ApiCaseStep.objects.bulk_create(steps)
                             count += len(res)
                 info = f'共复写{len(cases)}条用例, {count}行测试步骤.'
@@ -291,6 +314,8 @@ def duplicate_case(request):
                 msg = '复写用例成功!' + info
     else:
         msg = '请求内容不正确!'
+    end = time.time()
+    print(f'复写用时: {end - beg} s.')
     return JsonResponse({'msg': msg})
 
 
@@ -368,11 +393,29 @@ def get_result(request):
     limit = request.GET.get('limit', '30')
     group = request.GET.get('group', None)
     suite = request.GET.get('suite', None)
-    batch = ApiTestBatch.objects.all().values('id', 'tester__username', 'result', 'create_time').order_by('-create_time')
+    recent_90_days = datetime.datetime.strftime(datetime.datetime.now() + datetime.timedelta(days=-90), '%Y-%m-%d')
+    beg = request.GET.get('beg', None) or recent_90_days
+    end = request.GET.get('end', None)
+    batch = ApiTestBatch.objects.all()
+    if beg:
+        beg = str(beg).strip()
+        if ':' in beg:
+            edge = datetime.datetime.strptime(beg, '%Y-%m-%d %H:%M:%S')
+        else:
+            edge = datetime.datetime.strptime(f'{beg} 00:00:00', '%Y-%m-%d %H:%M:%S')
+        batch = batch.filter(create_time__gte=edge)
+    if end:
+        end = str(end).strip()
+        if ':' in end:
+            edge = datetime.datetime.strptime(end, '%Y-%m-%d %H:%M:%S')
+        else:
+            edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
+        batch = batch.filter(create_time__lte=edge)
     if group:
         batch = batch.filter(apicaseresult__case__group=group)
     if suite:
         batch = batch.filter(apicaseresult__case__suite=suite)
+    batch = batch.values('id', 'tester__username', 'result', 'create_time').order_by('-create_time')
     if len(batch) > 0:
         data_list = paginator(batch, int(page), int(limit))
     else:
@@ -405,6 +448,3 @@ def get_steps_result(request):
         return render(request, 'ApiTest/api_step_result.html', {'steps': json.dumps(list(step_result), cls=DateEncoder)})
     else:
         return JsonResponse({"code": 0, "msg": "请求参数不正确!", "count": 0, "data": []})
-
-
-

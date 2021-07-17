@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Min
 from django.http import JsonResponse
+
+from ApiTest.models import ApiGroup
 from DataPanel.orm import get_suite_total, filter_api_run_his, count_by_group, count_api_by_group, count_by_result, \
     count_api_by_result
 from Utils.CustomView import ListViewWithMenu
@@ -23,10 +25,11 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
 
     def get_queryset(self, **kwargs):
         group = RunHis.objects.values('group').distinct()
+        api_group = ApiGroup.objects.values('group').distinct()
         suite = RunHis.objects.values('suite').distinct()
         tester = RunHis.objects.values('tester').distinct()
         context = {
-            'group': group,
+            'group': group.union(api_group, all=True),
             'suite': suite,
             'tester': tester
         }
@@ -63,8 +66,12 @@ def get_run_count(request):
     )
     run_his = run_his.values('group', 'suite', 'case', res=Min('result'))
     # 增加API测试用例统计
-    api_run_his = filter_api_run_his().values('case__group__group', 'case__suite',
-                                              'case__title', res=Min('result'))
+    api_run_his = filter_api_run_his(group=request.GET.get('group', None),
+                                     suite=request.GET.get('suite', None),
+                                     tester=request.GET.get('tester', None),
+                                     beg=request.GET.get('beg', None) or recent_90_days,
+                                     end=request.GET.get('end', None)).values('case__group__group', 'case__suite',
+                                                                              'case__title', res=Min('result'))
     # run_his = run_his.union(api_run_his, all=True)
     suite_list = [line for line in suite_total]
     count = len(suite_list)
@@ -122,10 +129,11 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         summary = result_count_series(count_by_result(beg=recent_90_days))
         summary += result_count_series(count_api_by_result(beg=recent_90_days))
         group = RunHis.objects.values('group').distinct()
+        api_group = ApiGroup.objects.values('group').distinct()
         context = {
             'series': series + api_series,
             'summary': summary,
-            'group': group
+            'group': group.union(api_group, all=True)
         }
         return context
 
@@ -150,5 +158,8 @@ def get_run_his_chart_data(request):
     summary = result_count_series(count_by_result(group=request.GET.get('group', None),
                                                   beg=request.GET.get('beg', None) or recent_90_days,
                                                   end=request.GET.get('end', None)))
+    summary += result_count_series(count_api_by_result(group=request.GET.get('group', None),
+                                                       beg=request.GET.get('beg', None) or recent_90_days,
+                                                       end=request.GET.get('end', None)))
     return JsonResponse({'data': series + api_series, 'summary': summary})
 

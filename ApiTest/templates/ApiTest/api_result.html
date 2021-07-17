@@ -10,7 +10,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label ">Group：</label>
                     <div class="layui-input-inline">
-                        <select name="group" id="group" lay-search>
+                        <select name="group" id="group" lay-search="">
                             <option value=""></option>
                             {% if options.group %}
                                 {% for grp in options.group %}
@@ -19,11 +19,9 @@
                             {% endif %}
                         </select>
                     </div>
-                </div>
-                <div class="layui-inline">
                     <label class="layui-form-label ">Suite：</label>
                     <div class="layui-input-inline">
-                        <select name="suite" id="suite" lay-search>
+                        <select name="suite" id="suite" lay-search="">
                             <option value=""></option>
                             {% if options.suite %}
                                 {% for s in options.suite %}
@@ -32,12 +30,19 @@
                             {% endif %}
                         </select>
                     </div>
-                </div>
-                <div class="layui-inline">
-                    <div class="layui-input-inline" style="">
-                        <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
-                        <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
+                    <label class="layui-form-label">From：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="from" id="from" placeholder="请选择"
+                               autocomplete="off">
                     </div>
+                    <label class="layui-form-label">To：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="to" id="to" placeholder="请选择" autocomplete="off">
+                    </div>
+                </div>
+                <div class="layui-inline layui-row" style="margin-left: 80%">
+                    <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
+                    <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
                 </div>
             </div>
         </div>
@@ -60,9 +65,53 @@
             });
             let table = layui.table;
             let form = layui.form;
-            let $ = layui.$;
-            let layer = layui.layer;
             let soulTable = layui.soulTable;
+            let laydate = layui.laydate;
+            let _90DaysBefore = new Date().getTime() - 90 * 24 * 60 * 60 * 1000;
+
+            laydate.render({
+                elem: '#from'
+                , max: 1
+                , type: 'datetime'
+                , format: 'yyyy-MM-dd HH:mm:ss'
+                , value: new Date(_90DaysBefore)
+                , done: function (value, date, endDate) {
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
+                    let end = $("#to").val();
+                    if (end !== '' && value !== '') {
+                        let end_date = new Date(end);
+                        let beg_date = new Date(value);
+                        if (beg_date > end_date) {
+                            layer.msg('开始时间不能大于结束时间!', {offset: '15%', time: 2000});
+                            let from_ele = $("#from");
+                            from_ele.val("");
+                            from_ele.reset();
+                        }
+                    }
+                }
+            });
+
+            laydate.render({
+                elem: '#to'
+                , max: 1
+                , type: 'datetime'
+                , format: 'yyyy-MM-dd HH:mm:ss'
+                , value: new Date()
+                , done: function (value, date, endDate) {
+                    {#console.log(value); //得到日期生成的值，如：2017-08-18#}
+                    let beg = $("#from").val();
+                    if (value !== '' && beg !== '') {
+                        let end_date = new Date(value);
+                        let beg_date = new Date(beg);
+                        if (beg_date > end_date) {
+                            layer.msg('开始时间不能大于结束时间!', {offset: '15%', time: 2000});
+                            let to_elem = $("#to");
+                            to_elem.val("");
+                            to_elem.reset();
+                        }
+                    }
+                }
+            });
 
             let results = table.render({
                 elem: '#result_table'
@@ -73,6 +122,10 @@
                     curr: 1,
                     limit: 10
                 }
+                , where: {
+                    beg: $("#from").val(),
+                    end: $("#to").val(),
+                }
                 , even: true
                 , cols: [[
                     {title: '#', width: 50, childTitle: false, collapse: true, children: function(row) {
@@ -81,6 +134,7 @@
                             where: {batch: row.id},
                             page: false,
                             cols: [[
+                                {type: 'numbers', title: 'No', align: 'center'},
                                 {field: 'case__title', title: 'Title', align: 'center'},
                                 {field: 'info', title: 'Info', align: 'center'},
                                 {
@@ -113,7 +167,7 @@
                                                 if (ret.indexOf('ERROR') === -1) {
                                                     layer.open({
                                                         type: 1
-                                                        , title: '用例详细结果: ' + data.case__title
+                                                        , title: ['用例详细结果: ' + data.case__title, 'font-size:18px;']
                                                         , content: ret
                                                         , area: ['1200px', '600px']
                                                         , maxmin: true
@@ -188,7 +242,9 @@
                         }
                         , where: {
                             group: group,
-                            suite: suite
+                            suite: suite,
+                            beg: $("#from").val(),
+                            end: $("#to").val(),
                         }
                         , done: function (res, curr, count) {
                             soulTable.render(this);
@@ -203,12 +259,15 @@
             });
             {#重置按钮触发#}
             $('#reset').on('click', function () {
+                const now = new Date();
+                const _90Before= new Date(_90DaysBefore);
                 form.val('search', {
                     "group": 1,
-                    "suite": 1
+                    "suite": 1,
+                    "from": _90Before.toLocaleDateString().replaceAll("/", "-") + ' 00:00:00',
+                    "to": now.toLocaleDateString().replaceAll("/", "-") + ' ' + now.toLocaleTimeString().replace("上午", "").replace("下午", "")
                 })
             });
-
 
         });
     </script>

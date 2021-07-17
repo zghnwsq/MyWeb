@@ -10,7 +10,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label ">Group：</label>
                     <div class="layui-input-inline">
-                        <select name="group" id="group">
+                        <select name="group" id="group" lay-search="">
                             <option value=""></option>
                             {% if options.group %}
                                 {% for grp in options.group %}
@@ -23,7 +23,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label">Suite：</label>
                     <div class="layui-input-inline">
-                        <select name="suite" id="suite">
+                        <select name="suite" id="suite" lay-search="">
                             <option value=""></option>
                             {% if options.suite %}
                                 {% for sut in options.suite %}
@@ -36,7 +36,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label">Function：</label>
                     <div class="layui-input-inline">
-                        <select name="func" id="func">
+                        <select name="func" id="func" lay-search="">
                             <option value=""></option>
                             {% if options.function %}
                                 {% for func in options.function %}

@@ -78,7 +78,7 @@ def count_api_by_result(group=None, beg=None, end=None):
     run_his_extra = run_his.annotate(time=Cast(TruncDate('create_time'), output_field=CharField()))
     run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result='0')),
                                                               fail=Count('result', Q(result='1')),
-                                                              error=Count('result', ~Q(result='0') | ~Q(result='1')))
+                                                              error=Count('result', ~Q(result='0') & ~Q(result='1')))
     return run_his
 
 

@@ -5,7 +5,7 @@
     {% csrf_token %}
     <div class="layui-form-item">
         <div class="layui-row">
-            <div class="layui-col-md3 layui-col-md-offset9">
+            <div class="layui-col-md3 layui-col-md-offset10">
                 <button class="layui-btn" id="new_step" lay-filter="new_step">新增步骤</button>
                 <button lay-submit class="layui-btn layui-btn-normal" id="save_case" lay-filter="save_case">保存</button>
             </div>
@@ -16,7 +16,7 @@
 {#    <input style="display: none" id="csrf" value={{ csrf_token }}>#}
     <input style="display: none" id="case_id" value={{ case_id }}>
 </table>
-<script type="text/html" id="myBar">
+<script type="text/html" id="stepsToolBar">
     <div>
         行拖拽: <input type="checkbox" lay-skin="switch" lay-filter="rowDragSwitch" lay-text="启用|暂停" checked>
         <i style="margin-left: 2em; color: red; font-size: small">*切换分页前请保存</i>
@@ -74,16 +74,20 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     fm.render(null, 'steps');
     let table_data = [];
     let keywords = [];
+    let cases = [];
     {% if keywords %}
         keywords = {{ keywords | safe }};
+    {% endif %}
+    {% if cases %}
+        cases = {{ cases | safe }};
     {% endif %}
     {% if data %}
         table_data = {{ data | safe }};
     {% endif %}
-    for(let index in table_data){
-        if (!table_data.hasOwnProperty(index)) continue;
-        table_data[index]['keywords'] = keywords;
-    }
+    {#for(let index in table_data){#}
+    {#    if (!table_data.hasOwnProperty(index)) continue;#}
+    {#    table_data[index]['keywords'] = keywords;#}
+    {# } #}
 
     let step_table = tb.render({
         elem: '#step_table',
@@ -97,7 +101,8 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
         },
         {#where: {'case_id': {{case_id}} },#}
         even: true,
-        toolbar: '#myBar',
+        overflow: 'tips',
+        toolbar: '#stepsToolBar',
         rowDrag: {/*trigger: 'row',*/ done: function (obj) {
                 {#// 完成时（松开时）触发#}
                 {#// 如果拖动前和拖动后无变化，则不会触发此方法#}
@@ -118,7 +123,8 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                         '<option value="none">---</option>\n';
                     const end = '</select>';
                     let options = ''
-                    let keywords = d.keywords;
+                    {#let keywords = d.keywords;#}
+                    {#let cases = d.cases;#}
                     for(let index in keywords){
                         if (!keywords.hasOwnProperty(index)) continue;
                         if(keywords[index]['keyword'] === d.step_action){
@@ -127,11 +133,19 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                             options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '---' + keywords[index]['description'] + '</option>';
                         }
                     }
+                    for (let index in cases) {
+                        if (!cases.hasOwnProperty(index)) continue;
+                        if (cases[index]['id'].toString() === d.step_action) {
+                            options += '<option selected="selected" value="' + cases[index]['id'] + '">' + '用例: ' + cases[index]['title'] + '</option>';
+                        } else {
+                            options += '<option value="' + cases[index]['id'] + '">' + '用例: ' + cases[index]['title'] + '</option>';
+                        }
+                    }
                     return beg + options + end;
                 }},
-            {field: 'step_p1', title: 'Param 1', align: 'center', edit: 'text'},
-            {field: 'step_p2', title: 'Param 2', align: 'center', edit: 'text'},
-            {field: '', title: 'Operation', align: 'center', toolbar: '#row_tool'}
+            {field: 'step_p1', title: 'Param 1', align: 'center', edit: 'text', minWidth: 200},
+            {field: 'step_p2', title: 'Param 2', align: 'center', edit: 'text', minWidth: 400},
+            {field: '', title: 'Action', align: 'center', toolbar: '#row_tool', width: 80}
         ]],
         done: function (res) {
             soulTable.render(this);

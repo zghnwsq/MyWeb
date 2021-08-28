@@ -1,6 +1,6 @@
 from openpyxl import load_workbook
-from MyWeb import settings
-import os
+# from MyWeb import settings
+# import os
 
 
 def read_all_data(path):
@@ -21,8 +21,7 @@ def read_all_data(path):
     return sheetnames, data
 
 
-file_path = os.path.join(settings.BASE_DIR, 'Upload', 'DS', 'Demo_Web', '4641eba4_babb_5235_be5e_6b87a3f0f689.xlsx')
-read_all_data(file_path)
+
 
 
 

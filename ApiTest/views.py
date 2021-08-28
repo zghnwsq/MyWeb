@@ -237,9 +237,10 @@ def edit_case(request):
                                                                                                    'case', 'title',
                                                                                                    'step_order')
                 keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description')
+                cases = ApiCase.objects.exclude(id=case_id).order_by('id').values('id', 'title')
                 return render(request, 'ApiTest/api_case_steps.html',
                               {'case_id': case_id, 'title': case[0].title, 'data': json.dumps(list(steps)),
-                               'keywords': json.dumps(list(keywords))})
+                               'keywords': json.dumps(list(keywords)), 'cases': json.dumps(list(cases))})
             else:
                 msg = 'ERROR: 没有此用例.'
         else:

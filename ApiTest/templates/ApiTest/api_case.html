@@ -71,17 +71,19 @@
     <script>
         function confirmAgain(layer, active, that) {
             layer.open({
-                content: '<div style="padding: 20px 2em;">' + '关闭前请保存.' + '</div>'
+                content: '<div style="padding: 20px 2em;">' + '关闭前是否保存?' + '</div>'
                 , type: 1
                 , title: '提示'
-                , btn: ['确定', '返回']
+                , btn: ['保存', '关闭']
                 , yes: function () {
+                    {#  触发页面内提交  #}
+                    $("#save_case").click();
                     layer.closeAll();
                     {# 表格重载 #}
                     active['reload'].call(that);
                 }
                 , btn2: function (index) {
-                    layer.close(index);
+                    layer.closeAll();
                 }
             });
         }
@@ -222,7 +224,7 @@
                                         type: 1
                                         , title: ['编辑测试步骤: ' + data.title, 'font-size:18px;']
                                         , content: ret
-                                        , area: ['1000px', '600px']
+                                        , area: ['1200px', '600px']
                                         , maxmin: true
                                         , resizing: function (layero) {
                                             {# 监听窗口拉伸 #}

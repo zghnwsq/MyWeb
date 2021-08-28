@@ -1,8 +1,15 @@
 <table id="step_result_table" lay-filter="step_result_table"></table>
 <script>
-    layui.use(['table',], function () {
+    layui.use(['table', 'soulTable'], function () {
         let tb = layui.table;
         let table_data = [];
+        layui.soulTable.config({
+            fixTotal: false,
+            drag: false,
+            rowDrag: false,
+            overflow: true,
+        });
+        let soulTable = layui.soulTable;
         {% if steps %}
             table_data = {{ steps | safe }};
         {% endif %}
@@ -14,6 +21,13 @@
             even: true,
             defaultToolbar: ['filter', 'print', 'exports'],
             toolbar: true,
+            overflow: {
+                hoverTime: 300,
+                color: 'black',
+                bgColor: 'white',
+                'type': 'tips',
+                'maxWidth': 500,
+            },
             cols: [[
                 {type: 'numbers', title: '序号', fixed: 'left'},
                 {#{field: 'case__case__title', title: 'Case Title', align: 'center'},#}
@@ -30,13 +44,26 @@
                         }
                     }
                 },
-                {field: 'info', title: 'Info', align: 'left', minWidth: 500},
+                {field: 'info', title: 'Info', align: 'left', minWidth: 500,  templet(d) {
+                        let rows = d.info.split('||');
+                        let info = '';
+                        for (let i in rows) {
+                            if (rows.hasOwnProperty(i)) {
+                                info += rows[i] + '<br>';
+                            }
+                        }
+                        return info;
+                    }
+                },
                 {
                     field: 'create_time', title: 'Create Time', align: 'center', sort: true, templet(d) {
                         return d.create_time.replace('T', ' ');
                     }
                 }
             ]],
+            done: function () {
+                soulTable.render(this);
+            }
         });
 
     });

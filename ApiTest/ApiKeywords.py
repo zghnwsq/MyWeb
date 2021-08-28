@@ -150,17 +150,20 @@ class ApiKeywords:
                 url = f'{self.root}/{uri}'
             else:
                 url = uri
+            data = self.var_map.handle_var(p2)
             request_headers = self.http.headers
             request_cookies = dict_from_cookiejar(self.http.cookies)
-            self.http.post(url, data=p2)
+            if not isinstance(data, bytes):
+                data = data.encode('utf-8')
+            self.http.post(url, data=data)
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Data: {p2} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res}'
+            self.__debug_info = f'Debug: Url: {url} \n|| Data: {p2}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res}'
             return True, self.__debug_info if self.__debug else self.__res
         except Exception as e:
-            self.__res = f'Fail to post: {p1}, {p2}'
-            self.__debug_info = f'Debug: Fail to post: {p1}, {p2}. Info: {e.__str__()}'
+            self.__res = f'Fail to post: {p1}, {p2}; Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Fail to post: {p1}, {p2}; Vars: {self.var_map}. Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def json_extractor(self, *args):

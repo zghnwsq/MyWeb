@@ -3,6 +3,9 @@ class VarMap:
     def __init__(self):
         self.vars = {}
 
+    def __str__(self):
+        return self.vars.__str__()
+
     def set_var(self, key, value):
         self.vars[key] = value
 
@@ -15,7 +18,7 @@ class VarMap:
 
     def handle_var(self, string):
         if '${' in string:
-            self._handle_variables_in_string(string)
+            return self._handle_variables_in_string(string)
         else:
             return string
 

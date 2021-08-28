@@ -155,7 +155,10 @@ class HttpRequest:
         """
         :return: 返回响应的文本结果
         """
-        return self.response.text
+        resp = self.response.text
+        if isinstance(resp, bytes):
+            resp = resp.decode('utf-8')
+        return resp
 
     def get_response_status_code(self):
         """
@@ -172,7 +175,10 @@ class HttpRequest:
         try:
             js = json.loads(self.response.text)
             result = jsonpath.jsonpath(js, json_path)
-            return result
+            if isinstance(result, list):
+                return result[0]
+            else:
+                return result
         except JSONDecodeError:
             return '响应文本解析为json格式失败.'
 

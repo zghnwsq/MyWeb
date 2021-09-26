@@ -1,7 +1,10 @@
 import datetime
+import logging
 from django.db.models import F
 from .models import *
 import copy
+
+logger = logging.getLogger('django')
 
 
 def filter_run_his(tester=None, group=None, suite=None, testcase=None, result=None, beg=None, end=None, eval_result=None, order=None):
@@ -43,6 +46,7 @@ def filter_run_his(tester=None, group=None, suite=None, testcase=None, result=No
         run_his = run_his.extra(
             select={'result': 'select description from res_dict where res_dict.result=run_his.result'})
     # .extra(select={'create_time': "DATE_FORMAT(create_time, %s)"}, select_params=['%Y-%m-%d %H:%i:%s'])
+    logger.info(run_his.query)
     return run_his
 
 
@@ -57,6 +61,7 @@ def filter_runhis_by_group_and_time(group=None, beg=None, end=None):
     if end:
         edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
         run_his = run_his.filter(create_time__lte=edge)
+    logger.info(run_his.query)
     return run_his
 
 
@@ -77,6 +82,7 @@ def filter_jobs(group=None, suite=None, func=None):
                                   'mthd', 'ds_range',
                                   'funct', 'comment',
                                   'status', 'tests', 'id').order_by('group', 'suite')
+    logger.info(jobs.query)
     return jobs
 
 
@@ -91,3 +97,4 @@ def get_node_options(data_list):
             'node', 'tag').distinct())
         data['nodes'] = nodes
     return tmp_list
+

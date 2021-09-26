@@ -1,9 +1,12 @@
 import datetime
+import logging
 from ApiTest.models import ApiCase, ApiCaseResult
 from autotest.models import SuiteCount
 from django.db.models import Count, CharField, F, Q
 from django.db.models.functions import TruncDate, Cast
 from autotest.orm import filter_run_his
+
+logger = logging.getLogger('django')
 
 
 def filter_api_run_his(tester=None, group=None, suite=None, testcase=None, result=None, beg=None, end=None):
@@ -38,6 +41,7 @@ def filter_api_run_his(tester=None, group=None, suite=None, testcase=None, resul
         else:
             edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
         run_his = run_his.filter(create_time__lte=edge)
+    logger.info(run_his.query)
     return run_his
 
 
@@ -54,6 +58,7 @@ def get_suite_total(group=None, suite=None):
     if suite:
         api_suite_total = api_suite_total.filter(suite=suite)
     api_suite_total = api_suite_total.annotate(count=Count('id'))
+    logger.info(api_suite_total.query)
     return suite_total.union(api_suite_total, all=True)
     # return suite_total
 
@@ -63,6 +68,7 @@ def count_api_by_group(group=None, beg=None, end=None):
     run_his = run_his.values('case__group__group').annotate(group=F('case__group__group'),
                                                             time=Cast(TruncDate('create_time'),
                                                                       output_field=CharField()), count=Count(1))
+    logger.info(run_his.query)
     return run_his
 
 
@@ -79,6 +85,7 @@ def count_api_by_result(group=None, beg=None, end=None):
     run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result='0')),
                                                               fail=Count('result', Q(result='1')),
                                                               error=Count('result', ~Q(result='0') & ~Q(result='1')))
+    logger.info(run_his.query)
     return run_his
 
 
@@ -86,6 +93,7 @@ def count_by_group(group=None, beg=None, end=None):
     run_his = filter_run_his(group=group, beg=beg, end=end)
     run_his = run_his.values('group').annotate(
         time=Cast(TruncDate('create_time'), output_field=CharField()), count=Count(1))
+    logger.info(run_his.query)
     return run_his
 
 
@@ -126,5 +134,6 @@ def count_by_result(group=None, beg=None, end=None):
     run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result='0')),
                                                               fail=Count('result', Q(result='1')),
                                                               error=Count('result', Q(result='2')))
+    logger.info(run_his.query)
     return run_his
 

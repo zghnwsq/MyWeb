@@ -37,7 +37,7 @@ def scan_node():
             s = ServerProxy("http://%s" % node.ip_port)
             is_alive = s.is_alive()
             if 'alive' in is_alive:
-                status = 'on' if node.status != 'running' else 'running'
+                status = 'running' if node.status == 'running' else 'on'
         except TimeoutError:
             status = 'off'
         except ConnectionRefusedError:
@@ -46,8 +46,9 @@ def scan_node():
             status = 'off'
         finally:
             logger.info(f'Node {node.ip_port} is {status}')
-            node.status = status
-            node.save()
+            if status != 'running':
+                node.status = status
+                node.save()
     logger.info(f'Scan_node@{now} finished')
 
 

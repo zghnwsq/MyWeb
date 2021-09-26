@@ -56,7 +56,7 @@ class LoginV(LoginView):
                         user_group = ''
                     request.session['user_name'] = user_name
                     request.session['user_group'] = user_group
-                    self.logger.info('%s login' % user_name)
+                    self.logger.info(f'{self.__class__} {user_name} login')
                     request.session['menus'] = get_menu({'user_name': user_name})
                     if redirect:
                         return HttpResponseRedirect(redirect)

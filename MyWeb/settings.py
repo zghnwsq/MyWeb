@@ -27,7 +27,7 @@ SECRET_KEY = 'h%nbdt8e$0iyz_x-&us*@jhr&qqggiy2txbf4*vx)5*-$_2h!='
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.150', '192.168.50.211']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.150', '192.168.50.211', '*']
 
 
 # Application definition
@@ -88,19 +88,7 @@ DATABASES = {
     #     # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     #     'NAME': 'D:\\PythonProject\\myweb.sqlite3'
     # },
-    # 'autotest': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # },
-    # 'autotest': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': 'D:\\PythonProject\\zbh\\autotest.sqlite',
-    # }
-    # 'autotest': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     # 'NAME': 'D:\\PythonProject\\EasySelenium\\autotest.db',
-    #     'NAME': 'D:\\PythonProject\\myweb.sqlite3',
-    # },
+    # aliyun
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'HOST': '8.136.125.0',
@@ -113,17 +101,16 @@ DATABASES = {
         #     'default-character-set': 'utf8'
         # },
     },
-    # 'autotest': {
+    # local centos7
+    # 'default': {
     #     'ENGINE': 'django.db.backends.mysql',
-    #     'HOST': '8.136.125.0',
+    #     'HOST': '192.168.0.100',
     #     'PORT': 9306,
     #     'NAME': 'myweb',
-    #     'USER': environ.get('MYSQL_USER'),
+    #     'USER': 'myweb',
     #     'PASSWORD': environ.get('MYSQL_PWD'),
-    #     # 'OPTIONS': {
-    #     #     'default-character-set': 'utf8'
-    #     # },
-    # }
+    #     'CONN_MAX_AGE': 30 * 60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
+    # },
 }
 
 DATABASE_ROUTERS = []
@@ -245,7 +232,7 @@ LOGGING = {
 }
 
 # 自定义参数
-APSCHEDULER = 'off'
+APSCHEDULER = 'on'
 DATA_SOURCE_ROOT = os.path.join(BASE_DIR, 'Upload', 'DS')
 MNAGER_GROUPS = ['管理员']
 

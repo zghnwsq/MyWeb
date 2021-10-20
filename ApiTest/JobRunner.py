@@ -2,7 +2,7 @@ import datetime
 import threading
 from ApiTest.ApiKeywords import ApiKeywords
 from ApiTest.VarMap import VarMap
-from ApiTest.models import ApiCase, ApiCaseStep, ApiTestBatch, ApiCaseResult, ApiStepResult
+from ApiTest.models import ApiCase, ApiCaseStep, ApiTestBatch, ApiCaseResult, ApiStepResult, ApiGroupEnv
 
 
 class RunnerThread(threading.Thread):
@@ -21,6 +21,9 @@ class RunnerThread(threading.Thread):
         for case in self.cases:
             case_result = True
             case_var_map = VarMap()
+            env = ApiGroupEnv.objects.filter(group__apicase__id=case['id'])
+            if env:
+                case_var_map = set_group_env(case_var_map, env)
             api = ApiKeywords(case_var_map, debug=self.debug)
             if 'id' not in case.keys():
                 continue
@@ -87,3 +90,16 @@ def api_job_run(cases, tester, debug=False):
     batch.save()
     thd = RunnerThread(cases, batch, debug=debug)
     thd.start()
+
+
+def set_group_env(varmap: VarMap, group_env):
+    if group_env:
+        for row in group_env:
+            if row.env_key and row.env_value:
+                varmap.set_var(row.env_key, row.env_value)
+            else:
+                continue
+    return varmap
+
+
+

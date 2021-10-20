@@ -16,6 +16,19 @@ class ApiGroup(models.Model):
         db_table = 'api_group'
 
 
+class ApiGroupEnv(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    group = models.ForeignKey(ApiGroup, null=False, on_delete=models.CASCADE)
+    env_key = models.CharField(max_length=256, null=False, blank=False)
+    env_value = models.CharField(max_length=256, blank=True)
+
+    def __str__(self):
+        return self.env_key
+
+    class Meta:
+        db_table = 'api_group_env'
+
+
 class ApiCase(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     group = models.ForeignKey(ApiGroup, null=False, on_delete=models.CASCADE)

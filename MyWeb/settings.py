@@ -89,28 +89,28 @@ DATABASES = {
     #     'NAME': 'D:\\PythonProject\\myweb.sqlite3'
     # },
     # aliyun
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': '8.136.125.0',
-        'PORT': 9306,
-        'NAME': 'myweb',
-        'USER': environ.get('MYSQL_USER'),
-        'PASSWORD': environ.get('MYSQL_PWD'),
-        'CONN_MAX_AGE': 30*60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'HOST': '8.136.125.0',
+    #     'PORT': 9306,
+    #     'NAME': 'myweb',
+    #     'USER': environ.get('MYSQL_USER'),
+    #     'PASSWORD': environ.get('MYSQL_PWD'),
+    #     'CONN_MAX_AGE': 30*60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
         # 'OPTIONS': {
         #     'default-character-set': 'utf8'
         # },
-    },
-    # local centos7
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'HOST': '192.168.0.100',
-    #     'PORT': 9306,
-    #     'NAME': 'myweb',
-    #     'USER': 'myweb',
-    #     'PASSWORD': environ.get('MYSQL_PWD'),
-    #     'CONN_MAX_AGE': 30 * 60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
     # },
+    # local centos7
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': '192.168.1.113',
+        'PORT': 9306,
+        'NAME': 'myweb',
+        'USER': 'myweb',
+        'PASSWORD': environ.get('MYSQL_PWD'),
+        'CONN_MAX_AGE': 30 * 60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
+    },
 }
 
 DATABASE_ROUTERS = []

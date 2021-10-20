@@ -46,168 +46,239 @@
 {% block script %}
     <script type="text/html" id="operations">
         <a class="layui-btn layui-btn-xs" lay-event="update">更新</a>
+        <a class="layui-btn layui-btn-xs" lay-event="env">公共变量</a>
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     </script>
     <script>
-    !function () {
-        let table = layui.table;
-        let form = layui.form;
-        let $ = layui.$;
-        let layer = layui.layer;
+        function confirmAgain(layer) {
+            layer.open({
+                content: '<div style="padding: 20px 2em;">' + '关闭前是否保存?' + '</div>'
+                , type: 1
+                , title: '提示'
+                , btn: ['保存', '关闭']
+                , yes: function () {
+                    {#  触发页面内提交  #}
+                    $("#save_env").click();
+                    layer.closeAll();
+                }
+                , btn2: function () {
+                    layer.closeAll();
+                }
+            });
+        }
 
-        let groups = table.render({
-            elem: '#group_table'
-            , id: 'group_table'
-            , height: 'full'
-            , url: '/apitest/groups/get/'
-            , page: {
-                curr: 1,
-                limit: 10
-            }
-            , even: true
-            , cols: [[
-                {field: 'group', title: 'Test Group', sort: true, edit: 'text', align: 'center'},
-                {field: 'author__username', title: 'Author', align: 'center'},
-                {field: '', title: 'Action', align: 'center', toolbar: '#operations'}
-            ]]
-        });
+        !function () {
+            let table = layui.table;
+            let form = layui.form;
+            let $ = layui.$;
+            let layer = layui.layer;
+            let groups = table.render({
+                elem: '#group_table'
+                , id: 'group_table'
+                , height: 'full'
+                , url: '/apitest/groups/get/'
+                , page: {
+                    curr: 1,
+                    limit: 10
+                }
+                , even: true
+                , cols: [[
+                    {field: 'group', title: 'Test Group', sort: true, edit: 'text', align: 'center'},
+                    {field: 'author__username', title: 'Author', align: 'center'},
+                    {field: '', title: 'Action', align: 'center', toolbar: '#operations'}
+                ]]
+            });
 
-        let active = {
-            reload: function () {
-                const group = $('#group').val();
-                groups.reload({
-                    page: {
+            let active = {
+                reload: function () {
+                    const group = $('#group').val();
+                    groups.reload({
+                        page: {
                             curr: 1
                         }
-                    , where: {
+                        , where: {
                             group: group
                         }
-                    , done: function (res, curr, count) {
-                    }
-                });
-            }
-        }
-        {#搜索按钮触发#}
-        $('#search').on('click', function () {
-            let type = $(this).data('type');
-            active[type] ? active[type].call(this) : '';
-        });
-        {#重置按钮触发#}
-        $('#reset').on('click', function () {
-            form.val('search', {
-                "group": 1
-            })
-        });
-        table.on('tool(group_table)', function (obj) {
-            let data = obj.data;
-            let layEvent = obj.event;
-            const csrf = $("#csrf").val();
-            switch (layEvent) {
-                case 'update':
-                    $.ajax({
-                        url: "/apitest/group/update/"
-                        , type: "POST"
-                        , contentType: 'application/json; charset=utf-8'
-                        , beforeSend: function (xhr) {
-                            xhr.setRequestHeader("X-CSRFToken", csrf);
-                        }
-                        , data: JSON.stringify({group_id: data.id, group: data.group})
-                        , success: function (data) {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (index) {
-                                    layer.close(index);
-                                }
-                            });
-                            active['reload'].call(this);
+                        , done: function (res, curr, count) {
                         }
                     });
-                    break;
-                case 'del':
-                    $.ajax({
-                        url: "/apitest/group/del/"
-                        , type: "POST"
-                        , contentType: 'application/json; charset=utf-8'
-                        , beforeSend: function (xhr) {
-                            xhr.setRequestHeader("X-CSRFToken", csrf);
-                        }
-                        , data: JSON.stringify({group_id: data.id, group: data.group})
-                        , success: function (data, textStatus) {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (index) {
-                                    layer.close(index);
-                                }
-                            });
-                            active['reload'].call(this);
-                        }
-                    });
-                    break;
+                }
             }
-        });
-        {# 新建 #}
-        $('#new').on('click', function () {
-            $.get('/apitest/group/new/', {}, function (str) {
-                let new_layer = layer.open({
-                    title: '新建测试组'
-                    , type: 1
-                    , area: ['500px', '210px']
-                    {# 注意，如果str是object，那么需要字符拼接。 #}
-                    , content: str
-                    , scrollbar: false
-                    , btn: ['保存', '关闭']
-                    , yes: function (index, layero) {
-                        {# 保存按钮保存按钮回调 #}
-                        const new_group = $("#new_group").val();
-                        const new_group_csrf = $("div[lay-filter='new_group']>input[name='csrfmiddlewaretoken']").val();
+            {#搜索按钮触发#}
+            $('#search').on('click', function () {
+                let type = $(this).data('type');
+                active[type] ? active[type].call(this) : '';
+            });
+            {#重置按钮触发#}
+            $('#reset').on('click', function () {
+                form.val('search', {
+                    "group": 1
+                })
+            });
+            table.on('tool(group_table)', function (obj) {
+                let data = obj.data;
+                let layEvent = obj.event;
+                const csrf = $("#csrf").val();
+                switch (layEvent) {
+                    case 'update':
                         $.ajax({
-                            url: "/apitest/group/new/"
+                            url: "/apitest/group/update/"
                             , type: "POST"
-                            , beforeSend: function (xhr) {
-                                xhr.setRequestHeader("X-CSRFToken", new_group_csrf);
-                            }
                             , contentType: 'application/json; charset=utf-8'
-                            , data: JSON.stringify({group: new_group})
-                            , success: function (data, textStatus) {
-                                {#console.log(data.msg);#}
+                            , beforeSend: function (xhr) {
+                                xhr.setRequestHeader("X-CSRFToken", csrf);
+                            }
+                            , data: JSON.stringify({group_id: data.id, group: data.group})
+                            , success: function (data) {
                                 layer.open({
                                     content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
                                     , type: 1
                                     , title: '提示'
                                     , time: 5000
                                     , btn: '确定'
-                                    , yes: function (index, layero) {
+                                    , yes: function (index) {
                                         layer.close(index);
                                     }
                                 });
-                                {# 如果成功则关闭新建任务层 #}
-                                if (data.msg.indexOf('成功') !== -1) {
-                                    layer.close(new_layer);
-                                    {# 表格重载 刷新结果 #}
-                                    active['reload'].call(this);
-                                }
+                                active['reload'].call(this);
                             }
                         });
-                    }
-                    , btn2: function (index, layero) {
-                        {# 关闭按钮回调 #}
-                        layer.close(index);
-                        {# 表格重载 刷新结果 #}
-                        {#active['reload'].call(this);#}
-                    }
+                        break;
+                    case 'env':
+                        let group_name = data.group;
+                        $.ajax({
+                            url: "/apitest/group/env/"
+                            , type: "GET"
+                            , data: {group_id: data.id}
+                            , success: function (data) {
+                                layer.open({
+                                    type: 1
+                                    , title: ['编辑公共变量: ' + group_name, 'font-size:18px;']
+                                    , content: data
+                                    , area: ['900px', '680px']
+                                    , maxmin: true
+                                    , resizing: function (layero) {
+                                        {# 监听窗口拉伸 #}
+                                        table.resize('env_table');
+                                    }
+                                    , full: function (layero) {
+                                        {# 监听窗口最大化 #}
+                                        table.resize('env_table');
+                                    }
+                                    , restore: function (layero) {
+                                        {# 监听窗口还原 #}
+                                        table.resize('env_table');
+                                    }
+                                    , btn: ['保存', '关闭']
+                                    , yes: function (index) {
+                                        {#  触发页面内提交  #}
+                                        $("#save_env").click();
+                                    }
+                                    , btn2: function () {
+                                        confirmAgain(layer);
+                                        return false;
+                                    }
+                                    , cancel: function () {
+                                        confirmAgain(layer);
+                                        return false;
+                                    }
+                                });
+                            }
+                            , error: function (data) {
+                                layer.open({
+                                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                    , type: 1
+                                    , title: '提示'
+                                    , time: 5000
+                                    , btn: '确定'
+                                    , yes: function (index) {
+                                        layer.close(index);
+                                    }
+                                });
+                            }
+                        });
+                        break;
+                    case 'del':
+                        $.ajax({
+                            url: "/apitest/group/del/"
+                            , type: "POST"
+                            , contentType: 'application/json; charset=utf-8'
+                            , beforeSend: function (xhr) {
+                                xhr.setRequestHeader("X-CSRFToken", csrf);
+                            }
+                            , data: JSON.stringify({group_id: data.id, group: data.group})
+                            , success: function (data, textStatus) {
+                                layer.open({
+                                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                    , type: 1
+                                    , title: '提示'
+                                    , time: 5000
+                                    , btn: '确定'
+                                    , yes: function (index) {
+                                        layer.close(index);
+                                    }
+                                });
+                                active['reload'].call(this);
+                            }
+                        });
+                        break;
+                }
+            });
+            {# 新建 #}
+            $('#new').on('click', function () {
+                $.get('/apitest/group/new/', {}, function (str) {
+                    let new_layer = layer.open({
+                        title: '新建测试组'
+                        , type: 1
+                        , area: ['500px', '210px']
+                        {# 注意，如果str是object，那么需要字符拼接。 #}
+                        , content: str
+                        , scrollbar: false
+                        , btn: ['保存', '关闭']
+                        , yes: function (index, layero) {
+                            {# 保存按钮保存按钮回调 #}
+                            const new_group = $("#new_group").val();
+                            const new_group_csrf = $("div[lay-filter='new_group']>input[name='csrfmiddlewaretoken']").val();
+                            $.ajax({
+                                url: "/apitest/group/new/"
+                                , type: "POST"
+                                , beforeSend: function (xhr) {
+                                    xhr.setRequestHeader("X-CSRFToken", new_group_csrf);
+                                }
+                                , contentType: 'application/json; charset=utf-8'
+                                , data: JSON.stringify({group: new_group})
+                                , success: function (data, textStatus) {
+                                    {#console.log(data.msg);#}
+                                    layer.open({
+                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                        , type: 1
+                                        , title: '提示'
+                                        , time: 5000
+                                        , btn: '确定'
+                                        , yes: function (index, layero) {
+                                            layer.close(index);
+                                        }
+                                    });
+                                    {# 如果成功则关闭新建任务层 #}
+                                    if (data.msg.indexOf('成功') !== -1) {
+                                        layer.close(new_layer);
+                                        {# 表格重载 刷新结果 #}
+                                        active['reload'].call(this);
+                                    }
+                                }
+                            });
+                        }
+                        , btn2: function (index, layero) {
+                            {# 关闭按钮回调 #}
+                            layer.close(index);
+                            {# 表格重载 刷新结果 #}
+                            {#active['reload'].call(this);#}
+                        }
+                    });
                 });
             });
-        });
 
-    }()
+        }();
     </script>
 {% endblock %}
 

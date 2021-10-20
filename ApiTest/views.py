@@ -50,6 +50,7 @@ def get_groups(request):
 
 @auth_check
 @login_required
+@require_http_methods(['POST'])
 def update_group(request):
     req_json = json.loads(request.body)
     group_id = req_json.get('group_id', None)
@@ -67,6 +68,7 @@ def update_group(request):
 
 @auth_check
 @login_required
+@require_http_methods(['POST'])
 def del_group(request):
     req_json = json.loads(request.body)
     group_id = req_json.get('group_id', None)
@@ -99,6 +101,95 @@ def new_group(request):
         else:
             msg = 'ERROR: 请求内容有误.'
         return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+@require_http_methods(['GET'])
+def get_group_env(request):
+    group_id = request.GET.get('group_id', None)
+    if group_id:
+        group = ApiGroup.objects.filter(id=group_id)
+        if group:
+            envs = ApiGroupEnv.objects.filter(group=group_id).values('id', 'group_id', 'env_key', 'env_value')
+            return render(request, 'ApiTest/api_group_env.html',
+                          {'group_id': group_id, 'data': json.dumps(list(envs))})
+        else:
+            msg = 'ERROR: 用例不存在.'
+    else:
+        msg = 'ERROR: 请求内容有误.'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def edit_group_env(request):
+    if request.method == 'GET':
+        group_id = request.GET.get('group_id', None)
+        if group_id:
+            group = ApiGroup.objects.filter(id=group_id)
+            if group:
+                envs = ApiGroupEnv.objects.filter(group=group_id).values('id', 'group_id', 'env_key', 'env_value')
+                return JsonResponse({"code": 0, "msg": "", "count": len(envs), "data": list(envs)})
+            else:
+                msg = 'ERROR: 用例不存在.'
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+    if request.method == 'POST':
+        req_json = json.loads(request.body)
+        group_id = req_json.get('group_id', None)
+        data = req_json.get('data', None)
+        if group_id and data:
+            update, new, error = 0, 0, 0
+            group = ApiGroup.objects.filter(id=group_id)
+            if group:
+                for row in data:
+                    # 空值跳过
+                    if not row['env_key'] or not row['env_value']:
+                        error += 1
+                        continue
+                    # id存在更新
+                    if 'id' in row.keys() and row['id']:
+                        is_key_exist = ApiGroupEnv.objects.filter(group=group_id, env_key=row['env_key']).exclude(id=row['id'])
+                        # 重复key校验
+                        if is_key_exist:
+                            error += 1
+                            continue
+                        update += ApiGroupEnv.objects.filter(id=row['id'], group=group_id).update(env_key=row['env_key'], env_value=row['env_value'])
+                    # id不存在新增
+                    else:
+                        is_key_exist = ApiGroupEnv.objects.filter(group=group_id, env_key=row['env_key'])
+                        # 重复key校验
+                        if is_key_exist:
+                            error += 1
+                            continue
+                        ApiGroupEnv(group=group[0], env_key=row['env_key'], env_value=row['env_value']).save()
+                        new += 1
+                msg = f'保存成功,更新{update}条, 新增{new}条; 跳过错误数据{error}条.'
+            else:
+                msg = 'ERROR: 用例组不存在.'
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+@require_http_methods(['POST'])
+def del_group_env(request):
+    req_json = json.loads(request.body)
+    env_id = req_json.get('env_id', None)
+    if env_id:
+        is_exist = ApiGroupEnv.objects.filter(id=env_id)
+        if is_exist:
+            is_exist.delete()
+            msg = '删除成功.'
+        else:
+            msg = 'ERROR: 该变量不存在.'
+    else:
+        msg = 'ERROR: 请求内容有误.'
+    return JsonResponse({'msg': msg})
 
 
 class ApiCaseV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
@@ -257,13 +348,18 @@ def edit_case(request):
                 # 清空
                 ApiCaseStep.objects.filter(case=has_case[0]).delete()
                 batch = []
+                index = 0
                 for step in data:
                     if step:
                         batch.append(ApiCaseStep(case=has_case[0], step_action=step['step_action'], step_p1=step['step_p1'],
                                                  step_p2=step['step_p2'], step_p3=step['step_p3'], title=step['title'],
-                                                 step_order=step['LAY_TABLE_INDEX']))
-                res = ApiCaseStep.objects.bulk_create(batch)
-                msg = f'保存成功,更新{len(res)}条.'
+                                                 step_order=index))
+                        index += 1
+                if index == len(data):
+                    res = ApiCaseStep.objects.bulk_create(batch)
+                    msg = f'保存成功,更新{len(res)}条.'
+                else:
+                    msg = 'ERROR: 数据更新错误.'
             else:
                 msg = 'ERROR: 用例不存在.'
         else:

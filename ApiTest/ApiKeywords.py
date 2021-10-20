@@ -21,7 +21,8 @@ class ApiKeywords:
         :param args: 域名和根路径
         :return: boolean, information
         """
-        self.root = args[0]
+        p1 = args[0]
+        self.root = self.var_map.handle_var(p1)
         self.__res = f'Base url set to: {self.root}'
         return True, self.__res
 
@@ -123,7 +124,7 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Url Params: {p2} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res}'
+            self.__debug_info = f'Debug: Url: {url} \n|| Url Params: {p2} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n|| Vars: {self.var_map}'
             return True, self.__debug_info if self.__debug else self.__res
         except JSONDecodeError:
             self.__res = f'Url params json.loads解析失败: {p1}, {p2}'
@@ -159,7 +160,7 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Data: {p2}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res}'
+            self.__debug_info = f'Debug: Url: {url} \n|| Data: {p2}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n|| Vars: {self.var_map}'
             return True, self.__debug_info if self.__debug else self.__res
         except Exception as e:
             self.__res = f'Fail to post: {p1}, {p2}; Vars: {self.var_map}'
@@ -176,9 +177,12 @@ class ApiKeywords:
         p2 = args[1]
         try:
             value = self.http.get_value_by_json_path(p2)
-            self.var_map.set_var(p1, value)
-            self.__res = f'Set "{p1}={value}" by json_path="{p2}" from response.'
-            return True, self.__res
+            if 'Error' not in value:
+                self.var_map.set_var(p1, value)
+                self.__res = f'Set "{p1}={value}" by json_path="{p2}" from response.'
+                return True, self.__res
+            else:
+                return False, value
         except JSONDecodeError as e:
             return False, e.__str__()
 
@@ -241,6 +245,8 @@ class ApiKeywords:
             value = self.http.get_value_by_xpath(p2)
             if not value:
                 value = 'Xpath match nothing.'
+            elif 'Error' in value:
+                return False, value
             p1 = self.var_map.handle_var(p1)
             res = self.http.get_response_text()
             self.__res = f'Assert by xpath={p2}: expected: {p1}, actual: {value}'
@@ -264,6 +270,8 @@ class ApiKeywords:
             value = self.http.get_value_by_json_path(p2)
             if not value:
                 value = 'Json path match nothing.'
+            elif 'Error' in value:
+                return False, value
             p1 = self.var_map.handle_var(p1)
             res = self.http.get_response_text()
             self.__res = f'Assert by json_path={p2}: expected: {p1}, actual: {value}'

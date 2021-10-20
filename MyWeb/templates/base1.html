@@ -104,51 +104,50 @@
 {% load static %}
 <script src="{% static 'layui.js' %} "></script>
 <script>
-    !function () {
-        layui.config({
-            base: '/static/ext/',
-            version: 'v1.6.2'
-        }).extend({
-            soulTable: 'soulTable',
-        });
-        let layer = layui.layer;
-        let $ = layui.jquery;
-        let element = layui.element;
-        $(".layui-side li.layui-nav-item a").on('click', function () {
-            let expand = $(this).attr('class');
-            if (layui.sessionData('expand').expand === 'none' || layui.sessionData('expand').expand !== expand) {
-                {#console.log('expand');#}
-                layui.sessionData('expand', {key: 'expand', value: expand});
-            } else {
-                {#console.log('remove');#}
-                layui.sessionData('expand', {key: 'expand', value: 'none'});
-            }
-        });
-
-        let exp = layui.sessionData('expand').expand;
-        {% if expand %}
-            if (layui.sessionData('expand').expand === 'none' || layui.sessionData('expand').expand == null) {
-                exp = "{{expand}}";
-                layui.sessionData('expand', {key: 'expand', value: exp});
-            }
-        {% endif %}
-        if (exp != null && exp.toString() !== '') {
-            $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
+    {#!function () {#}
+    layui.config({
+        base: '/static/ext/',
+        version: 'v1.6.2'
+    }).extend({
+        soulTable: 'soulTable',
+    });
+    var layer = layui.layer;
+    var $ = layui.jquery;
+    var element = layui.element;
+    $(".layui-side li.layui-nav-item a").on('click', function () {
+        let expand = $(this).attr('class');
+        if (layui.sessionData('expand').expand === 'none' || layui.sessionData('expand').expand !== expand) {
+            {#console.log('expand');#}
+            layui.sessionData('expand', {key: 'expand', value: expand});
+        } else {
+            {#console.log('remove');#}
+            layui.sessionData('expand', {key: 'expand', value: 'none'});
         }
-        {% if message %}
-            layer.open({
-                content: '<div style="padding: 20px 100px;">' + '{{message}}' + '</div>'
-                , type: 1
-                , title: '提示'
-                , time: 5000
-                , btn: '确定'
-                , yes: function () {
-                    layer.closeAll();
-                }
-            });
-        {% endif %}
+    });
 
-    }();
+    var exp = layui.sessionData('expand').expand;
+    {% if expand %}
+        if (layui.sessionData('expand').expand === 'none' || layui.sessionData('expand').expand == null) {
+            exp = "{{expand}}";
+            layui.sessionData('expand', {key: 'expand', value: exp});
+        }
+    {% endif %}
+    if (exp != null && exp.toString() !== '') {
+        $("." + exp).parent().attr("class", "layui-nav-item layui-nav-itemed");
+    }
+    {% if message %}
+        layer.open({
+            content: '<div style="padding: 20px 100px;">' + '{{message}}' + '</div>'
+            , type: 1
+            , title: '提示'
+            , time: 5000
+            , btn: '确定'
+            , yes: function () {
+                layer.closeAll();
+            }
+        });
+    {% endif %}
+    {# }();#}
 </script>
 {% load static %}
 {% block script %}

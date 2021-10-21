@@ -28,10 +28,11 @@ class RunnerThread(threading.Thread):
             if 'id' not in case.keys():
                 continue
             api_case = ApiCase.objects.filter(id=case['id'])
-            steps = ApiCaseStep.objects.filter(case__id=api_case[0].id).order_by('step_order')
+            steps = ApiCaseStep.objects.filter(case=api_case[0]).order_by('step_order')
             if not steps or not case:
                 continue
-            case_res = ApiCaseResult(batch=self.batch, case=api_case[0], create_time=datetime.datetime.now(), result='9')
+            case_res = ApiCaseResult(batch=self.batch, case=api_case[0], case_title=api_case[0].title,
+                                     create_time=datetime.datetime.now(), result='9')
             case_res.save()
             case_result = self.execute_steps(steps, case_result, api, case_res)
             # for step in steps:
@@ -60,19 +61,25 @@ class RunnerThread(threading.Thread):
 
     def execute_steps(self, steps, case_result, api, case_res):
         for step in steps:
+            step_res = ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title,
+                                     step_action=step.step_action, result='9')
             if not str(step.step_action).isdigit() and hasattr(api, step.step_action):
                 try:
                     func = getattr(api, step.step_action)
                     res, info = func(*(step.step_p1, step.step_p2))
                     case_result = case_result and res
                     result = '0' if res else '1'
-                    ApiStepResult(batch=self.batch, case=case_res, step=step, result=result, info=info[:2047],
-                                  create_time=datetime.datetime.now()).save()
+                    step_res.result = result
+                    step_res.info = info[:2047]
+                    # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result=result,
+                    #               info=info[:2047], create_time=datetime.datetime.now()).save()
                 except Exception as e:
                     error = e.__str__()[:2047] if len(e.__str__()) > 2048 else e.__str__()
                     case_result = False
-                    ApiStepResult(batch=self.batch, case=case_res, step=step, result='1',
-                                  info=error, create_time=datetime.datetime.now()).save()
+                    step_res.result = '1'
+                    step_res.info = error
+                    # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result='1',
+                    #               info=error, create_time=datetime.datetime.now()).save()
             elif str(step.step_action).isdigit():
                 case = ApiCase.objects.filter(id=step.step_action)
                 child_case_steps = ApiCaseStep.objects.filter(case_id=case[0].id)
@@ -80,8 +87,12 @@ class RunnerThread(threading.Thread):
                     case_result = case_result and self.execute_steps(child_case_steps, case_result, api, case_res)
             else:
                 case_result = False
-                ApiStepResult(batch=self.batch, case=case_res, step=step, result='1', info='No such keyword.',
-                              create_time=datetime.datetime.now()).save()
+                step_res.result = '1'
+                step_res.info = 'No such keyword.'
+                # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result='1',
+                #               info='No such keyword.', create_time=datetime.datetime.now()).save()
+            step_res.create_time = datetime.datetime.now()
+            step_res.save()
         return case_result
 
 

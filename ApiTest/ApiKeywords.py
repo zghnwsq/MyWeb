@@ -35,7 +35,7 @@ class ApiKeywords:
         p1 = args[0]
         p2 = args[1]
         try:
-            if p2:
+            if p1 and p2:
                 p2 = self.var_map.handle_var(p2)
                 self.http.add_headers({p1: p2})
             else:

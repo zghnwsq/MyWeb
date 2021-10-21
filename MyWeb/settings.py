@@ -104,7 +104,7 @@ DATABASES = {
     # local centos7
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'HOST': '192.168.1.113',
+        'HOST': '192.168.0.100',
         'PORT': 9306,
         'NAME': 'myweb',
         'USER': 'myweb',
@@ -232,7 +232,7 @@ LOGGING = {
 }
 
 # 自定义参数
-APSCHEDULER = 'on'
+APSCHEDULER = 'off'
 DATA_SOURCE_ROOT = os.path.join(BASE_DIR, 'Upload', 'DS')
 MNAGER_GROUPS = ['管理员']
 

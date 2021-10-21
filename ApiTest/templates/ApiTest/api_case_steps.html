@@ -27,29 +27,7 @@
 </script>
 
 <script>
-function reload_data($, case_id, tb) {
-    let new_data;
-    let options;
-    $.ajax({
-        url: "/apitest/case/steps/"
-        , type: "GET"
-        , data: {case_id: case_id}
-        , success: function (data) {
-            new_data = data.data;
-            options = data.keywords;
-            for(let index in new_data){
-                if (!new_data.hasOwnProperty(index)) continue;
-                new_data[index]['keywords'] = options;
-            }
-            tb.reload("step_table", {
-                data: new_data
-            });
-            setSelectCSS();
-            {#return new_data;#}
-        }
-    });
-    {#return new_data;#}
-}
+
 function setSelectCSS() {
     $(".layui-table-body, .layui-table-box, td[data-field='step_action']>.layui-table-cell").css('overflow', 'visible');
     $("td[data-field='step_action'] .layui-form-select").css({
@@ -89,6 +67,28 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     {#    table_data[index]['keywords'] = keywords;#}
     {# } #}
 
+    function reload_data($, case_id, tb) {
+        let new_data;
+        let options;
+        $.ajax({
+            url: "/apitest/case/steps/"
+            , type: "GET"
+            , data: {case_id: case_id}
+            , success: function (data) {
+                new_data = data.data;
+                options = data.keywords;
+                for (let index in new_data) {
+                    if (!new_data.hasOwnProperty(index)) continue;
+                    new_data[index]['keywords'] = options;
+                }
+                table_data = new_data;
+                tb.reload("step_table", {
+                    data: new_data
+                });
+                setSelectCSS();
+            }
+        });
+    }
     let step_table = tb.render({
         elem: '#step_table',
         id: 'step_table',
@@ -156,11 +156,19 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
             setSelectCSS();
         }
     });
+    function getRowIndex(tb, row) {
+        {# row: tr object #}
+        let curr = step_table['config']['page']['curr'];
+        let limit = step_table['config']['page']['limit'];
+        let idx = row.data('index');
+        return (curr - 1) * limit + idx;
+    }
     tb.on('tool(step_table)', function (obj) {
-        {#let data = obj.data;#}
         let layEvent = obj.event;
         if (layEvent === 'del') {
             msg.confirm('是否确定删除?', function (index) {
+                let idx = getRowIndex(step_table, obj['tr']);
+                table_data.splice(idx, 1);
                 obj.del();
                 msg.close(index);
             });
@@ -172,9 +180,8 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
         let trElem = elem.parents('tr');
         {#更新到表格的缓存数据中，才能在获得选中行等等其他的方法中得到更新之后的值#}
         {#tableData[trElem.data('index')][elem.attr('name')] = data.value;#}
-        let curr = step_table['config']['page']['curr'];
-        let limit = step_table['config']['page']['limit'];
-        table_data[(curr - 1) * limit + trElem.data('index')][elem.attr('name')] = data.value;
+        let idx = getRowIndex(step_table, trElem)
+        table_data[idx][elem.attr('name')] = data.value;
     });
     fm.on('switch(rowDragSwitch)', function (data) {
         soulTable.suspend('step_table', 'rowDrag', !data.elem.checked)
@@ -196,7 +203,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                     content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
                     , type: 1
                     , title: '提示'
-                    , time: 5000
+                    , time: 10000
                     , btn: '确定'
                     , yes: function (index) {
                         msg.close(index);

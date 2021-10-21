@@ -40,7 +40,7 @@ class ApiGroupV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
 def get_groups(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    groups = ApiGroup.objects.filter(status='1').values('id', 'group', 'author__username')
+    groups = ApiGroup.objects.filter(status='1').values('id', 'group', 'author__username').order_by('id')
     if len(groups) > 0:
         data_list = paginator(groups, int(page), int(limit))
     else:
@@ -346,20 +346,37 @@ def edit_case(request):
             has_case = ApiCase.objects.filter(id=int(case_id))
             if has_case:
                 # 清空
-                ApiCaseStep.objects.filter(case=has_case[0]).delete()
+                # ApiCaseStep.objects.filter(case=has_case[0]).delete()
                 batch = []
                 index = 0
-                for step in data:
-                    if step:
-                        batch.append(ApiCaseStep(case=has_case[0], step_action=step['step_action'], step_p1=step['step_p1'],
-                                                 step_p2=step['step_p2'], step_p3=step['step_p3'], title=step['title'],
-                                                 step_order=index))
-                        index += 1
-                if index == len(data):
-                    res = ApiCaseStep.objects.bulk_create(batch)
-                    msg = f'保存成功,更新{len(res)}条.'
-                else:
-                    msg = 'ERROR: 数据更新错误.'
+                created, updated, deleted = [], [], []
+                with transaction.atomic():
+                    # 事务回滚点
+                    save_id = transaction.savepoint()
+                    for step in data:
+                        if step:
+                            if 'id' in step.keys():
+                                is_exists = ApiCaseStep.objects.filter(id=step['id'])
+                                if is_exists:
+                                    is_exists.update(step_action=step['step_action'], step_p1=step['step_p1'],
+                                                     step_p2=step['step_p2'], step_p3=step['step_p3'], title=step['title'],
+                                                     step_order=index)
+                                    updated.append(step['id'])
+                            else:
+                                batch.append(ApiCaseStep(case=has_case[0], step_action=step['step_action'], step_p1=step['step_p1'],
+                                                         step_p2=step['step_p2'], step_p3=step['step_p3'], title=step['title'],
+                                                         step_order=index))
+                            index += 1
+                    # 删除新增顺序不能变
+                    deleted = ApiCaseStep.objects.filter(case=has_case[0]).exclude(id__in=updated).delete()
+                    if index > 0:
+                        created = ApiCaseStep.objects.bulk_create(batch)
+                    if len(created) + len(updated) != len(data):
+                        transaction.savepoint_rollback(save_id)
+                        msg = 'ERROR: 数据更新错误.'
+                    else:
+                        transaction.savepoint_commit(save_id)
+                        msg = f'保存成功,新增{len(created)}条, 更新{len(updated)}条, 删除{deleted[0]}条.'
             else:
                 msg = 'ERROR: 用例不存在.'
         else:
@@ -459,7 +476,7 @@ def exec_job(request):
     print(req_json)
     if 'cases' in req_json.keys():
         cases = req_json['cases']
-        tester = request.user
+        tester = request.user.username
         debug = True if req_json.get('debug', 'False') == 'True' else False
         api_job_run(cases, tester, debug)
         msg = '任务提交成功!'
@@ -512,7 +529,7 @@ def get_result(request):
         batch = batch.filter(apicaseresult__case__group=group)
     if suite:
         batch = batch.filter(apicaseresult__case__suite=suite)
-    batch = batch.values('id', 'tester__username', 'result', 'create_time').order_by('-create_time')
+    batch = batch.values('id', 'tester', 'result', 'create_time').order_by('-create_time')
     if len(batch) > 0:
         data_list = paginator(batch, int(page), int(limit))
     else:
@@ -525,7 +542,7 @@ def get_result(request):
 def get_case_result(request):
     batch_id = request.GET.get('batch', None)
     if batch_id:
-        case_result = ApiCaseResult.objects.filter(batch=batch_id).values('id', 'batch', 'case__title', 'result', 'info',
+        case_result = ApiCaseResult.objects.filter(batch=batch_id).values('id', 'batch', 'case_title', 'result', 'info',
                                                                           'create_time').order_by('id')
         return JsonResponse({"code": 0, "msg": "", "count": len(case_result), "data": list(case_result)})
     else:
@@ -537,11 +554,13 @@ def get_case_result(request):
 def get_steps_result(request):
     case_result_id = request.GET.get('case_result_id', None)
     if case_result_id:
-        step_result = ApiStepResult.objects.filter(case=case_result_id).values('batch', 'case__case__title',
-                                                                                        'step__step_action',
-                                                                                        'step__title',
-                                                                                        'result', 'info',
-                                                                                        'create_time').order_by('id')
+        step_result = ApiStepResult.objects.filter(case=case_result_id).values('batch', 'case__case_title',
+                                                                               'step_action',
+                                                                               # 'step__step_action',
+                                                                               'step_title',
+                                                                               # 'step__title',
+                                                                               'result', 'info',
+                                                                               'create_time').order_by('id')
         return render(request, 'ApiTest/api_step_result.html', {'steps': json.dumps(list(step_result), cls=DateEncoder)})
     else:
         return JsonResponse({"code": 0, "msg": "请求参数不正确!", "count": 0, "data": []})

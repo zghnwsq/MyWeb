@@ -135,7 +135,7 @@
                             page: false,
                             cols: [[
                                 {type: 'numbers', title: 'No', align: 'center'},
-                                {field: 'case__title', title: 'Title', align: 'center'},
+                                {field: 'case_title', title: 'Case Title', align: 'center'},
                                 {field: 'info', title: 'Info', align: 'center'},
                                 {
                                     field: 'result', title: 'Result', align: 'center', templet(d) {
@@ -167,7 +167,7 @@
                                                 if (ret.indexOf('ERROR') === -1) {
                                                     layer.open({
                                                         type: 1
-                                                        , title: ['用例详细结果: ' + data.case__title, 'font-size:18px;']
+                                                        , title: ['用例详细结果: ' + data.case_title, 'font-size:18px;']
                                                         , content: ret
                                                         , area: ['1200px', '600px']
                                                         , maxmin: true
@@ -212,7 +212,7 @@
                         }]
                         }},
                     {field: 'id', title: 'Batch No', sort: true, align: 'center'},
-                    {field: 'tester__username', title: 'Tester', align: 'center', sort: true},
+                    {field: 'tester', title: 'Tester', align: 'center', sort: true},
                     {field: 'result', title: 'Result', align: 'center', sort: true, templet(d){
                             if (d.result === '0') {
                                 return '<span style="color: green">通过</span>';

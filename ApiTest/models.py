@@ -5,8 +5,8 @@ from django.contrib.auth.models import User
 
 class ApiGroup(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    group = models.CharField(max_length=64, null=False)
-    author = models.ForeignKey(User, null=False, on_delete=models.DO_NOTHING)
+    group = models.CharField(max_length=64, blank=False)
+    author = models.ForeignKey(User, blank=False, on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=1)
 
     def __str__(self):
@@ -18,7 +18,7 @@ class ApiGroup(models.Model):
 
 class ApiGroupEnv(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    group = models.ForeignKey(ApiGroup, null=False, on_delete=models.CASCADE)
+    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE)
     env_key = models.CharField(max_length=256, null=False, blank=False)
     env_value = models.CharField(max_length=256, blank=True)
 
@@ -31,9 +31,9 @@ class ApiGroupEnv(models.Model):
 
 class ApiCase(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    group = models.ForeignKey(ApiGroup, null=False, on_delete=models.CASCADE)
-    suite = models.CharField(max_length=64, null=False)
-    title = models.CharField(max_length=128, null=False)
+    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE)
+    suite = models.CharField(max_length=64, blank=False)
+    title = models.CharField(max_length=128, blank=False)
     author = models.ForeignKey(User, null=False, on_delete=models.DO_NOTHING)
 
     def __str__(self):
@@ -45,7 +45,7 @@ class ApiCase(models.Model):
 
 class ApiCaseStep(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    case = models.ForeignKey(ApiCase, null=False, on_delete=models.CASCADE)
+    case = models.ForeignKey(ApiCase, blank=False, on_delete=models.CASCADE)
     step_action = models.CharField(max_length=128, null=False)
     step_p1 = models.CharField(max_length=1024, null=True)
     step_p2 = models.CharField(max_length=1024, null=True)
@@ -62,7 +62,7 @@ class ApiCaseStep(models.Model):
 
 class ApiTestBatch(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    tester = models.ForeignKey(User, null=True, on_delete=models.DO_NOTHING)
+    tester = models.CharField(max_length=150, null=True, blank=True)
     result = models.CharField(max_length=1, null=True)
     create_time = models.DateTimeField(auto_created=True)
 
@@ -72,8 +72,9 @@ class ApiTestBatch(models.Model):
 
 class ApiCaseResult(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    batch = models.ForeignKey(ApiTestBatch, null=False, on_delete=models.CASCADE)
-    case = models.ForeignKey(ApiCase, null=False, on_delete=models.CASCADE)
+    batch = models.ForeignKey(ApiTestBatch, blank=False, on_delete=models.CASCADE)
+    case = models.ForeignKey(ApiCase, null=True, on_delete=models.SET_NULL)
+    case_title = models.CharField(max_length=128, null=False)
     result = models.CharField(max_length=1, null=True)
     info = models.CharField(max_length=512, null=True)
     create_time = models.DateTimeField(auto_created=True)
@@ -84,9 +85,11 @@ class ApiCaseResult(models.Model):
 
 class ApiStepResult(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    batch = models.ForeignKey(ApiTestBatch, null=False, on_delete=models.CASCADE)
-    case = models.ForeignKey(ApiCaseResult, null=False, on_delete=models.CASCADE)
-    step = models.ForeignKey(ApiCaseStep, null=False, on_delete=models.CASCADE)
+    batch = models.ForeignKey(ApiTestBatch, blank=False, on_delete=models.CASCADE)
+    case = models.ForeignKey(ApiCaseResult, blank=False, on_delete=models.CASCADE)
+    step = models.ForeignKey(ApiCaseStep, null=True, on_delete=models.SET_NULL)
+    step_title = models.CharField(max_length=128, null=True)
+    step_action = models.CharField(max_length=128, null=True)
     result = models.CharField(max_length=1)
     info = models.CharField(max_length=2048, null=True)
     create_time = models.DateTimeField(auto_created=True)
@@ -97,9 +100,9 @@ class ApiStepResult(models.Model):
 
 class Keyword(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    keyword = models.CharField(max_length=128, null=False)
+    keyword = models.CharField(max_length=128, blank=False)
     description = models.CharField(max_length=256, null=True)
-    is_active = models.CharField(max_length=1, null=False, default='1')
+    is_active = models.CharField(max_length=1, blank=False, default='1')
 
     class Meta:
         db_table = 'api_keyword'

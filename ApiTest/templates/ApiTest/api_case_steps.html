@@ -27,29 +27,7 @@
 </script>
 
 <script>
-function reload_data($, case_id, tb) {
-    let new_data;
-    let options;
-    $.ajax({
-        url: "/apitest/case/steps/"
-        , type: "GET"
-        , data: {case_id: case_id}
-        , success: function (data) {
-            new_data = data.data;
-            options = data.keywords;
-            for(let index in new_data){
-                if (!new_data.hasOwnProperty(index)) continue;
-                new_data[index]['keywords'] = options;
-            }
-            tb.reload("step_table", {
-                data: new_data
-            });
-            setSelectCSS();
-            return new_data;
-        }
-    });
-    return new_data;
-}
+
 function setSelectCSS() {
     $(".layui-table-body, .layui-table-box, td[data-field='step_action']>.layui-table-cell").css('overflow', 'visible');
     $("td[data-field='step_action'] .layui-form-select").css({
@@ -89,6 +67,28 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     {#    table_data[index]['keywords'] = keywords;#}
     {# } #}
 
+    function reload_data($, case_id, tb) {
+        let new_data;
+        let options;
+        $.ajax({
+            url: "/apitest/case/steps/"
+            , type: "GET"
+            , data: {case_id: case_id}
+            , success: function (data) {
+                new_data = data.data;
+                options = data.keywords;
+                for (let index in new_data) {
+                    if (!new_data.hasOwnProperty(index)) continue;
+                    new_data[index]['keywords'] = options;
+                }
+                table_data = new_data;
+                tb.reload("step_table", {
+                    data: new_data
+                });
+                setSelectCSS();
+            }
+        });
+    }
     let step_table = tb.render({
         elem: '#step_table',
         id: 'step_table',
@@ -97,20 +97,23 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
         {#url: '/apitest/case/steps/',#}
         page: {
             curr: 1,
-            limit: 30
+            limit: 10
         },
         {#where: {'case_id': {{case_id}} },#}
         even: true,
         {#overflow: 'tips',#}
         toolbar: '#stepsToolBar',
         rowDrag: {/*trigger: 'row',*/ done: function (obj) {
-                {#// 完成时（松开时）触发#}
-                {#// 如果拖动前和拖动后无变化，则不会触发此方法#}
+                {#// 完成时（松开时）触发,如果拖动前和拖动后无变化，则不会触发此方法#}
                 {#console.log(obj.row); // 当前行数据#}
-                {#console.log(obj.cache); // 改动后全表数据#}
-                table_data = obj.cache;
-                {#console.log(obj.oldIndex); // 原来的数据索引#}
-                {#console.log(obj.newIndex); // 改动后数据索引#}
+                {#console.log(obj.cache); // 改动后全表数据,会被分页截断#}
+                console.log(obj.oldIndex); // 原来的数据索引
+                console.log(obj.newIndex); // 改动后数据索引
+                let curr = step_table['config']['page']['curr'];
+                let limit = step_table['config']['page']['limit'];
+                table_data.splice((curr - 1) * limit, limit, ...obj.cache);
+                {#table_data = step_table['config']['data'];#}
+                console.log(table_data);
             }
         },
         cols: [[
@@ -149,15 +152,23 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
         ]],
         done: function (res) {
             soulTable.render(this);
-            table_data = res.data;
+            {#table_data = res.data;  //分页会截断数据#}
             setSelectCSS();
         }
     });
+    function getRowIndex(tb, row) {
+        {# row: tr object #}
+        let curr = step_table['config']['page']['curr'];
+        let limit = step_table['config']['page']['limit'];
+        let idx = row.data('index');
+        return (curr - 1) * limit + idx;
+    }
     tb.on('tool(step_table)', function (obj) {
-        {#let data = obj.data;#}
         let layEvent = obj.event;
         if (layEvent === 'del') {
             msg.confirm('是否确定删除?', function (index) {
+                let idx = getRowIndex(step_table, obj['tr']);
+                table_data.splice(idx, 1);
                 obj.del();
                 msg.close(index);
             });
@@ -167,11 +178,10 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     fm.on('select(step_action)', function (data) {
         let elem = $(data.elem);
         let trElem = elem.parents('tr');
-        {#table id#}
-        let tableData = tb.cache['step_table'];
         {#更新到表格的缓存数据中，才能在获得选中行等等其他的方法中得到更新之后的值#}
-        tableData[trElem.data('index')][elem.attr('name')] = data.value;
-        table_data = tableData;
+        {#tableData[trElem.data('index')][elem.attr('name')] = data.value;#}
+        let idx = getRowIndex(step_table, trElem)
+        table_data[idx][elem.attr('name')] = data.value;
     });
     fm.on('switch(rowDragSwitch)', function (data) {
         soulTable.suspend('step_table', 'rowDrag', !data.elem.checked)
@@ -179,6 +189,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     fm.on('submit(save_case)', function () {
         const steps_csrf = $("div[lay-filter='steps']>input[name='csrfmiddlewaretoken']").val();
         const case_id = $("#case_id").val();
+        console.log(table_data);
         $.ajax({
             url: "/apitest/case/edit/"
             , type: "POST"
@@ -192,7 +203,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                     content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
                     , type: 1
                     , title: '提示'
-                    , time: 5000
+                    , time: 10000
                     , btn: '确定'
                     , yes: function (index) {
                         msg.close(index);
@@ -205,7 +216,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     });
     $("#new_step").on('click', function () {
         table_data.push({
-            'step_order': '',
+            'step_order': table_data.length.toString(),
             'step_action': '',
             'step_p1': '',
             'step_p2': '',
@@ -213,6 +224,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
             'title': '',
             'keywords': keywords
         });
+        console.log(table_data);
         {# 将新数据重新载入表格 #}
         tb.reload("step_table", {
             data: table_data

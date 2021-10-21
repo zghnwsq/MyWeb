@@ -10,7 +10,6 @@ logger = logging.getLogger('django')
 
 
 def filter_api_run_his(tester=None, group=None, suite=None, testcase=None, result=None, beg=None, end=None):
-    # run_his = ApiTestBatch.objects.all()
     run_his = ApiCaseResult.objects.all()
     if tester:
         tester = str(tester).strip()
@@ -23,7 +22,7 @@ def filter_api_run_his(tester=None, group=None, suite=None, testcase=None, resul
         run_his = run_his.filter(case__suite=suite)
     if testcase:
         testcase = str(testcase).strip()
-        run_his = run_his.filter(case__title=testcase)
+        run_his = run_his.filter(case_title=testcase)
     if result:
         result = str(result).strip()
         run_his = run_his.filter(status=result)
@@ -64,7 +63,13 @@ def get_suite_total(group=None, suite=None):
 
 
 def count_api_by_group(group=None, beg=None, end=None):
-    run_his = filter_api_run_his(group=group, beg=beg, end=end)
+    # 过滤掉case删除后，case_id为null的记录
+    run_his = filter_api_run_his(group=group, beg=beg, end=end).filter(case_id__isnull=False)
+    # 非外键下的关联子查询
+    # from django.db.models import OuterRef, Subquery
+    # group = ApiGroup.objects.filter(id=OuterRef('group'))
+    # case = ApiCase.objects.annotate(grp=groups.values('group')).filter(id=OuterRef('case'))
+    # run_his.annotate(group=case.values('grp')).values('group')
     run_his = run_his.values('case__group__group').annotate(group=F('case__group__group'),
                                                             time=Cast(TruncDate('create_time'),
                                                                       output_field=CharField()), count=Count(1))
@@ -80,7 +85,8 @@ def count_api_by_result(group=None, beg=None, end=None):
     :param end:
     :return:
     """
-    run_his = filter_api_run_his(group=group, beg=beg, end=end)
+    # 过滤掉case删除后，case_id为null的记录
+    run_his = filter_api_run_his(group=group, beg=beg, end=end).filter(case_id__isnull=False)
     run_his_extra = run_his.annotate(time=Cast(TruncDate('create_time'), output_field=CharField()))
     run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result='0')),
                                                               fail=Count('result', Q(result='1')),

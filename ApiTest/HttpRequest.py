@@ -180,7 +180,7 @@ class HttpRequest:
             else:
                 return result
         except JSONDecodeError:
-            return '响应文本解析为json格式失败.'
+            return 'Error: 响应文本解析为json格式失败.'
 
     def get_value_by_xpath(self, xpath):
         """
@@ -191,4 +191,5 @@ class HttpRequest:
         tree = etree.HTML(self.response.text)
         value = tree.xpath(xpath)
         return value
+
 

@@ -221,7 +221,7 @@ def get_cases(request):
         cases = cases.filter(group__group=group)
     if suite:
         cases = cases.filter(suite=suite)
-    cases = cases.values('id', 'group__group', 'suite', 'title', 'author__username').order_by('group__group', 'suite')
+    cases = cases.values('id', 'group__group', 'suite', 'title', 'author__username').order_by('group__group', 'id')
     if len(cases) > 0:
         data_list = paginator(cases, int(page), int(limit))
     else:
@@ -327,8 +327,8 @@ def edit_case(request):
                                                                                                    'step_p2', 'step_p3',
                                                                                                    'case', 'title',
                                                                                                    'step_order')
-                keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description')
-                cases = ApiCase.objects.exclude(id=case_id).order_by('id').values('id', 'title')
+                keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description').order_by('list_order')
+                cases = ApiCase.objects.exclude(id=case_id).order_by('group', 'id').values('id', 'title')
                 return render(request, 'ApiTest/api_case_steps.html',
                               {'case_id': case_id, 'title': case[0].title, 'data': json.dumps(list(steps)),
                                'keywords': json.dumps(list(keywords)), 'cases': json.dumps(list(cases))})
@@ -443,7 +443,7 @@ def get_steps(request):
     steps = ApiCaseStep.objects.filter(case__id=case_id).order_by('step_order').values('id', 'step_action', 'step_p1',
                                                                                        'step_p2', 'step_p3', 'case',
                                                                                        'step_order', 'title')
-    keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description')
+    keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description').order_by('list_order')
     # if len(steps) > 0:
     #     data_list = paginator(steps, int(page), int(limit))
     # else:
@@ -478,7 +478,8 @@ def exec_job(request):
         cases = req_json['cases']
         tester = request.user.username
         debug = True if req_json.get('debug', 'False') == 'True' else False
-        api_job_run(cases, tester, debug)
+        stop_after_fail = True if req_json.get('stop_after_fail', 'False') == 'True' else False
+        api_job_run(cases, tester, debug=debug, stop_after_fail=stop_after_fail)
         msg = '任务提交成功!'
     else:
         msg = '请求内容不正确!'

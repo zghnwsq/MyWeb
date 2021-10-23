@@ -59,7 +59,11 @@
 {% block script %}
     <script type="text/html" id="myBar">
         <div>
-            Debug: <input type="checkbox" name="debug" lay-filter="debug" lay-skin="switch" lay-text="ON|OFF">
+            <span>Debug:</span>
+            <input type="checkbox" name="debug" lay-filter="debug" lay-skin="switch" lay-text="ON|OFF">
+            <span style="margin-left: 20px">Stop After Fail:</span>
+            <input type="checkbox" name="stop_after_fail" lay-filter="stop_after_fail" lay-skin="switch"
+                   lay-text="ON|OFF" checked>
         </div>
     </script>
     <script>
@@ -69,6 +73,7 @@
             let $ = layui.$;
             let layer = layui.layer;
             let debug_switch = 'False';
+            let stop_after_fail = 'True';
 
             let cases = table.render({
                 elem: '#case_table'
@@ -126,7 +131,15 @@
                 }else{
                     debug_switch = 'False';
                 }
-            })
+            });
+            {# stop_after_fail 开关#}
+            form.on('switch(stop_after_fail)', function (data) {
+                if (data.elem.checked) {
+                    stop_after_fail = 'True';
+                } else {
+                    stop_after_fail = 'False';
+                }
+            });
             {# 执行任务 #}
             $('#exec').on('click', function () {
                 let checkStatus = table.checkStatus('case_table');
@@ -152,7 +165,7 @@
                         , beforeSend: function (xhr) {
                             xhr.setRequestHeader("X-CSRFToken", csrf);
                         }
-                        , data: JSON.stringify({cases: cases, debug: debug_switch})
+                        , data: JSON.stringify({cases: cases, debug: debug_switch, stop_after_fail: stop_after_fail})
                         , success: function (data) {
                             layer.open({
                                 content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'

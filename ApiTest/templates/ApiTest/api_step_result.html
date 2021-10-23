@@ -17,17 +17,17 @@
             elem: '#step_result_table',
             id: 'step_result_table',
             data: table_data,
-            page: false,
+            page: true,
             even: true,
             defaultToolbar: ['filter', 'print', 'exports'],
             toolbar: true,
-            overflow: {
-                hoverTime: 300,
-                color: 'black',
-                bgColor: 'white',
-                'type': 'tips',
-                'maxWidth': 500,
-            },
+            {#overflow: {#}
+            {#    hoverTime: 300,#}
+            {#    color: 'black',#}
+            {#    bgColor: 'white',#}
+            {#    'type': 'tips',#}
+            {#    'maxWidth': 500,#}
+            {# },#}
             cols: [[
                 {type: 'numbers', title: '序号', fixed: 'left'},
                 {#{field: 'case__case__title', title: 'Case Title', align: 'center'},#}

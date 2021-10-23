@@ -102,6 +102,7 @@ class Keyword(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     keyword = models.CharField(max_length=128, blank=False)
     description = models.CharField(max_length=256, null=True)
+    list_order = models.IntegerField(blank=False, default=1)
     is_active = models.CharField(max_length=1, blank=False, default='1')
 
     class Meta:

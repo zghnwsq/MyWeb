@@ -47,7 +47,7 @@ class ApiKeywords:
             return True, self.__res
         except Exception as e:
             self.__res = f'Fail to set header: {p1}, {p2}'
-            self.__debug_info = f'Debug: Fail to set header: {p1}, {p2}. Info: {e.__str__()}'
+            self.__debug_info = f'Debug: Fail to set header: {p1}, {p2}. \n|| Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def del_header(self, *args):
@@ -95,7 +95,7 @@ class ApiKeywords:
             return True, self.__res
         except Exception as e:
             self.__res = f'Fail to set cookie: {p1}, {p2}'
-            self.__debug_info = f'Debug: Fail to set cookie: {p1}, {p2}. Info: {e.__str__()}'
+            self.__debug_info = f'Debug: Fail to set cookie: {p1}, {p2}. \n|| Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def get(self, *args):
@@ -124,15 +124,15 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Url Params: {p2} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n|| Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Url: {url} \n|| Vars: {self.var_map} \n|| Url Params: {p2} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
             return True, self.__debug_info if self.__debug else self.__res
         except JSONDecodeError:
             self.__res = f'Url params json.loads解析失败: {p1}, {p2}'
-            self.__debug_info = f'Url params json.loads解析失败: {p1}, {p2}.'
+            self.__debug_info = f'Url params json.loads解析失败: {p1}, {p2}. \n|| Vars: {self.var_map} '
             return False, self.__debug_info if self.__debug else self.__res
         except Exception as e:
             self.__res = f'Fail to get: {p1}, {p2}'
-            self.__debug_info = f'Debug: Fail to get: {p1}, {p2}. Info: {e.__str__()}'
+            self.__debug_info = f'Debug: Fail to get: {p1}, {p2}.  \n|| Vars: {self.var_map} \n|| Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def post(self, *args):
@@ -153,6 +153,9 @@ class ApiKeywords:
                 url = uri
             data = self.var_map.handle_var(p2)
             request_headers = self.http.headers
+            # jsonpath提取数组转字符串为单引号,json只认双引号
+            if 'Content-Type' in self.http.headers and 'json' in self.http.headers['Content-Type'].lower():
+                data = data.replace('\'', '\"')
             request_cookies = dict_from_cookiejar(self.http.cookies)
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
@@ -160,23 +163,26 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Data: {p2}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n|| Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Url: {url} \n|| Vars: {self.var_map} \n|| Data: {p2}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
             return True, self.__debug_info if self.__debug else self.__res
         except Exception as e:
-            self.__res = f'Fail to post: {p1}, {p2}; Vars: {self.var_map}'
-            self.__debug_info = f'Debug: Fail to post: {p1}, {p2}; Vars: {self.var_map}. Info: {e.__str__()}'
+            self.__res = f'Fail to post: {p1}, {p2}; \n|| Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Fail to post: {p1}, {p2}; \n|| Vars: {self.var_map}. \n|| Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
-    def json_extractor(self, *args):
+    def json_extractor(self, *args, match: int = 1):
         """
             根据json path提取值到var map
         :param args:p1: 参数名;p2: json path
+        :param match: 匹配方式, -1:返回全部, 1:返回第一个
         :return: boolean, information
         """
         p1 = args[0]
         p2 = args[1]
         try:
             value = self.http.get_value_by_json_path(p2)
+            if isinstance(match, int) and match > 0:
+                value = value[match - 1]
             if 'Error' not in value:
                 self.var_map.set_var(p1, value)
                 self.__res = f'Set "{p1}={value}" by json_path="{p2}" from response.'
@@ -186,18 +192,65 @@ class ApiKeywords:
         except JSONDecodeError as e:
             return False, e.__str__()
 
-    def xpath_extractor(self, *args):
+    def json_value(self, *args):
         """
-            根据xpath提取值到var map
+        :param args: args:p1: 参数名;p2: json path
+        :return: 返回第一个
+        """
+        return self.json_extractor(*args, match=1)
+
+    def json_values(self, *args):
+        """
+        :param args: args: args:p1: 参数名;p2: json path
+        :return: 返回全部
+        """
+        return self.json_extractor(*args, match=-1)
+
+    def xpath_extractor(self, *args, match: int = 1):
+        """
+            根据xpath提取文本值到var map
+        :param args:p1: 参数名;p2: xpath
+        :param match: 匹配方式, -1:返回全部, 1:返回第一个
+        :return: boolean, information
+        """
+        p1 = args[0]
+        p2 = args[1]
+        try:
+            value = self.http.get_text_by_xpath(p2)
+            if isinstance(match, int) and match > 0:
+                value = value[match - 1]
+            self.var_map.set_var(p1, value)
+            self.__res = f'Set "{p1}={value}" by xpath="{p2}" from response.'
+            return True, self.__res
+        except Exception as e:
+            return False, e.__str__()
+
+    def xpath_node_text(self, *args):
+        """
+        :param args: args:p1: 参数名;p2: xpath
+        :return: 返回第一个
+        """
+        return self.xpath_extractor(*args, match=1)
+
+    def xpath_nodes_texts(self, *args):
+        """
+        :param args: args:p1: 参数名;p2: xpath
+        :return: 返回全部
+        """
+        return self.xpath_extractor(*args, match=-1)
+
+    def xpath_node_attr(self, *args):
+        """
+        根据xpath提取属性值到var map
         :param args:p1: 参数名;p2: xpath
         :return: boolean, information
         """
         p1 = args[0]
         p2 = args[1]
         try:
-            value = self.http.get_value_by_xpath(p2)[0]
-            self.var_map.set_var(p1, value)
-            self.__res = f'Set "{p1}={value}" by xpath="{p2}" from response.'
+            attr = self.http.get_value_by_xpath(p2)[0]
+            self.var_map.set_var(p1, attr)
+            self.__res = f'Set "{p1}={attr}" by xpath="{p2}" from response.'
             return True, self.__res
         except Exception as e:
             return False, e.__str__()
@@ -242,7 +295,7 @@ class ApiKeywords:
         p1 = args[0]
         p2 = args[1]
         try:
-            value = self.http.get_value_by_xpath(p2)
+            value = self.http.get_text_by_xpath(p2)[0]
             if not value:
                 value = 'Xpath match nothing.'
             elif 'Error' in value:
@@ -250,7 +303,7 @@ class ApiKeywords:
             p1 = self.var_map.handle_var(p1)
             res = self.http.get_response_text()
             self.__res = f'Assert by xpath={p2}: expected: {p1}, actual: {value}'
-            self.__debug_info = f'Debug: Assert by xpath={p2}: expected: {p1}, actual: {value} \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert by xpath={p2}: expected: {p1}, actual: {value} \n|| Vars: {self.var_map}. \n|| Response: {res}'
             if p1.strip() == value.strip():
                 return True, self.__debug_info if self.__debug else self.__res
             else:
@@ -267,7 +320,7 @@ class ApiKeywords:
         p1 = args[0]
         p2 = args[1]
         try:
-            value = self.http.get_value_by_json_path(p2)
+            value = self.http.get_value_by_json_path(p2)[0]
             if not value:
                 value = 'Json path match nothing.'
             elif 'Error' in value:
@@ -275,7 +328,7 @@ class ApiKeywords:
             p1 = self.var_map.handle_var(p1)
             res = self.http.get_response_text()
             self.__res = f'Assert by json_path={p2}: expected: {p1}, actual: {value}'
-            self.__debug_info = f'Debug: Assert by json_path={p2}: expected: {p1}, actual: {value} \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert by json_path={p2}: expected: {p1}, actual: {value} \n|| Vars: {self.var_map}. \n|| Response: {res}'
             if p1.strip() == value.strip():
                 return True, self.__debug_info if self.__debug else self.__res
             else:
@@ -294,9 +347,9 @@ class ApiKeywords:
         p1 = self.var_map.handle_var(p1)
         if p1 in res:
             self.__res = f'Assert result contains: {p1}, True'
-            self.__debug_info = f'Debug: Assert result contains: {p1}, True \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, True \n|| Vars: {self.var_map}. \n|| Response: {res}'
             return True, self.__debug_info if self.__debug else self.__res
         else:
             self.__res = f'Assert result contains: {p1}, False'
-            self.__debug_info = f'Debug: Assert result contains: {p1}, False \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, False \n|| Vars: {self.var_map}. \n|| Response: {res}'
             return False, self.__debug_info if self.__debug else self.__res

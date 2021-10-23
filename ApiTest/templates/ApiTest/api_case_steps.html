@@ -5,7 +5,7 @@
     {% csrf_token %}
     <div class="layui-form-item">
         <div class="layui-row">
-            <div class="layui-col-md3 layui-col-md-offset10">
+            <div class="layui-col-md3 layui-col-md-offset9" style="text-align: center">
                 <button class="layui-btn" id="new_step" lay-filter="new_step">新增步骤</button>
                 <button lay-submit class="layui-btn layui-btn-normal" id="save_case" lay-filter="save_case">保存</button>
             </div>
@@ -121,7 +121,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
             {#{field: 'step_order', title: 'Order', align: 'center'},#}
             {field: 'title', title: 'Title', align: 'center', edit: 'text'},
             {#{field: 'step_action', title: 'Action', align: 'center', edit: 'text'},#}
-            {field: 'step_action', title: 'Action', align: 'center', templet(d) {
+            {field: 'step_action', title: 'Action', align: 'left', templet(d) {
                     const beg = '<select name="step_action" lay-filter="step_action" id="step_action" required lay-verify="required">\n' +
                         '<option value="none">---</option>\n';
                     const end = '</select>';
@@ -131,15 +131,15 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                     for(let index in keywords){
                         if (!keywords.hasOwnProperty(index)) continue;
                         if(keywords[index]['keyword'] === d.step_action){
-                            options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '---' + keywords[index]['description'] + '</option>';
+                            options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
                         }else{
-                            options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '---' + keywords[index]['description'] + '</option>';
+                            options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
                         }
                     }
                     for (let index in cases) {
                         if (!cases.hasOwnProperty(index)) continue;
                         if (cases[index]['id'].toString() === d.step_action) {
-                            options += '<option selected="selected" value="' + cases[index]['id'] + '">' + '用例: ' + cases[index]['title'] + '</option>';
+                            options += '<option selected="selected" value="' + cases[index]['id'] + '">' + '用例:&nbsp;' + cases[index]['title'] + '</option>';
                         } else {
                             options += '<option value="' + cases[index]['id'] + '">' + '用例: ' + cases[index]['title'] + '</option>';
                         }
@@ -169,7 +169,9 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
             msg.confirm('是否确定删除?', function (index) {
                 let idx = getRowIndex(step_table, obj['tr']);
                 table_data.splice(idx, 1);
-                obj.del();
+                tb.reload("step_table", {
+                    data: table_data
+                });
                 msg.close(index);
             });
         }
@@ -189,7 +191,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     fm.on('submit(save_case)', function () {
         const steps_csrf = $("div[lay-filter='steps']>input[name='csrfmiddlewaretoken']").val();
         const case_id = $("#case_id").val();
-        console.log(table_data);
+        {#console.log(table_data);#}
         $.ajax({
             url: "/apitest/case/edit/"
             , type: "POST"

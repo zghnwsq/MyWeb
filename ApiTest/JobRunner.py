@@ -10,11 +10,12 @@ class RunnerThread(threading.Thread):
         多线程执行
     """
 
-    def __init__(self, cases, batch, debug=False):
+    def __init__(self, cases, batch, debug=False, stop_after_fail=False):
         threading.Thread.__init__(self)
         self.cases = cases
         self.batch = batch
         self.debug = debug
+        self.stop_after_fail = stop_after_fail
 
     def run(self):
         batch_result = True
@@ -34,7 +35,7 @@ class RunnerThread(threading.Thread):
             case_res = ApiCaseResult(batch=self.batch, case=api_case[0], case_title=api_case[0].title,
                                      create_time=datetime.datetime.now(), result='9')
             case_res.save()
-            case_result = self.execute_steps(steps, case_result, api, case_res)
+            case_result = self.execute_steps(steps, case_result, api, case_res, stop_after_fail=self.stop_after_fail)
             # for step in steps:
             #     if hasattr(api, step.step_action):
             #         try:
@@ -59,7 +60,7 @@ class RunnerThread(threading.Thread):
         self.batch.result = '0' if batch_result else '1'
         self.batch.save()
 
-    def execute_steps(self, steps, case_result, api, case_res):
+    def execute_steps(self, steps, case_result, api, case_res, stop_after_fail=False):
         for step in steps:
             step_res = ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title,
                                      step_action=step.step_action, result='9')
@@ -70,7 +71,7 @@ class RunnerThread(threading.Thread):
                     case_result = case_result and res
                     result = '0' if res else '1'
                     step_res.result = result
-                    step_res.info = info[:2047]
+                    step_res.info = info.replace('<', '{').replace('>', '}')[:2047]
                     # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result=result,
                     #               info=info[:2047], create_time=datetime.datetime.now()).save()
                 except Exception as e:
@@ -84,7 +85,10 @@ class RunnerThread(threading.Thread):
                 case = ApiCase.objects.filter(id=step.step_action)
                 child_case_steps = ApiCaseStep.objects.filter(case_id=case[0].id)
                 if child_case_steps:
-                    case_result = case_result and self.execute_steps(child_case_steps, case_result, api, case_res)
+                    child_case_result = self.execute_steps(child_case_steps, case_result, api, case_res)
+                    case_result = case_result and child_case_result
+                    step_res.result = '0' if child_case_result else '1'
+                    step_res.info = f'End of case call: {case[0].title}.'
             else:
                 case_result = False
                 step_res.result = '1'
@@ -93,13 +97,15 @@ class RunnerThread(threading.Thread):
                 #               info='No such keyword.', create_time=datetime.datetime.now()).save()
             step_res.create_time = datetime.datetime.now()
             step_res.save()
+            if stop_after_fail and step_res.result != '0':
+                break
         return case_result
 
 
-def api_job_run(cases, tester, debug=False):
+def api_job_run(cases, tester, debug=False, stop_after_fail=False):
     batch = ApiTestBatch(tester=tester, create_time=datetime.datetime.now(), result='9')
     batch.save()
-    thd = RunnerThread(cases, batch, debug=debug)
+    thd = RunnerThread(cases, batch, debug=debug, stop_after_fail=stop_after_fail)
     thd.start()
 
 

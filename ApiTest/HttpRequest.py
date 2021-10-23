@@ -175,16 +175,31 @@ class HttpRequest:
         try:
             js = json.loads(self.response.text)
             result = jsonpath.jsonpath(js, json_path)
-            if isinstance(result, list):
-                return result[0]
-            else:
-                return result
+            return result
+            # if isinstance(result, list):
+            #     return result[0]
+            # else:
+            #     return result
         except JSONDecodeError:
             return 'Error: 响应文本解析为json格式失败.'
 
+    def get_text_by_xpath(self, xpath):
+        """
+        以xpath提取响应body中的文本数据
+        :param xpath: xpath
+        :return: body中的数据
+        """
+        tree = etree.HTML(self.response.text)
+        nodes = tree.xpath(xpath)
+        values = []
+        for node in nodes:
+            values.append(node.text)
+        # value = tree.xpath(xpath)
+        return values
+
     def get_value_by_xpath(self, xpath):
         """
-        以xpath提取响应body中的数据
+        以xpath提取响应body中的数据,如attribute::value、attribute::csrf、attribute::style
         :param xpath: xpath
         :return: body中的数据
         """

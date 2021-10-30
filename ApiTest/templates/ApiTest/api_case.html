@@ -54,9 +54,10 @@
 {% load static %}
 {% block script %}
     <script type="text/html" id="operations">
-        <a class="layui-btn layui-btn-xs" lay-event="update">更新</a>
-        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑步骤</a>
-        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="update"><i class="layui-icon layui-icon-ok"></i></a>
+        <a class="layui-btn layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></a>
+        <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="ds"><i class="layui-icon layui-icon-table"></i></a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-delete"></i></a>
     </script>
     <script type="text/html" id="myBar">
         <div>
@@ -254,13 +255,59 @@
                                     });
                                 } else {
                                     layer.open({
-                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                        content: '<div style="padding: 20px 2em;">' + ret.msg + '</div>'
                                         , type: 1
                                         , title: '提示'
                                         , time: 5000
                                         , btn: '确定'
                                         , yes: function (index) {
                                             layer.close(index);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                        break;
+                    case 'ds':
+                        $.ajax({
+                            url: "/apitest/case/ds/"
+                            , type: "GET"
+                            , data: {case_id: data.id, case_title: data.title}
+                            , success: function (ret) {
+                                if (!ret.hasOwnProperty('msg')) {
+                                    layer.open({
+                                        type: 1
+                                        , title: ['编辑用例参数: ' + data.title, 'font-size:18px;']
+                                        , content: ret
+                                        , area: ['800px', '600px']
+                                        , maxmin: true
+                                        , resizing: function (layero) {
+                                            {# 监听窗口拉伸 #}
+                                            table.resize('ds_table');
+                                        }
+                                        , full: function (layero) {
+                                            {# 监听窗口最大化 #}
+                                            table.resize('ds_table');
+                                        }
+                                        , restore: function (layero) {
+                                            {# 监听窗口还原 #}
+                                            table.resize('ds_table');
+                                        }
+                                        , btn: ['保存', '关闭']
+                                        , yes: function (ds_layer) {
+                                            {#  触发页面内提交  #}
+                                            $("#save_name").click();
+                                        }
+                                    });
+                                } else {
+                                    layer.open({
+                                        content: '<div style="padding: 20px 2em;">' + ret.msg + '</div>'
+                                        , type: 1
+                                        , title: '提示'
+                                        , time: 5000
+                                        , btn: '确定'
+                                        , yes: function (err_layer) {
+                                            layer.close(err_layer);
                                         }
                                     });
                                 }

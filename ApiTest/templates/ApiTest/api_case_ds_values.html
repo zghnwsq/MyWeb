@@ -1,0 +1,133 @@
+<div class="layui-form  layui-form-pane" lay-filter="ds_value" style="padding-top: 1em;">
+    {% csrf_token %}
+    <div class="layui-form-item">
+        <div class="layui-row">
+            <div class="layui-col-md3 layui-col-md-offset9">
+                <button class="layui-btn" id="new_value" lay-filter="new_value">新增值</button>
+                <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_value"
+                        lay-filter="save_value">保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<table id="ds_value_table" lay-filter="ds_value_table">
+    <input style="display: none" id="param_id" value={{ param_id }}>
+</table>
+<script type="text/html" id="value_row_tool">
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del_value">删除</a>
+</script>
+<script>
+    let form = layui.form;
+    let table = layui.table;
+    form.render(null, 'ds_value');
+    let param_id = $("#param_id").val();
+    let table_data = [];
+
+    function reload_value_data($, param_id) {
+        $.ajax({
+            url: "/apitest/case/ds/value/edit/"
+            , type: "GET"
+            , data: {param_id: param_id}
+            , success: function (data) {
+                table_data = data.data;
+                table.reload("ds_value_table", {
+                    data: data.data
+                });
+            }
+        });
+    }
+
+    let ds_value_table = table.render({
+        elem: '#ds_value_table',
+        id: 'ds_value_table',
+        data: table_data,
+        page: {
+            curr: 1,
+            limit: 10
+        },
+        even: true,
+        cols: [[
+            {type: 'numbers', title: '序号', fixed: 'left'},
+            {field: 'p_value', title: 'Param Value', align: 'center', edit: 'text'},
+            {field: '', title: 'Action', align: 'center', width: '20%', toolbar: '#value_row_tool'},
+        ]],
+    });
+    {# 初始化获取 #}
+    !function () {
+        reload_value_data($, param_id);
+    }();
+    form.on('submit(save_value)', function () {
+        const ds_value_csrf = $("div[lay-filter='ds_value']>input[name='csrfmiddlewaretoken']").val();
+        const param_id = $("#param_id").val();
+        $.ajax({
+            url: "/apitest/case/ds/value/edit/"
+            , type: "POST"
+            , contentType: 'application/json; charset=utf-8'
+            , beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", ds_value_csrf);
+            }
+            , data: JSON.stringify({param_id: param_id, data: table_data})
+            , success: function (data) {
+                layer.open({
+                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                    , type: 1
+                    , title: '提示'
+                    , time: 5000
+                    , btn: '确定'
+                    , yes: function (save_layer) {
+                        layer.close(save_layer);
+                    }
+                });
+                reload_value_data($, param_id);
+            }
+        });
+    });
+    table.on('tool(ds_value_table)', function (obj) {
+        let layEvent = obj.event;
+        let idx = obj.tr.data('index');
+        const ds_value_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();
+        let curr = parseInt($("[lay-id=ds_value_table] .layui-laypage-curr em:last").text());
+        let limit = parseInt($("[lay-id=ds_value_table] .layui-laypage-limits option:selected").val());
+        if (layEvent === 'del_value') {
+            layer.confirm('是否确定删除?', function (del_value_layer) {
+                obj.del();
+                if (obj.data.hasOwnProperty('id')) {
+                    $.ajax({
+                        url: "/apitest/case/ds/del/value/"
+                        , type: "POST"
+                        , contentType: 'application/json; charset=utf-8'
+                        , beforeSend: function (xhr) {
+                            xhr.setRequestHeader("X-CSRFToken", ds_value_csrf);
+                        }
+                        , data: JSON.stringify({value_id: obj.data['id']})
+                        , success: function (data) {
+                            layer.open({
+                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                                , type: 1
+                                , title: '提示'
+                                , time: 5000
+                                , btn: '确定'
+                                , yes: function (ret_layer) {
+                                    layer.close(ret_layer);
+                                }
+                            });
+                        }
+                    });
+                }
+                table_data.splice((curr - 1) * limit + idx, 1);
+                layer.close(del_value_layer);
+            });
+        }
+    });
+    $("#new_value").on('click', function () {
+        table_data.push({
+            'p_value': ''
+        });
+        {# 将新数据重新载入表格 #}
+        table.reload("ds_value_table", {
+            data: table_data
+        });
+    });
+
+</script>

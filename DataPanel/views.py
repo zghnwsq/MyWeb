@@ -3,8 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Min
 from django.http import JsonResponse
-
-from ApiTest.models import ApiGroup
+from ApiTest.models import ApiGroup, ApiCase
 from DataPanel.orm import get_suite_total, filter_api_run_his, count_by_group, count_api_by_group, count_by_result, \
     count_api_by_result
 from Utils.CustomView import ListViewWithMenu
@@ -27,10 +26,11 @@ class RunCountV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         group = RunHis.objects.values('group').distinct()
         api_group = ApiGroup.objects.values('group').distinct()
         suite = RunHis.objects.values('suite').distinct()
+        api_suite = ApiCase.objects.values('suite').distinct()
         tester = RunHis.objects.values('tester').distinct()
         context = {
             'group': group.union(api_group, all=True),
-            'suite': suite,
+            'suite': suite.union(api_suite, all=True),
             'tester': tester
         }
         return context
@@ -73,16 +73,17 @@ def get_run_count(request):
                                      end=request.GET.get('end', None)).values('case__group__group', 'case__suite',
                                                                               'case__title', res=Min('result'))
     # run_his = run_his.union(api_run_his, all=True)
-    suite_list = [line for line in suite_total]
-    count = len(suite_list)
+    # suite_list = [line for line in suite_total]
+    count = len(suite_total)
     data_table = []
-    for line in suite_list:
+    for line in list(suite_total):
         run = len(run_his.filter(group=line['group'], suite=line['suite']).values('case').distinct())
+        # api用例运行次数要算上参数化, case_title包含轮次,case__titile不包含轮次
         run += len(api_run_his.filter(case__group__group=line['group'],
                                       case__suite=line['suite']).values(
-            'case__title').distinct())
+            'case_title').distinct())
         if line['count'] != 0:
-            executed_ratio = '%.1f%%' % (run / line['count'] * 100)
+            executed_ratio = '%.1f%%' % (run / int(line['count']) * 100)
             if run > line['count']:
                 executed_ratio = '100.0%'
         else:
@@ -92,7 +93,7 @@ def get_run_count(request):
         pass_count += len(
             api_run_his.filter(case__group__group=line['group'],
                                case__suite=line['suite'], res='0').values(
-                'case__title').distinct()
+                'case_title').distinct()
         )
         if line['count'] > 0 and pass_count <= line['count']:
             pass_ratio = '%.1f%%' % (pass_count / line['count'] * 100)

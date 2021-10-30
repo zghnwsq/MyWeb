@@ -4,7 +4,7 @@ def group_count_and_result_series(run_his):
     series = []
     names = run_his.values('group').distinct()
     for name in names:
-        list_of_group = run_his.filter(group=name['group'])
+        list_of_group = run_his.filter(group=name['group']).order_by('time')
         datas, pass_datas, fail_datas = {}, {}, {}
         pass_of_group = list_of_group.filter(result='0')
         fail_of_group = list_of_group.exclude(result='0').exclude(result='3')
@@ -24,7 +24,7 @@ def group_count_series(run_his):
     series = []
     names = run_his.values('group').distinct()
     for name in names:
-        list_of_group = run_his.filter(group=name['group'])
+        list_of_group = run_his.filter(group=name['group']).order_by('time')
         datas = []
         for data_of_group in list_of_group:
             datas.append([data_of_group['time'], data_of_group['count']])

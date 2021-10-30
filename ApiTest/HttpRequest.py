@@ -117,15 +117,15 @@ class HttpRequest:
         self.cookies.update(self.response.cookies)
         return self.response
 
-    def post(self, url, url_param=None, headers=None, cookie=None, data=None, js=None):
+    def post(self, url, url_param=None, headers=None, cookie=None, data: str = None, js: dict = None):
         """
         以POST方式发送请求
         :param url: 请求的URL，可以直接拼接好参数
         :param url_param: 以字典形式存储的url参数
         :param headers: 以字典形式存储的Header
         :param cookie: 以字典形式存储的cookie
-        :param data: body中要发送的数据
-        :param js: body中要发送的json
+        :param data: body中要发送的数据, str
+        :param js: body中要发送的json, dict
         :return: 返回requests.response对象(状态码)
         """
         self.url = url

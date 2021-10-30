@@ -6,7 +6,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.views import LoginView
 from django.views import generic
-from DataPanel.orm import count_by_group, result_count, count_api_by_group
+from DataPanel.orm import count_by_group, result_count, count_api_by_group, get_group_total, get_test_total, \
+    get_report_total
 from Utils.CustomView import ListViewWithMenu
 from Utils.MyMixin import URIPermissionMixin
 from Utils.hightchart import group_count_series
@@ -138,7 +139,11 @@ class IndexV(LoginRequiredMixin, generic.ListView):
         series = group_count_series(run_his)
         api_series = group_count_series(api_run_his)
         res_count = result_count(beg=seven_day, end=today)
-        context['data'] = {'series': series + api_series, 'result': res_count}
+        group_total = get_group_total()
+        test_total = get_test_total()
+        report_total = get_report_total()
+        context['data'] = {'series': series + api_series, 'result': res_count, 'group_total': group_total,
+                           'test_total': test_total, 'report_total': report_total}
         return context
 
     def get_queryset(self, **kwargs):

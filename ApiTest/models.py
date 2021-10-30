@@ -109,5 +109,22 @@ class Keyword(models.Model):
         db_table = 'api_keyword'
 
 
+class ApiCaseParam(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    case = models.ForeignKey(ApiCase, blank=False, on_delete=models.CASCADE)
+    p_name = models.CharField(max_length=256, blank=False)
+
+    class Meta:
+        db_table = 'api_case_param'
+
+
+class ApiCaseParamValues(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    param = models.ForeignKey(ApiCaseParam, blank=False, on_delete=models.CASCADE)
+    p_value = models.CharField(max_length=512, blank=True)
+
+    class Meta:
+        db_table = 'api_case_param_values'
+
 
 

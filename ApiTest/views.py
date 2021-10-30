@@ -3,6 +3,7 @@ import json
 import time
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
@@ -16,6 +17,7 @@ from .form import *
 from .models import *
 from Utils.JsonEncoder import DateEncoder
 from django.db import transaction
+
 
 PARENT_MENU = r'接口自动化\\(Codeless\\)'
 
@@ -40,7 +42,11 @@ class ApiGroupV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
 def get_groups(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    groups = ApiGroup.objects.filter(status='1').values('id', 'group', 'author__username').order_by('id')
+    group = request.GET.get('group', None)
+    groups = ApiGroup.objects.filter(status='1')
+    if group:
+        groups = groups.filter(group=group)
+    groups = groups.values('id', 'group', 'author__username').order_by('id')
     if len(groups) > 0:
         data_list = paginator(groups, int(page), int(limit))
     else:
@@ -115,7 +121,7 @@ def get_group_env(request):
             return render(request, 'ApiTest/api_group_env.html',
                           {'group_id': group_id, 'data': json.dumps(list(envs))})
         else:
-            msg = 'ERROR: 用例不存在.'
+            msg = 'ERROR: 用例组不存在.'
     else:
         msg = 'ERROR: 请求内容有误.'
     return JsonResponse({'msg': msg})
@@ -430,6 +436,141 @@ def duplicate_case(request):
         msg = '请求内容不正确!'
     end = time.time()
     print(f'复写用时: {end - beg} s.')
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+@require_http_methods(['GET'])
+def case_ds_layer(request):
+    case_id = request.GET.get('case_id', None)
+    case_title = request.GET.get('case_title', '')
+    if case_id:
+        return render(request, 'ApiTest/api_case_ds.html', {'case_id': case_id, 'case_title': case_title, 'data': []})
+    else:
+        msg = 'ERROR: 请求内容有误.'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def edit_case_ds(request):
+    if request.method == 'GET':
+        case_id = request.GET.get('case_id', None)
+        if case_id:
+            p_names = ApiCaseParam.objects.filter(case__id=case_id).values('id', 'p_name').annotate(
+                count=Count('apicaseparamvalues__p_value'))
+            return JsonResponse({"code": 0, "msg": "", "count": len(p_names), "data": list(p_names)})
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+    if request.method == 'POST':
+        req_json = json.loads(request.body)
+        case_id = req_json.get('case_id', None)
+        data = req_json.get('data', None)
+        if case_id and data:
+            new, update, error = 0, 0, 0
+            case = ApiCase.objects.filter(id=case_id)
+            if case:
+                for row in data:
+                    if 'p_name' in row.keys() and not row['p_name']:
+                        error += 1
+                        continue
+                    if 'id' in row.keys():
+                        update += ApiCaseParam.objects.filter(id=row['id']).update(p_name=row['p_name'])
+                    else:
+                        ApiCaseParam(case=case[0], p_name=row['p_name']).save()
+                        new += 1
+                msg = f'保存成功,更新{update}条, 新增{new}条; 跳过错误数据{error}条.'
+            else:
+                msg = 'ERROR: 关联用例不存在.'
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+@require_http_methods(['POST'])
+def del_case_param(request):
+    req_json = json.loads(request.body)
+    param_id = req_json.get('param_id', None)
+    if param_id:
+        is_exists = ApiCaseParam.objects.filter(id=param_id)
+        if is_exists:
+            is_exists.delete()
+            msg = '删除成功.'
+        else:
+            msg = 'ERROR: 用例参数不存在.'
+    else:
+        msg = 'ERROR: 请求内容有误.'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+@require_http_methods(['GET'])
+def case_ds_value_layer(request):
+    param_id = request.GET.get('param_id', None)
+    if param_id:
+        return render(request, 'ApiTest/api_case_ds_values.html', {'param_id': param_id, 'data': []})
+    else:
+        msg = 'ERROR: 请求内容有误.'
+    return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+def edit_case_ds_value(request):
+    if request.method == 'GET':
+        param_id = request.GET.get('param_id', None)
+        if param_id:
+            params = ApiCaseParamValues.objects.filter(param_id=param_id).values('id', 'param_id', 'p_value')
+            return JsonResponse({"code": 0, "msg": "", "count": len(params), "data": list(params)})
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+    if request.method == 'POST':
+        req_json = json.loads(request.body)
+        param_id = req_json.get('param_id', None)
+        data = req_json.get('data', None)
+        if param_id and data:
+            new, update, error = 0, 0, 0
+            for row in data:
+                if 'id' in row.keys():
+                    is_exists = ApiCaseParamValues.objects.filter(id=row['id'])
+                    if is_exists:
+                        update += is_exists.update(p_value=row['p_value'])
+                    else:
+                        error += 1
+                else:
+                    param = ApiCaseParam.objects.filter(id=param_id)
+                    if param:
+                        ApiCaseParamValues(param=param[0], p_value=row['p_value']).save()
+                        new += 1
+                    else:
+                        error += '1'
+            msg = f'保存成功,更新{update}条, 新增{new}条; 跳过错误数据{error}条.'
+        else:
+            msg = 'ERROR: 请求内容有误.'
+        return JsonResponse({'msg': msg})
+
+
+@auth_check
+@login_required
+@require_http_methods(['POST'])
+def del_case_ds_value(request):
+    req_json = json.loads(request.body)
+    value_id = req_json.get('value_id', None)
+    if value_id:
+        is_exists = ApiCaseParamValues.objects.filter(id=value_id)
+        if is_exists:
+            is_exists.delete()
+            msg = '删除成功.'
+        else:
+            msg = '参数值不存在.'
+    else:
+        msg = 'ERROR: 请求内容有误.'
     return JsonResponse({'msg': msg})
 
 

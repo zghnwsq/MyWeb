@@ -1,8 +1,23 @@
 import datetime
 import threading
+import copy
+from django.db.models import Count, Max
 from ApiTest.ApiKeywords import ApiKeywords
 from ApiTest.VarMap import VarMap
 from ApiTest.models import ApiCase, ApiCaseStep, ApiTestBatch, ApiCaseResult, ApiStepResult, ApiGroupEnv
+from ApiTest.models import ApiCaseParam, ApiCaseParamValues
+
+
+def set_scene_param(param_dict, index, case_var_map):
+    v_map = copy.deepcopy(case_var_map)
+    for p_name in param_dict.keys():
+        if len(param_dict[p_name]) < 1:
+            continue
+        if index > len(param_dict[p_name]) - 1:
+            v_map.set_var(p_name, param_dict[p_name][-1])
+        else:
+            v_map.set_var(p_name, param_dict[p_name][index])
+    return v_map
 
 
 class RunnerThread(threading.Thread):
@@ -10,56 +25,63 @@ class RunnerThread(threading.Thread):
         多线程执行
     """
 
-    def __init__(self, cases, batch, debug=False):
+    def __init__(self, cases, batch, debug=False, stop_after_fail=False):
         threading.Thread.__init__(self)
         self.cases = cases
         self.batch = batch
         self.debug = debug
+        self.stop_after_fail = stop_after_fail
 
     def run(self):
         batch_result = True
         for case in self.cases:
+            if 'id' not in case.keys():
+                continue
             case_result = True
             case_var_map = VarMap()
             env = ApiGroupEnv.objects.filter(group__apicase__id=case['id'])
             if env:
                 case_var_map = set_group_env(case_var_map, env)
-            api = ApiKeywords(case_var_map, debug=self.debug)
-            if 'id' not in case.keys():
-                continue
+            # api = ApiKeywords(case_var_map, debug=self.debug)
             api_case = ApiCase.objects.filter(id=case['id'])
             steps = ApiCaseStep.objects.filter(case=api_case[0]).order_by('step_order')
             if not steps or not case:
                 continue
-            case_res = ApiCaseResult(batch=self.batch, case=api_case[0], case_title=api_case[0].title,
-                                     create_time=datetime.datetime.now(), result='9')
-            case_res.save()
-            case_result = self.execute_steps(steps, case_result, api, case_res)
-            # for step in steps:
-            #     if hasattr(api, step.step_action):
-            #         try:
-            #             func = getattr(api, step.step_action)
-            #             res, info = func(*(step.step_p1, step.step_p2))
-            #             case_result = case_result and res
-            #             result = '0' if res else '1'
-            #             ApiStepResult(batch=self.batch, case=case_res, step=step, result=result, info=info,
-            #                           create_time=datetime.datetime.now()).save()
-            #         except Exception as e:
-            #             error = e.__str__()[:2047] if len(e.__str__()) > 2048 else e.__str__()
-            #             case_result = False
-            #             ApiStepResult(batch=self.batch, case=case_res, step=step, result='1',
-            #                           info=error, create_time=datetime.datetime.now()).save()
-            #     else:
-            #         case_result = False
-            #         ApiStepResult(batch=self.batch, case=case_res, step=step, result='1', info='No such keyword.',
-            #                       create_time=datetime.datetime.now()).save()
-            case_res.result = '0' if case_result else '1'
-            case_res.save()
+            params = ApiCaseParam.objects.filter(case__id=case['id']).values('id', 'p_name').annotate(
+                count=Count('apicaseparamvalues__p_value'))
+            if params:
+                max_count = params.aggregate(max_count=Max('count'))['max_count']
+                param_dict = {}
+                for param in params:
+                    param_dict[param['p_name']] = list(
+                        ApiCaseParamValues.objects.filter(param=param['id']).values_list('p_value', flat=True))
+                for index in range(max_count):
+                    scene_var_map = set_scene_param(param_dict, index, case_var_map)
+                    api = ApiKeywords(scene_var_map, debug=self.debug)
+                    case_result = self.execute_case(api_case[0], api_case[0].title + f'_#{index + 1}', api, steps, case_result)
+            else:
+                api = ApiKeywords(case_var_map, debug=self.debug)
+                case_result = self.execute_case(api_case[0], api_case[0].title, api, steps, case_result)
+            # case_res = ApiCaseResult(batch=self.batch, case=api_case[0], case_title=api_case[0].title,
+            #                          create_time=datetime.datetime.now(), result='9')
+            # case_res.save()
+            # case_result = self.execute_steps(steps, case_result, api, case_res, stop_after_fail=self.stop_after_fail)
+            # case_res.result = '0' if case_result else '1'
+            # case_res.save()
             batch_result = batch_result and case_result
         self.batch.result = '0' if batch_result else '1'
         self.batch.save()
 
-    def execute_steps(self, steps, case_result, api, case_res):
+    def execute_case(self, api_case_obj, api_case_title, api, steps, case_result):
+        case_res = ApiCaseResult(batch=self.batch, case=api_case_obj, case_title=api_case_title,
+                                 create_time=datetime.datetime.now(), result='9')
+        case_res.save()
+        case_result = self.execute_steps(steps, case_result, api, case_res, stop_after_fail=self.stop_after_fail)
+        case_res.result = '0' if case_result else '1'
+        case_res.save()
+        return case_result
+
+    def execute_steps(self, steps, case_result, api, case_res, stop_after_fail=False):
         for step in steps:
             step_res = ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title,
                                      step_action=step.step_action, result='9')
@@ -70,7 +92,7 @@ class RunnerThread(threading.Thread):
                     case_result = case_result and res
                     result = '0' if res else '1'
                     step_res.result = result
-                    step_res.info = info[:2047]
+                    step_res.info = info.replace('<', '{').replace('>', '}')[:2047]
                     # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result=result,
                     #               info=info[:2047], create_time=datetime.datetime.now()).save()
                 except Exception as e:
@@ -84,7 +106,15 @@ class RunnerThread(threading.Thread):
                 case = ApiCase.objects.filter(id=step.step_action)
                 child_case_steps = ApiCaseStep.objects.filter(case_id=case[0].id)
                 if child_case_steps:
-                    case_result = case_result and self.execute_steps(child_case_steps, case_result, api, case_res)
+                    # 增加用例调用起始记录
+                    ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title,
+                                  step_action=step.title, result='0', info=f'Start call case: {case[0].title}.').save()
+                    child_case_result = self.execute_steps(child_case_steps, case_result, api, case_res)
+                    case_result = case_result and child_case_result
+                    # 调用用例,action改为用例title
+                    step_res.step_action = step.title
+                    step_res.result = '0' if child_case_result else '1'
+                    step_res.info = f'End of case call: {case[0].title}.'
             else:
                 case_result = False
                 step_res.result = '1'
@@ -93,13 +123,15 @@ class RunnerThread(threading.Thread):
                 #               info='No such keyword.', create_time=datetime.datetime.now()).save()
             step_res.create_time = datetime.datetime.now()
             step_res.save()
+            if stop_after_fail and step_res.result != '0':
+                break
         return case_result
 
 
-def api_job_run(cases, tester, debug=False):
+def api_job_run(cases, tester, debug=False, stop_after_fail=False):
     batch = ApiTestBatch(tester=tester, create_time=datetime.datetime.now(), result='9')
     batch.save()
-    thd = RunnerThread(cases, batch, debug=debug)
+    thd = RunnerThread(cases, batch, debug=debug, stop_after_fail=stop_after_fail)
     thd.start()
 
 

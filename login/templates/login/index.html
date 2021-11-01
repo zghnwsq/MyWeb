@@ -38,8 +38,8 @@
         <legend>首页</legend>
     </fieldset>
     <div class="layui-container">
-        <div class="layui-row">
-            <div class="layui-col-md4 layui-col-md-offset4">
+        <div class="layui-row layui-col-space10">
+            <div class="layui-col-md6 layui-col-md-offset1">
                 <h1 style="text-align: center; margin-bottom: 5%">欢迎来到自动化测试平台</h1>
                 {% if time %}
                     <h2 style="text-align: center">{{ time }}</h2>
@@ -86,6 +86,16 @@
                     </h3>
                 {% endif %}
             </div>
+            <div class="layui-col-md5 layui-panel" style="border-radius: 10px">
+                <div style="text-align: center">
+                <div class="layui-inline" id="group_circle" style="width:150px;height:150px;">
+                </div>
+                <div class="layui-inline" id="test_circle" style="width:150px;height:150px;">
+                </div>
+                <div class="layui-inline" id="report_circle" style="width:150px;height:150px;">
+                </div>
+                    </div>
+            </div>
         </div>
     </div>
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -128,7 +138,7 @@
         Highcharts.setOptions({
             global: {
                 useUTC: false
-            }
+            },
         });
 
         let chart1 = Highcharts.chart('trend', {
@@ -273,6 +283,67 @@
                 data: result_count
             }]
         });
+
+        function circle_chart(tag_id, title, y_data, y_color) {
+            let circle = Highcharts.chart(tag_id, {
+                title: {
+                    text: title,
+                    align: 'center',
+                    verticalAlign: 'middle',
+                    y: -40
+                },
+                chart: {
+                    borderWidth: 1,
+                    borderColor: '#c5c5c5',
+                    borderRadius: 10
+                },
+                credits: {enabled: false},
+                exporting: {enabled: false},
+                tooltip: {enabled: false},
+                plotOptions: {
+                    pie: {
+                        dataLabels: {
+                            enabled: true,
+                            distance: -60,
+                            format: '{y}',
+                            style: {
+                                fontSize: '24px',
+                                color: 'black',
+                            }
+                        },
+                        startAngle: 0,
+                        endAngle: 360,
+                        center: ['50%', '60%'],
+                        size: '100%',
+                    }
+                },
+                series: [{
+                    type: 'pie',
+                    innerSize: '60%',
+                    data: [
+                        {#['Group', 100.0],#}
+                        {y: y_data, color: y_color}
+                    ],
+                }]
+            });
+            return circle;
+        }
+        let group_total = 0,
+            test_total = 0,
+            report_total = 0;
+        {% if data.group_total %}
+            group_total = {{data.group_total}};
+        {% endif %}
+        {% if data.test_total %}
+            test_total = {{data.test_total}};
+        {% endif %}
+        {% if data.report_total %}
+            report_total = {{data.report_total}};
+        {% endif %}
+        let group_circle = circle_chart('group_circle', '项目', group_total, '#f7a35c');
+        let test_circle = circle_chart('test_circle', '用例', test_total, '#8085e9');
+        let report_circle = circle_chart('report_circle', '报告', report_total, '#91e8e1');
+
     </script>
 {% endblock %}
 

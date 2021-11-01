@@ -1,10 +1,11 @@
 import datetime
 import logging
-from ApiTest.models import ApiCase, ApiCaseResult
-from autotest.models import SuiteCount
-from django.db.models import Count, CharField, F, Q
+from ApiTest.models import ApiCase, ApiCaseResult, ApiGroup
+from autotest.models import SuiteCount, RunHis
+from django.db.models import Count, CharField, F, Q, Case, When, Sum
 from django.db.models.functions import TruncDate, Cast
 from autotest.orm import filter_run_his
+from Utils.RawSql import dict_fetch_all, raw_sql_fetch_one
 
 logger = logging.getLogger('django')
 
@@ -44,22 +45,65 @@ def filter_api_run_his(tester=None, group=None, suite=None, testcase=None, resul
     return run_his
 
 
-def get_suite_total(group=None, suite=None):
-    suite_total = SuiteCount.objects.all().values('group', 'suite', 'count').order_by('group', 'suite')
+def get_suite_total(group='', suite=''):
+    suite_total = SuiteCount.objects.all().values('count', 'group', 'suite').order_by('group', 'suite')
     if group:
         suite_total = suite_total.filter(group=group)
     if suite:
         suite_total = suite_total.filter(suite=suite)
     # 增加API测试用例统计
-    api_suite_total = ApiCase.objects.all().values('group__group', 'suite').order_by('group', 'suite')
+    # 初版##################
+    # api_suite_total = ApiCase.objects.all().values('group__group', 'suite').order_by('group', 'suite')
+    # if group:
+    #     api_suite_total = api_suite_total.filter(group__group=group)
+    # if suite:
+    #     api_suite_total = api_suite_total.filter(suite=suite)
+    # api_suite_total = api_suite_total.annotate(count=Count('id'))
+    #######################
+    # 第二版################
+    # 注意case when在不同数据库区别
+    # api_suite_total = ApiCase.objects.all()
+    # if group:
+    #     api_suite_total = api_suite_total.filter(group__group=group)
+    # if suite:
+    #     api_suite_total = api_suite_total.filter(suite=suite)
+    # api_suite_total = api_suite_total.extra(select={
+    #     'count': 'select case when max(a.n) is null then 1 else max(a.n) end max_count from (select count(v.p_value) n from api_case_param p, api_case_param_values v where p.id=v.param_id and p.case_id=api_case.id group by p.p_name) a'}).values(
+    #     'count', 'group__group', 'suite').order_by(
+    #     'group__group', 'suite')
+    #########################
+    # logger.info(api_suite_total.query)
+    # union all的字段顺序
+    # return suite_total.union(api_suite_total, all=True)
+    # 第三版#################
+    sql = """select sum(max_count) count, b.`group` `group`, b.suite suite
+                from (
+                         SELECT (
+                                    select case when max(a.n) is null then 1 else max(a.n) end max_count
+                                    from (select count(v.param_id) n
+                                          from api_case_param p,
+                                               api_case_param_values v
+                                          where p.id = v.param_id
+                                            and p.case_id = c.id
+                                          group by p.p_name) a) max_count,
+                                c.suite                         suite,
+                                g.`group`                       `group`
+                         FROM api_case c,
+                              api_group g
+                         where g.id = c.group_id) b
+                where %c1% and %c2%
+                group by b.suite, b.`group`"""
+    params = []
+    c1 = c2 = '1=1'
     if group:
-        api_suite_total = api_suite_total.filter(group__group=group)
+        c1 = 'b.`group` = %s'
+        params.append(group)
     if suite:
-        api_suite_total = api_suite_total.filter(suite=suite)
-    api_suite_total = api_suite_total.annotate(count=Count('id'))
-    logger.info(api_suite_total.query)
-    return suite_total.union(api_suite_total, all=True)
-    # return suite_total
+        c2 = 'b.`suite` = %s'
+        params.append(suite)
+    sql = sql.replace('%c1%', c1).replace('%c2%', c2)
+    api_suite_total = dict_fetch_all(sql, params)
+    return list(suite_total) + api_suite_total
 
 
 def count_api_by_group(group=None, beg=None, end=None):
@@ -67,7 +111,7 @@ def count_api_by_group(group=None, beg=None, end=None):
     run_his = filter_api_run_his(group=group, beg=beg, end=end).filter(case_id__isnull=False)
     # 非外键下的关联子查询
     # from django.db.models import OuterRef, Subquery
-    # group = ApiGroup.objects.filter(id=OuterRef('group'))
+    # groups = ApiGroup.objects.filter(id=OuterRef('group'))
     # case = ApiCase.objects.annotate(grp=groups.values('group')).filter(id=OuterRef('case'))
     # run_his.annotate(group=case.values('grp')).values('group')
     run_his = run_his.values('case__group__group').annotate(group=F('case__group__group'),
@@ -142,4 +186,34 @@ def count_by_result(group=None, beg=None, end=None):
                                                               error=Count('result', Q(result='2')))
     logger.info(run_his.query)
     return run_his
+
+
+def get_group_total():
+    group_count = SuiteCount.objects.all().values('group').distinct().count()
+    group_count += ApiGroup.objects.all().values('group').distinct().count()
+    return group_count
+
+
+def get_test_total():
+    test_total = SuiteCount.objects.all().aggregate(sum=Sum('count'))['sum']
+    # api count
+    sql = """select sum(b.max_count) count
+            from (select (select case when max(a.n) is null then 1 else max(a.n) end max_count
+                          from (select count(v.param_id) n
+                                from api_case_param p,
+                                     api_case_param_values v
+                                where p.id = v.param_id
+                                  and p.case_id = c.id
+                                group by p.p_name) a) max_count
+                  FROM api_case c) b"""
+    api_test_total = int(raw_sql_fetch_one(sql)[0])
+    return test_total + api_test_total
+
+
+def get_report_total():
+    report_total = RunHis.objects.all().values('case').distinct().count()
+    report_total += ApiCaseResult.objects.all().count()
+    return report_total
+
+
 

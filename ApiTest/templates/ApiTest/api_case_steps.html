@@ -5,9 +5,11 @@
     {% csrf_token %}
     <div class="layui-form-item">
         <div class="layui-row">
-            <div class="layui-col-md3 layui-col-md-offset10">
+            <div class="layui-col-md3 layui-col-md-offset9" style="text-align: center">
                 <button class="layui-btn" id="new_step" lay-filter="new_step">新增步骤</button>
-                <button lay-submit class="layui-btn layui-btn-normal" id="save_case" lay-filter="save_case">保存</button>
+                <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_case"
+                        lay-filter="save_case">保存
+                </button>
             </div>
         </div>
     </div>
@@ -107,13 +109,12 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                 {#// 完成时（松开时）触发,如果拖动前和拖动后无变化，则不会触发此方法#}
                 {#console.log(obj.row); // 当前行数据#}
                 {#console.log(obj.cache); // 改动后全表数据,会被分页截断#}
-                console.log(obj.oldIndex); // 原来的数据索引
-                console.log(obj.newIndex); // 改动后数据索引
+                {#console.log(obj.oldIndex); // 原来的数据索引#}
+                {#console.log(obj.newIndex); // 改动后数据索引#}
                 let curr = step_table['config']['page']['curr'];
                 let limit = step_table['config']['page']['limit'];
                 table_data.splice((curr - 1) * limit, limit, ...obj.cache);
                 {#table_data = step_table['config']['data'];#}
-                console.log(table_data);
             }
         },
         cols: [[
@@ -121,7 +122,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
             {#{field: 'step_order', title: 'Order', align: 'center'},#}
             {field: 'title', title: 'Title', align: 'center', edit: 'text'},
             {#{field: 'step_action', title: 'Action', align: 'center', edit: 'text'},#}
-            {field: 'step_action', title: 'Action', align: 'center', templet(d) {
+            {field: 'step_action', title: 'Action', align: 'left', templet(d) {
                     const beg = '<select name="step_action" lay-filter="step_action" id="step_action" required lay-verify="required">\n' +
                         '<option value="none">---</option>\n';
                     const end = '</select>';
@@ -131,15 +132,15 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                     for(let index in keywords){
                         if (!keywords.hasOwnProperty(index)) continue;
                         if(keywords[index]['keyword'] === d.step_action){
-                            options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '---' + keywords[index]['description'] + '</option>';
+                            options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
                         }else{
-                            options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '---' + keywords[index]['description'] + '</option>';
+                            options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
                         }
                     }
                     for (let index in cases) {
                         if (!cases.hasOwnProperty(index)) continue;
                         if (cases[index]['id'].toString() === d.step_action) {
-                            options += '<option selected="selected" value="' + cases[index]['id'] + '">' + '用例: ' + cases[index]['title'] + '</option>';
+                            options += '<option selected="selected" value="' + cases[index]['id'] + '">' + '用例:&nbsp;' + cases[index]['title'] + '</option>';
                         } else {
                             options += '<option value="' + cases[index]['id'] + '">' + '用例: ' + cases[index]['title'] + '</option>';
                         }
@@ -158,8 +159,8 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     });
     function getRowIndex(tb, row) {
         {# row: tr object #}
-        let curr = step_table['config']['page']['curr'];
-        let limit = step_table['config']['page']['limit'];
+        let curr = parseInt($("[lay-id=step_table] .layui-laypage-curr em:last").text());
+        let limit = parseInt($("[lay-id=step_table] .layui-laypage-limits option:selected").val());
         let idx = row.data('index');
         return (curr - 1) * limit + idx;
     }
@@ -168,8 +169,17 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
         if (layEvent === 'del') {
             msg.confirm('是否确定删除?', function (index) {
                 let idx = getRowIndex(step_table, obj['tr']);
-                table_data.splice(idx, 1);
+                {#let curr = parseInt($("[lay-id=step_table] .layui-laypage-curr em:last").text());#}
                 obj.del();
+                table_data.splice(idx, 1);
+                {# bug: 前端分页,第二页删除完，表格空 #}
+                {#if(tb.getData('step_table').length === 0){#}
+                {#    curr = curr - 1;#}
+                {# }#}
+                {#tb.reload("step_table", {#}
+                {#    data: table_data,#}
+                {#    page: {curr: curr}#}
+                {# });#}
                 msg.close(index);
             });
         }
@@ -182,6 +192,7 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
         {#tableData[trElem.data('index')][elem.attr('name')] = data.value;#}
         let idx = getRowIndex(step_table, trElem)
         table_data[idx][elem.attr('name')] = data.value;
+        console.log(table_data);
     });
     fm.on('switch(rowDragSwitch)', function (data) {
         soulTable.suspend('step_table', 'rowDrag', !data.elem.checked)
@@ -189,7 +200,6 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
     fm.on('submit(save_case)', function () {
         const steps_csrf = $("div[lay-filter='steps']>input[name='csrfmiddlewaretoken']").val();
         const case_id = $("#case_id").val();
-        console.log(table_data);
         $.ajax({
             url: "/apitest/case/edit/"
             , type: "POST"
@@ -224,7 +234,6 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
             'title': '',
             'keywords': keywords
         });
-        console.log(table_data);
         {# 将新数据重新载入表格 #}
         tb.reload("step_table", {
             data: table_data

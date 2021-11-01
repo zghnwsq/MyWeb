@@ -117,15 +117,15 @@ class HttpRequest:
         self.cookies.update(self.response.cookies)
         return self.response
 
-    def post(self, url, url_param=None, headers=None, cookie=None, data=None, js=None):
+    def post(self, url, url_param=None, headers=None, cookie=None, data: str = None, js: dict = None):
         """
         以POST方式发送请求
         :param url: 请求的URL，可以直接拼接好参数
         :param url_param: 以字典形式存储的url参数
         :param headers: 以字典形式存储的Header
         :param cookie: 以字典形式存储的cookie
-        :param data: body中要发送的数据
-        :param js: body中要发送的json
+        :param data: body中要发送的数据, str
+        :param js: body中要发送的json, dict
         :return: 返回requests.response对象(状态码)
         """
         self.url = url
@@ -175,16 +175,31 @@ class HttpRequest:
         try:
             js = json.loads(self.response.text)
             result = jsonpath.jsonpath(js, json_path)
-            if isinstance(result, list):
-                return result[0]
-            else:
-                return result
+            return result
+            # if isinstance(result, list):
+            #     return result[0]
+            # else:
+            #     return result
         except JSONDecodeError:
             return 'Error: 响应文本解析为json格式失败.'
 
+    def get_text_by_xpath(self, xpath):
+        """
+        以xpath提取响应body中的文本数据
+        :param xpath: xpath
+        :return: body中的数据
+        """
+        tree = etree.HTML(self.response.text)
+        nodes = tree.xpath(xpath)
+        values = []
+        for node in nodes:
+            values.append(node.text)
+        # value = tree.xpath(xpath)
+        return values
+
     def get_value_by_xpath(self, xpath):
         """
-        以xpath提取响应body中的数据
+        以xpath提取响应body中的数据,如attribute::value、attribute::csrf、attribute::style
         :param xpath: xpath
         :return: body中的数据
         """

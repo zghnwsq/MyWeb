@@ -1,6 +1,7 @@
 import datetime
 import json
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
@@ -13,9 +14,10 @@ from Utils.MyMixin import URIPermissionMixin
 from Utils.hightchart import group_count_series
 from .form import LoginForm, PersonalInfoForm, ChangePasswordFrom
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User, Group
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from Utils.Personal import *
+from Utils.Personal import get_menu, get_personal
 import logging
 import requests
 from .models import Weather

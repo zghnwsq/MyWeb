@@ -1,9 +1,8 @@
 from django.contrib.sessions.models import Session
-from django.shortcuts import render
+# from django.shortcuts import render
 from django.utils import timezone
-
 from login.models import UserMenu, Menu
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 
 
 def get_personal(request, context):

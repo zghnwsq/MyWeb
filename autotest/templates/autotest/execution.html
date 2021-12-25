@@ -80,9 +80,15 @@
     {#    </script>#}
     <script type="text/html" id="operations">
         {% verbatim %}
-        <a class="layui-btn layui-btn-normal layui-btn-xs update_ds" id="{{ d.funct }}">数据源</a>
+        <a class="layui-btn layui-btn-normal layui-btn-xs update_ds" id="{{ d.funct }}">
+            <i class="layui-icon layui-icon-download-circle"></i>
+            数据源
+        </a>
         {{#  if(d.status === 'finished' || d.status === null){ }}
-        <a class="layui-btn layui-btn-xs" lay-event="exec">执行</a>
+        <a class="layui-btn layui-btn-xs" lay-event="exec">
+            <i class="layui-icon layui-icon-play"></i>
+            执行
+        </a>
         {{#  } }}
         {{# if(d.status === 'in queue'){ }}
         <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="pullback">撤回</a>

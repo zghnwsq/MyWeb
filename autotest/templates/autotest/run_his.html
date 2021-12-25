@@ -80,7 +80,10 @@
 {% block script %}
         <script type="text/html" id="actions">
         {% verbatim %}
-        <a lay-event="update_comment" class="layui-btn layui-btn-xs layui-btn-normal">保存</a>
+        <a lay-event="update_comment" class="layui-btn layui-btn-xs layui-btn-normal">
+            <i class="layui-icon layui-icon-ok-circle"></i>
+            备注
+        </a>
         <a target="_blank" class="layui-btn layui-btn-xs" href="report/?id={{ d.id }}">报告</a>
         {% endverbatim %}
     </script>
@@ -189,7 +192,7 @@
                             }
                         }
                         , {
-                            field: '', title: 'Action', width: '9%', align: 'center', toolbar: '#actions', fixed: 'right'
+                            field: '', title: 'Action', width: '12%', align: 'center', toolbar: '#actions', fixed: 'right'
                         }
                     ]]
                     , done: function (res, curr, count) {

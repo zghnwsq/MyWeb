@@ -15,3 +15,5 @@
 /Test/
 /ApiTest/migrations/
 /DataPanel/migrations/
+/MyWeb/dev.py
+/MyWeb/server.py

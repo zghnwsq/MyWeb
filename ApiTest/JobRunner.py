@@ -9,6 +9,13 @@ from ApiTest.models import ApiCaseParam, ApiCaseParamValues
 
 
 def set_scene_param(param_dict, index, case_var_map):
+    """
+       添加场景环境变量
+    :param param_dict: 用例环境变量字典
+    :param index: 当前场景序号
+    :param case_var_map: 公共环境变量
+    :return: 场景环境变量字典,包括用例组公共环境变量和当前场景环境变量
+    """
     v_map = copy.deepcopy(case_var_map)
     for p_name in param_dict.keys():
         if len(param_dict[p_name]) < 1:
@@ -39,6 +46,7 @@ class RunnerThread(threading.Thread):
                 continue
             case_result = True
             case_var_map = VarMap()
+            # 添加用例组环境变量
             env = ApiGroupEnv.objects.filter(group__apicase__id=case['id'])
             if env:
                 case_var_map = set_group_env(case_var_map, env)
@@ -56,9 +64,11 @@ class RunnerThread(threading.Thread):
                     param_dict[param['p_name']] = list(
                         ApiCaseParamValues.objects.filter(param=param['id']).values_list('p_value', flat=True))
                 for index in range(max_count):
+                    # 当前场景环境变量
                     scene_var_map = set_scene_param(param_dict, index, case_var_map)
                     api = ApiKeywords(scene_var_map, debug=self.debug)
-                    case_result = self.execute_case(api_case[0], api_case[0].title + f'_#{index + 1}', api, steps, case_result)
+                    case_title = api_case[0].title + f'_#{index + 1}' if max_count > 1 else api_case[0].title
+                    case_result = self.execute_case(api_case[0], case_title, api, steps, case_result)
             else:
                 api = ApiKeywords(case_var_map, debug=self.debug)
                 case_result = self.execute_case(api_case[0], api_case[0].title, api, steps, case_result)

@@ -11,8 +11,13 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-import time
+# import time
 from os import environ
+
+if environ.get('ENV', None) == 'SERVER':
+    from .server import *
+else:
+    from .dev import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,9 +30,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'h%nbdt8e$0iyz_x-&us*@jhr&qqggiy2txbf4*vx)5*-$_2h!='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.150', '192.168.50.211', '*']
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.150', '192.168.50.211', '*']
 
 
 # Application definition
@@ -59,22 +64,21 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'MyWeb.urls'
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates'), os.path.join('D:/PythonProject/zbh/Report'),
-                 os.path.join('D:/PythonProject/EasySelenium/Report'), os.path.join('D:/PythonProject/MyWeb/Report')],  # 加入报告路径，用于展示报告
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
+# TEMPLATES = [
+#     {
+#         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+#         'DIRS': [os.path.join(BASE_DIR, 'MyWeb/templates')],
+#         'APP_DIRS': True,
+#         'OPTIONS': {
+#             'context_processors': [
+#                 'django.template.context_processors.debug',
+#                 'django.template.context_processors.request',
+#                 'django.contrib.auth.context_processors.auth',
+#                 'django.contrib.messages.context_processors.messages',
+#             ],
+#         },
+#     },
+# ]
 
 WSGI_APPLICATION = 'MyWeb.wsgi.application'
 
@@ -82,36 +86,36 @@ WSGI_APPLICATION = 'MyWeb.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    #     'NAME': 'D:\\PythonProject\\myweb.sqlite3'
-    # },
-    # aliyun
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'HOST': '8.136.125.0',
-    #     'PORT': 9306,
-    #     'NAME': 'myweb',
-    #     'USER': environ.get('MYSQL_USER'),
-    #     'PASSWORD': environ.get('MYSQL_PWD'),
-    #     'CONN_MAX_AGE': 30*60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
-        # 'OPTIONS': {
-        #     'default-character-set': 'utf8'
-        # },
-    # },
-    # local centos7
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': '192.168.0.100',
-        'PORT': 9306,
-        'NAME': 'myweb',
-        'USER': 'myweb',
-        'PASSWORD': environ.get('MYSQL_PWD'),
-        'CONN_MAX_AGE': 30 * 60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
-    },
-}
+# DATABASES = {
+#     # 'default': {
+#     #     'ENGINE': 'django.db.backends.sqlite3',
+#     #     # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     #     'NAME': 'D:\\PythonProject\\myweb.sqlite3'
+#     # },
+#     # aliyun
+#     # 'default': {
+#     #     'ENGINE': 'django.db.backends.mysql',
+#     #     'HOST': '8.136.125.0',
+#     #     'PORT': 9306,
+#     #     'NAME': 'myweb',
+#     #     'USER': environ.get('MYSQL_USER'),
+#     #     'PASSWORD': environ.get('MYSQL_PWD'),
+#     #     'CONN_MAX_AGE': 30*60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
+#         # 'OPTIONS': {
+#         #     'default-character-set': 'utf8'
+#         # },
+#     # },
+#     # local centos7
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'HOST': '192.168.0.103',
+#         'PORT': 9306,
+#         'NAME': 'myweb',
+#         'USER': 'myweb',
+#         'PASSWORD': environ.get('MYSQL_PWD'),
+#         'CONN_MAX_AGE': 30 * 60,  # 数据库连接空闲时间. 复用连接，避免mysql反向解析主机名耗时太长
+#     },
+# }
 
 DATABASE_ROUTERS = []
 
@@ -155,13 +159,13 @@ USE_TZ = False
 
 STATIC_URL = '/static/'
 #
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "layui"),
-    os.path.join(BASE_DIR, "MyWeb/statics"),
-    os.path.join(BASE_DIR, "MyWeb/statics/hightcharts"),
-    os.path.join(BASE_DIR, "Report"),
-    'D:/PythonProject/EasySelenium/Report',
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "layui"),
+#     os.path.join(BASE_DIR, "MyWeb/statics"),
+#     os.path.join(BASE_DIR, "MyWeb/statics/hightcharts"),
+#     os.path.join(BASE_DIR, "Report"),
+#     'D:/PythonProject/EasySelenium/Report',
+# ]
 
 # 部署生产前运行python manage.py collectstatic
 STATIC_ROOT = os.path.join(BASE_DIR, "Statics")
@@ -232,7 +236,7 @@ LOGGING = {
 }
 
 # 自定义参数
-APSCHEDULER = 'off'
-DATA_SOURCE_ROOT = os.path.join(BASE_DIR, 'Upload', 'DS')
-MNAGER_GROUPS = ['管理员']
+# APSCHEDULER = 'off'
+# DATA_SOURCE_ROOT = os.path.join(BASE_DIR, 'Upload', 'DS')
+# MANAGER_GROUPS = ['管理员']
 

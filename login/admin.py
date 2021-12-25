@@ -24,6 +24,7 @@ class UserPermissionAdmin(admin.ModelAdmin):
     fieldsets = [
         ('user_permission', {'fields': ['user', 'permi']}),
     ]
+    # filter_horizontal = ('user', 'permi',)
 
 
 admin.site.register(Menu, MenuAdmin)

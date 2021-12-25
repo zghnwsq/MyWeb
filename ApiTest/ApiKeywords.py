@@ -98,6 +98,21 @@ class ApiKeywords:
             self.__debug_info = f'Debug: Fail to set cookie: {p1}, {p2}. \n|| Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
+    def __eval_url(self, p1):
+        """
+             拼接完整url路径
+         :param p1: url或uri
+         :return: 完整url
+         """
+        uri = self.var_map.handle_var(p1)
+        if p1.startswith('/') and self.root is not None:
+            url = f'{self.root}{uri}'
+        elif self.root is not None:
+            url = f'{self.root}/{uri}'
+        else:
+            url = uri
+        return url
+
     def get(self, *args):
         """
             发送get请求，headers和cookies通过set方法设置
@@ -106,16 +121,13 @@ class ApiKeywords:
         :param args: p1: uri;p2: url params json-like string
         :return: boolean, information
         """
-        p1 = args[0]
-        p2 = args[1]
+        p1 = self.var_map.handle_var(args[0])
+        p2 = self.var_map.handle_var(args[1])
         try:
-            if p1.startswith('/') and self.root is not None:
-                url = f'{self.root}{p1}'
-            elif self.root is not None:
-                url = f'{self.root}/{p1}'
-            else:
-                url = p1
-            url_params_dict = json.loads(p2)
+            url = self.__eval_url(p1)
+            url_params_dict = {}
+            if p2:
+                url_params_dict = json.loads(p2)
             for key in url_params_dict.keys():
                 url_params_dict[key] = self.var_map.handle_var(url_params_dict[key])
             request_headers = self.http.headers
@@ -144,13 +156,7 @@ class ApiKeywords:
         p1 = args[0]
         p2 = args[1]
         try:
-            uri = self.var_map.handle_var(p1)
-            if p1.startswith('/') and self.root is not None:
-                url = f'{self.root}{uri}'
-            elif self.root is not None:
-                url = f'{self.root}/{uri}'
-            else:
-                url = uri
+            url = self.__eval_url(p1)
             data = self.var_map.handle_var(p2)
             request_headers = self.http.headers
             # jsonpath提取数组转字符串为单引号,json只认双引号

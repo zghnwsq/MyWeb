@@ -1,7 +1,7 @@
 import datetime
-from django.db.models import Min, Count, CharField, F
-from django.db.models.functions import TruncDate, Cast
-import copy
+# from django.db.models import Min, Count, CharField, F
+# from django.db.models.functions import TruncDate, Cast
+# import copy
 from autotest.models import Node
 from .models import Sys_Config
 

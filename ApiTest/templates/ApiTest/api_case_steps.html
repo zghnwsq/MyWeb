@@ -132,17 +132,17 @@ layui.use(['form', 'table', 'soulTable', 'layer'], function () {
                     for(let index in keywords){
                         if (!keywords.hasOwnProperty(index)) continue;
                         if(keywords[index]['keyword'] === d.step_action){
-                            options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
+                            options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
                         }else{
-                            options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'] + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
+                            options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
                         }
                     }
                     for (let index in cases) {
                         if (!cases.hasOwnProperty(index)) continue;
                         if (cases[index]['id'].toString() === d.step_action) {
-                            options += '<option selected="selected" value="' + cases[index]['id'] + '">' + '用例:&nbsp;' + cases[index]['title'] + '</option>';
+                            options += '<option selected="selected" value="' + cases[index]['id'] + '">' + '用例:&nbsp;' + cases[index]['group__group'] + ' - ' + cases[index]['suite'] + ' - ' + cases[index]['title'] + '</option>';
                         } else {
-                            options += '<option value="' + cases[index]['id'] + '">' + '用例: ' + cases[index]['title'] + '</option>';
+                            options += '<option value="' + cases[index]['id'] + '">' + '用例:&nbsp;' + cases[index]['group__group'] + ' - ' + cases[index]['suite'] + ' - ' + cases[index]['title'] + '</option>';
                         }
                     }
                     return beg + options + end;

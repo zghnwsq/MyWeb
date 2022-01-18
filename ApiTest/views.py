@@ -334,7 +334,7 @@ def edit_case(request):
                                                                                                    'case', 'title',
                                                                                                    'step_order')
                 keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description').order_by('list_order')
-                cases = ApiCase.objects.exclude(id=case_id).order_by('group', 'id').values('id', 'title')
+                cases = ApiCase.objects.exclude(id=case_id).filter(group=case[0].group).order_by('group', 'id').values('id', 'group__group', 'suite', 'title')
                 return render(request, 'ApiTest/api_case_steps.html',
                               {'case_id': case_id, 'title': case[0].title, 'data': json.dumps(list(steps)),
                                'keywords': json.dumps(list(keywords)), 'cases': json.dumps(list(cases))})
@@ -445,8 +445,10 @@ def duplicate_case(request):
 def case_ds_layer(request):
     case_id = request.GET.get('case_id', None)
     case_title = request.GET.get('case_title', '')
+    group = ApiCase.objects.filter(id=case_id).values('group')
+    case_in_same_group = ApiCase.objects.exclude(id=case_id).filter(group__in=group).values('id', 'title')
     if case_id:
-        return render(request, 'ApiTest/api_case_ds.html', {'case_id': case_id, 'case_title': case_title, 'data': []})
+        return render(request, 'ApiTest/api_case_ds.html', {'case_id': case_id, 'case_title': case_title, 'data': list(case_in_same_group)})
     else:
         msg = 'ERROR: 请求内容有误.'
     return JsonResponse({'msg': msg})
@@ -466,12 +468,13 @@ def edit_case_ds(request):
         return JsonResponse({'msg': msg})
     if request.method == 'POST':
         req_json = json.loads(request.body)
-        case_id = req_json.get('case_id', None)
+        case_id = req_json.get('case_id', '')
         data = req_json.get('data', None)
-        if case_id and data:
-            new, update, error = 0, 0, 0
-            case = ApiCase.objects.filter(id=case_id)
-            if case:
+        copy_case_id = req_json.get('copy_case_id', None)
+        case = ApiCase.objects.filter(id=case_id)
+        if case:
+            if data:
+                new, update, error = 0, 0, 0
                 for row in data:
                     if 'p_name' in row.keys() and not row['p_name']:
                         error += 1
@@ -482,10 +485,24 @@ def edit_case_ds(request):
                         ApiCaseParam(case=case[0], p_name=row['p_name']).save()
                         new += 1
                 msg = f'保存成功,更新{update}条, 新增{new}条; 跳过错误数据{error}条.'
+            elif copy_case_id:
+                copy_case_params = ApiCaseParam.objects.filter(case__id=copy_case_id)
+                if copy_case_params:
+                    # 复制变量名
+                    for param in copy_case_params:
+                        new_param = ApiCaseParam(case=case[0], p_name=param.p_name)
+                        new_param.save()
+                        # 复制变量值
+                        copy_param_values = ApiCaseParamValues.objects.filter(param_id=param.id)
+                        for value in copy_param_values:
+                            ApiCaseParamValues(param=new_param, p_value=value.p_value).save()
+                    msg = '复制成功.'
+                else:
+                    msg = 'ERROR: 复制用例数据源出错.'
             else:
-                msg = 'ERROR: 关联用例不存在.'
+                msg = 'ERROR: 请求内容有误.'
         else:
-            msg = 'ERROR: 请求内容有误.'
+            msg = 'ERROR: 关联用例不存在.'
         return JsonResponse({'msg': msg})
 
 

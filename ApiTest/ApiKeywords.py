@@ -70,6 +70,7 @@ class ApiKeywords:
             清空headers
         :return: boolean, information
         """
+        print(args)
         self.http.clear_headers()
         self.__res = 'Clear all headers.'
         return True, self.__res
@@ -286,11 +287,63 @@ class ApiKeywords:
         p2 = args[1]
         p1 = self.var_map.handle_var(p1)
         p2 = self.var_map.handle_var(p2)
-        self.__res = f'Assert status code: expected: {p1}, actual: {p2}'
+        self.__res = f'Assert equals: expected: {p1}, actual: {p2}'
         if p1.strip() == p2.strip():
             return True, self.__res
         else:
             return False, self.__res
+
+    def assert_not_equals(self, *args):
+        """
+            断言值
+        :param args:p1: 期望值; p2: 实际值
+        :return: boolean, information
+        """
+        p1 = args[0]
+        p2 = args[1]
+        p1 = self.var_map.handle_var(p1)
+        p2 = self.var_map.handle_var(p2)
+        self.__res = f'Assert not equals: not expected: {p1}, actual: {p2}'
+        if p1.strip() == p2.strip():
+            return False, self.__res
+        else:
+            return True, self.__res
+
+    def assert_res_contains(self, *args):
+        """
+        断言response中的值是否包含预期值
+        :param args:p1: 期望值
+        :return: boolean, information
+        """
+        p1 = args[0]
+        res = self.http.get_response_text()
+        p1 = self.var_map.handle_var(p1)
+        if p1 in res:
+            self.__res = f'Assert result contains: {p1}, True'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, True \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            return True, self.__debug_info if self.__debug else self.__res
+        else:
+            self.__res = f'Assert result contains: {p1}, False'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, False \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            return False, self.__debug_info if self.__debug else self.__res
+
+    def assert_res_not_contains(self, *args):
+        """
+        断言response中的值是否不包含预期值
+        :param args:p1: 期望不包含的值
+        :return: boolean, information
+        """
+        p1 = args[0]
+        res = self.http.get_response_text()
+        p1 = self.var_map.handle_var(p1)
+        if p1 not in res:
+            self.__res = f'Assert result not contains: {p1}, True'
+            self.__debug_info = f'Debug: Assert result not contains: {p1}, True \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            return True, self.__debug_info if self.__debug else self.__res
+        else:
+            self.__res = f'Assert result contains: {p1}, False'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, False \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            return False, self.__debug_info if self.__debug else self.__res
 
     def assert_by_xpath(self, *args):
         """
@@ -320,21 +373,22 @@ class ApiKeywords:
     def assert_by_jpath(self, *args):
         """
             根据json path取值断言
-        :param args:p1: 期望值; p2: xpath
+        :param args:p1: 期望值; p2: jsonpath
         :return: boolean, information
         """
         p1 = args[0]
         p2 = args[1]
         try:
             value = self.http.get_value_by_json_path(p2)[0]
-            if not value:
+            if isinstance(value, bool):
+                value = str(value).lower()
+            elif not value:
                 value = 'Json path match nothing.'
             elif 'Error' in value:
                 return False, value
             p1 = self.var_map.handle_var(p1)
-            res = self.http.get_response_text()
             self.__res = f'Assert by json_path={p2}: expected: {p1}, actual: {value}'
-            self.__debug_info = f'Debug: Assert by json_path={p2}: expected: {p1}, actual: {value} \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert by json_path={p2}: expected: {p1}, actual: {value} \n|| Vars: {self.var_map}. \n||'
             if p1.strip() == value.strip():
                 return True, self.__debug_info if self.__debug else self.__res
             else:
@@ -342,20 +396,127 @@ class ApiKeywords:
         except JSONDecodeError as e:
             return False, e.__str__()
 
-    def assert_res_contains(self, *args):
+    def assert_json_contains_keys(self, *args):
         """
-        断言response中的值是否包含预期值
-        :param args:p1: 期望值
+            根据json path断言json响应某一层包含键, 多键用;分隔
+        :param args: p1: 期望键, p2：json path
+        :return:
+        """
+        p1 = args[0]
+        p2 = args[1]
+        try:
+            # 列表要使用$.data.apply[*]的形式，否则是二维列表
+            values = self.http.get_value_by_json_path(p2) or 'Error: Json path match nothing.'
+            if 'Error' in values:
+                return False, values
+            p1 = self.var_map.handle_var(p1)
+            keys = p1.split(';')
+            not_contains = []
+            for value in values:
+                if not isinstance(value, dict):
+                    not_contains.append(f'values: {values} is not a list of dict')
+                    break
+                missing_keys = []
+                for key in keys:
+                    if key and key not in value.keys():
+                        missing_keys.append(key)
+                if missing_keys:
+                    not_contains.append(f'missing {missing_keys}')
+            self.__res = f'Assert json contains keys by json_path={p2}:|| expected keys: {keys},|| actual info: {not_contains}||'
+            self.__debug_info = f'Debug: Assert json contains keys by json_path={p2}:\n|| expected keys: {keys},\n|| actual missing: {not_contains} \n|| Vars: {self.var_map}. \n||'
+            if not_contains:
+                return False, self.__debug_info if self.__debug else self.__res
+            else:
+                return True, self.__debug_info if self.__debug else self.__res
+        except JSONDecodeError as e:
+            return False, e.__str__()
+
+    def assert_json_value_in(self, *args):
+        """
+            根据json path断言json某个值属于集合, 集合元素用;分隔
+        :param args: p1: 期望集合, p2：json path
+        :return:
+        """
+        p1 = args[0]
+        p2 = args[1]
+        p1 = self.var_map.handle_var(p1)
+        try:
+            value = self.http.get_value_by_json_path(p2)
+            if not value:
+                value = 'Json path match nothing.'
+            elif 'Error' in value:
+                return False, value
+            if isinstance(p1, str):
+                p1 = p1.split(';')
+            elif isinstance(p1, (list, tuple)):
+                pass
+            else:
+                value = f'P1 should be a collection, but: {p1}.'
+            # if not isinstance(value, list):
+            #     value = [value]
+            not_in = []
+            for v in value:
+                if v not in p1:
+                    not_in.append(v)
+            self.__res = f'Assert json value in {p1} by json_path={p2},|| actual values: {value}||'
+            self.__debug_info = f'Debug: Assert json value in {p1} by json_path={p2},\n|| actual values: {value}\n|| Vars: {self.var_map}. \n||'
+            if not_in:
+                return False, self.__debug_info if self.__debug else self.__res
+            else:
+                return True, self.__debug_info if self.__debug else self.__res
+        except JSONDecodeError as e:
+            return False, e.__str__()
+
+    def assert_json_value_not_empty(self, *args):
+        """
+            根据json path取值断言是否不为空
+        :param args:p1: jsonpath;
         :return: boolean, information
         """
         p1 = args[0]
-        res = self.http.get_response_text()
         p1 = self.var_map.handle_var(p1)
-        if p1 in res:
-            self.__res = f'Assert result contains: {p1}, True'
-            self.__debug_info = f'Debug: Assert result contains: {p1}, True \n|| Vars: {self.var_map}. \n|| Response: {res}'
-            return True, self.__debug_info if self.__debug else self.__res
-        else:
-            self.__res = f'Assert result contains: {p1}, False'
-            self.__debug_info = f'Debug: Assert result contains: {p1}, False \n|| Vars: {self.var_map}. \n|| Response: {res}'
-            return False, self.__debug_info if self.__debug else self.__res
+        try:
+            values = self.http.get_value_by_json_path(p1)
+            if 'Error' in values:
+                return False, values
+            empty = []
+            for value in values:
+                if isinstance(value, bool) or value is None:
+                    value = str(value).lower()
+                if not value.strip() and value in ('None', 'null', 'Null'):
+                    empty.append(value)
+            self.__res = f'Assert by json_path={p1}: expected not null or empty, actual: "{empty}"'
+            self.__debug_info = f'Debug: Assert by json_path={p1}: expected not null or empty, actual: "{empty}" \n|| Vars: {self.var_map}. \n||'
+            if not empty:
+                return True, self.__debug_info if self.__debug else self.__res
+            else:
+                return False, self.__debug_info if self.__debug else self.__res
+        except JSONDecodeError as e:
+            return False, e.__str__()
+
+    def assert_json_value_empty(self, *args):
+        """
+            根据json path取值断言是否为空
+        :param args:p1: jsonpath;
+        :return: boolean, information
+        """
+        p1 = args[0]
+        p1 = self.var_map.handle_var(p1)
+        try:
+            values = self.http.get_value_by_json_path(p1)
+            if 'Error' in values:
+                return False, values
+            not_empty = []
+            for value in values:
+                if isinstance(value, bool) or value is None:
+                    value = str(value).lower()
+                if value.strip() and value not in ('None', 'null', 'Null'):
+                    not_empty.append(value)
+            self.__res = f'Assert by json_path={p1}: expected null or empty, actual not empty: "{not_empty}"'
+            self.__debug_info = f'Debug: Assert by json_path={p1}: expected null or empty, actual not empty: "{not_empty}" \n|| Vars: {self.var_map}. \n||'
+            if not_empty:
+                return False, self.__debug_info if self.__debug else self.__res
+            else:
+                return True, self.__debug_info if self.__debug else self.__res
+        except JSONDecodeError as e:
+            return False, e.__str__()

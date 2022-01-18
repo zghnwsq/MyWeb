@@ -114,11 +114,12 @@ class RunnerThread(threading.Thread):
                     #               info=error, create_time=datetime.datetime.now()).save()
             elif str(step.step_action).isdigit():
                 case = ApiCase.objects.filter(id=step.step_action)
-                child_case_steps = ApiCaseStep.objects.filter(case_id=case[0].id)
+                child_case_steps = ApiCaseStep.objects.filter(case_id=case[0].id).order_by('step_order')
                 if child_case_steps:
                     # 增加用例调用起始记录
                     ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title,
-                                  step_action=step.title, result='0', info=f'Start call case: {case[0].title}.').save()
+                                  step_action=step.title, result='0', info=f'Start call case: {case[0].title}.',
+                                  create_time=datetime.datetime.now()).save()
                     child_case_result = self.execute_steps(child_case_steps, case_result, api, case_res)
                     case_result = case_result and child_case_result
                     # 调用用例,action改为用例title
@@ -153,6 +154,3 @@ def set_group_env(varmap: VarMap, group_env):
             else:
                 continue
     return varmap
-
-
-

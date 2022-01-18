@@ -1,8 +1,26 @@
 <div class="layui-form  layui-form-pane" lay-filter="ds" style="padding-top: 1em;">
     {% csrf_token %}
     <div class="layui-form-item">
-        <div class="layui-row">
-            <div class="layui-col-md3 layui-col-md-offset9">
+        <div class="layui-inline">
+            <label for="copy_ds" class="layui-form-label ">用例:</label>
+            <div class="layui-input-inline">
+                <select name="copy_ds" id="copy_ds">
+                    <option value=""></option>
+                    {% if data %}
+                        {% for item in data %}
+                            <option value="{{ item.id }}">{{ item.title }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <div class="layui-input-inline">
+                <button class="layui-btn" id="do_copy">复制参数</button>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <div class="layui-input-inline">
                 <button class="layui-btn" id="new_name" lay-filter="new_name">新增字段</button>
                 <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_name"
                         lay-filter="save_name">保存
@@ -40,6 +58,7 @@
             }
         });
     }
+
     let ds_table = table.render({
         elem: '#ds_table',
         id: 'ds_table',
@@ -95,7 +114,7 @@
         if (layEvent === 'del_name') {
             layer.confirm('是否确定删除?', function (del_layer) {
                 obj.del();
-                if(obj.data.hasOwnProperty('id')) {
+                if (obj.data.hasOwnProperty('id')) {
                     $.ajax({
                         url: "/apitest/case/ds/del/param/"
                         , type: "POST"
@@ -121,8 +140,8 @@
                 table_data.splice((curr - 1) * limit + idx, 1);
                 layer.close(del_layer);
             });
-        }else if (layEvent === 'edit_value'){
-            if(obj.data.hasOwnProperty('id')) {
+        } else if (layEvent === 'edit_value') {
+            if (obj.data.hasOwnProperty('id')) {
                 $.ajax({
                     url: "/apitest/case/ds/value/"
                     , type: "GET"
@@ -170,7 +189,7 @@
                         }
                     }
                 });
-            }else{
+            } else {
                 layer.open({
                     content: '<div style="padding: 20px 2em;">' + '请先保存参数名.' + '</div>'
                     , type: 1
@@ -193,6 +212,34 @@
         {# 将新数据重新载入表格 #}
         table.reload("ds_table", {
             data: table_data
+        });
+    });
+    {# 从其他用例复制 #}
+    $("#do_copy").on('click', function () {
+        const copy_case_id = $("#copy_ds").val();
+        const case_id = $("#case_id").val();
+        const ds_value_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();
+        $.ajax({
+            url: "/apitest/case/ds/edit/"
+            , type: "POST"
+            , contentType: 'application/json; charset=utf-8'
+            , beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", ds_value_csrf);
+            }
+            , data: JSON.stringify({case_id: case_id, copy_case_id: copy_case_id})
+            , success: function (data) {
+                layer.open({
+                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
+                    , type: 1
+                    , title: '提示'
+                    , time: 5000
+                    , btn: '确定'
+                    , yes: function (index) {
+                        layer.close(index);
+                    }
+                });
+                reload_ds_data($, case_id);
+            }
         });
     });
 

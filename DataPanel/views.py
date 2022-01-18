@@ -127,8 +127,9 @@ class RunHisChartV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         api_run_his = count_api_by_group(beg=recent_90_days)
         series = group_count_and_result_series(run_his)
         api_series = group_count_and_result_series(api_run_his)
-        summary = result_count_series(count_by_result(beg=recent_90_days))
-        summary += result_count_series(count_api_by_result(beg=recent_90_days))
+        run_his_count_by_result = count_by_result(beg=recent_90_days)
+        api_run_his_count_by_result = count_api_by_result(beg=recent_90_days)
+        summary = result_count_series(run_his_count_by_result.union(api_run_his_count_by_result, all=True))
         group = RunHis.objects.values('group').distinct()
         api_group = ApiGroup.objects.values('group').distinct()
         context = {
@@ -156,11 +157,13 @@ def get_run_his_chart_data(request):
     )
     series = group_count_and_result_series(run_his)
     api_series = group_count_and_result_series(api_run_his)
-    summary = result_count_series(count_by_result(group=request.GET.get('group', None),
-                                                  beg=request.GET.get('beg', None) or recent_90_days,
-                                                  end=request.GET.get('end', None)))
-    summary += result_count_series(count_api_by_result(group=request.GET.get('group', None),
-                                                       beg=request.GET.get('beg', None) or recent_90_days,
-                                                       end=request.GET.get('end', None)))
+    run_his_count_by_result = count_by_result(group=request.GET.get('group', None),
+                                              beg=request.GET.get('beg', None) or recent_90_days,
+                                              end=request.GET.get('end', None))
+    api_run_his_count_by_result = count_api_by_result(group=request.GET.get('group', None),
+                                                      beg=request.GET.get('beg', None) or recent_90_days,
+                                                      end=request.GET.get('end', None))
+    run_his_count_by_result = run_his_count_by_result.union(api_run_his_count_by_result, all=True)
+    summary = result_count_series(run_his_count_by_result)
     return JsonResponse({'data': series + api_series, 'summary': summary})
 

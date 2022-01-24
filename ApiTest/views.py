@@ -13,6 +13,7 @@ from Utils.MyMixin import URIPermissionMixin
 from Utils.Paginator import paginator
 from Utils.decorators import auth_check
 from .JobRunner import api_job_run
+from .attachment import save_attachment
 from .form import *
 from .models import *
 from Utils.JsonEncoder import DateEncoder
@@ -335,9 +336,12 @@ def edit_case(request):
                                                                                                    'step_order')
                 keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description').order_by('list_order')
                 cases = ApiCase.objects.exclude(id=case_id).filter(group=case[0].group).order_by('group', 'id').values('id', 'group__group', 'suite', 'title')
+                case_group = ApiGroup.objects.filter(apicase__id=case_id)
+                attachments = ApiAttachment.objects.filter(group=case_group[0]).values('file_name', 'uuid', 'suffix').order_by('-id')
                 return render(request, 'ApiTest/api_case_steps.html',
                               {'case_id': case_id, 'title': case[0].title, 'data': json.dumps(list(steps)),
-                               'keywords': json.dumps(list(keywords)), 'cases': json.dumps(list(cases))})
+                               'keywords': json.dumps(list(keywords)), 'cases': json.dumps(list(cases)),
+                               'attachments': list(attachments)})
             else:
                 msg = 'ERROR: 没有此用例.'
         else:
@@ -595,7 +599,7 @@ def del_case_ds_value(request):
 @login_required
 def get_steps(request):
     case_id = request.GET.get('case_id', '')
-    # 前台分页
+    # 改成前台分页
     # page = request.GET.get('page', '1')
     # limit = request.GET.get('limit', '30')
     steps = ApiCaseStep.objects.filter(case__id=case_id).order_by('step_order').values('id', 'step_action', 'step_p1',
@@ -607,6 +611,21 @@ def get_steps(request):
     # else:
     #     data_list = []
     return JsonResponse({"code": 0, "msg": "", "count": len(steps), "data": list(steps), "keywords": list(keywords)})
+
+
+@auth_check
+@login_required
+@require_http_methods(['POST'])
+def upload_attachment(request):
+    form = ApiAttachForm(request.POST, request.FILES)
+    saved = ""
+    if form.is_valid():
+        case_id = form.cleaned_data['case_id']
+        file = form.cleaned_data['file']
+        msg, saved = save_attachment(case_id, file)
+    else:
+        msg = "ERROR: 提交表单错误!"
+    return JsonResponse({"msg": msg, "data": saved}, json_dumps_params={'ensure_ascii': False})
 
 
 class ApiJobV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
@@ -685,9 +704,11 @@ def get_result(request):
             edge = datetime.datetime.strptime(f'{end} 23:59:59', '%Y-%m-%d %H:%M:%S')
         batch = batch.filter(create_time__lte=edge)
     if group:
-        batch = batch.filter(apicaseresult__case__group=group)
+        case_result_of_group = ApiCaseResult.objects.filter(case__group__group=group).values('batch')
+        batch = batch.filter(id__in=case_result_of_group)
     if suite:
-        batch = batch.filter(apicaseresult__case__suite=suite)
+        case_result_of_suite = ApiCaseResult.objects.filter(case__suite=suite).values('batch')
+        batch = batch.filter(id__in=case_result_of_suite)
     batch = batch.values('id', 'tester', 'result', 'create_time').order_by('-create_time')
     if len(batch) > 0:
         data_list = paginator(batch, int(page), int(limit))

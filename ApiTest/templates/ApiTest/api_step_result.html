@@ -53,7 +53,8 @@
                         let info = '';
                         for (let i in rows) {
                             if (rows.hasOwnProperty(i)) {
-                                info += rows[i] + '<br>';
+                                let row = rows[i] + '<br>';
+                                info += row;
                             }
                         }
                         return info;

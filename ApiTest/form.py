@@ -7,4 +7,7 @@ class CaseForm(forms.Form):
     title = forms.CharField(max_length=128, required=False, empty_value='')
 
 
+class ApiAttachForm(forms.Form):
+    case_id = forms.IntegerField(required=True)
+    file = forms.FileField(allow_empty_file=False)
 

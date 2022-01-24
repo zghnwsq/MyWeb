@@ -117,7 +117,7 @@ class HttpRequest:
         self.cookies.update(self.response.cookies)
         return self.response
 
-    def post(self, url, url_param=None, headers=None, cookie=None, data: str = None, js: dict = None):
+    def post(self, url, url_param=None, headers=None, cookie=None, data: str = None, js: dict = None, files=None):
         """
         以POST方式发送请求
         :param url: 请求的URL，可以直接拼接好参数
@@ -126,6 +126,7 @@ class HttpRequest:
         :param cookie: 以字典形式存储的cookie
         :param data: body中要发送的数据, str
         :param js: body中要发送的json, dict
+        :param files: body中要发送的文件{'file_name': file_stream_reader}
         :return: 返回requests.response对象(状态码)
         """
         self.url = url
@@ -140,7 +141,7 @@ class HttpRequest:
             # 合并自动管理cookie和手动设置cookie
             self.cookies = cookiejar_from_dict(self.cookie, cookiejar=self.cookies, overwrite=True)
             self.session.cookies = self.cookies
-        self.response = self.session.post(self.url, data=data, json=js)
+        self.response = self.session.post(self.url, data=data, json=js, files=files)
         # 自动更新cookie
         self.cookies.update(self.response.cookies)
         return self.response

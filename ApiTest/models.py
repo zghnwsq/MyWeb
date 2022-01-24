@@ -127,4 +127,13 @@ class ApiCaseParamValues(models.Model):
         db_table = 'api_case_param_values'
 
 
+class ApiAttachment(models.Model):
+    id = models.AutoField(unique=True, primary_key=True)
+    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE)
+    file_name = models.CharField(max_length=128, null=False)
+    uuid = models.CharField(max_length=64, null=False, unique=True)
+    suffix = models.CharField(max_length=16, null=False)
+    path = models.CharField(max_length=128, null=False)
 
+    class Meta:
+        db_table = 'api_attachment'

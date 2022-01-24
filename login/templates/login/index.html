@@ -42,7 +42,11 @@
             <div class="layui-col-md6 layui-col-md-offset1">
                 <h1 style="text-align: center; margin-bottom: 5%">欢迎来到自动化测试平台</h1>
                 {% if time %}
-                    <h2 style="text-align: center">{{ time }}</h2>
+                    <h2 style="text-align: center">{{ time }}
+                        {% if weather.skycon_icon %}
+                            <i class="weathericon {{ weather.skycon_icon }}" style="font-size: 28px"></i>
+                        {% endif %}
+                    </h2>
                 {% endif %}
                 {% if weather %}
                     <h3 class="weather">

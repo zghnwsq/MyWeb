@@ -19,6 +19,7 @@ urlpatterns = [
     path('case/new/', views.new_case, name='new_case'),
     path('case/edit/', views.edit_case, name='edit_case'),
     path('case/steps/', views.get_steps, name='get_step'),
+    path('case/attachment/', views.upload_attachment, name='upload_attachment'),
     path('case/ds/', views.case_ds_layer, name='case_ds'),
     path('case/ds/edit/', views.edit_case_ds, name='edit_case_ds'),
     path('case/ds/del/param/', views.del_case_param, name='del_case_ds_param'),

@@ -133,3 +133,18 @@ api_test_result
 result_id  batch_id  case_id	step_id	status	information	create_time
 1          1         1	        1	    pass	xxx	         xxx
 
+## API测试上传文件实现
+1.用例编辑界面上传文件按钮：点击选择文件上传，后台生成uuid重命名，保存到以用例组命名的文件夹，
+并将用例组、原始文件名、uuid名、路径、后缀写入表
+2.用例编辑界面下拉框选择本用例组已经上传的原始文件名，点复制按钮复制文件uuid
+3.关键字post_upload:p1为uri, p2文件uuid,多文件分号;分隔, p3为字典结构的其他参数
+表结构:
+ApiAttachment
+id, group, file_name, uuid, suffix, path
+
+
+
+
+
+
+

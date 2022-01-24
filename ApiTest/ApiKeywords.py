@@ -1,8 +1,11 @@
 import json
+import os.path
 from json import JSONDecodeError
 from ApiTest.VarMap import VarMap
 from ApiTest.HttpRequest import HttpRequest
 from requests.utils import dict_from_cookiejar
+from ApiTest.models import ApiAttachment
+from MyWeb import settings
 
 
 class ApiKeywords:
@@ -137,7 +140,7 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Vars: {self.var_map} \n|| Url Params: {p2} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
+            self.__debug_info = f'Debug: Url: {url} \n|| Vars: {self.var_map} \n|| Url Params: {url_params_dict} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
             return True, self.__debug_info if self.__debug else self.__res
         except JSONDecodeError:
             self.__res = f'Url params json.loads解析失败: {p1}, {p2}'
@@ -156,6 +159,7 @@ class ApiKeywords:
         """
         p1 = args[0]
         p2 = args[1]
+        data = ''
         try:
             url = self.__eval_url(p1)
             data = self.var_map.handle_var(p2)
@@ -170,11 +174,58 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Vars: {self.var_map} \n|| Data: {p2}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
+            self.__debug_info = f'Debug: Url: {url} \n|| Data: {data}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
             return True, self.__debug_info if self.__debug else self.__res
         except Exception as e:
-            self.__res = f'Fail to post: {p1}, {p2}; \n|| Vars: {self.var_map}'
-            self.__debug_info = f'Debug: Fail to post: {p1}, {p2}; \n|| Vars: {self.var_map}. \n|| Info: {e.__str__()}'
+            self.__res = f'Fail to post: {p1}, {data}; \n|| Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Fail to post: {p1}, {data}; \n|| Vars: {self.var_map}. \n|| Info: {e.__str__()}'
+            return False, self.__debug_info if self.__debug else self.__res
+
+    def post_upload(self, *args):
+        """
+            发送post请求上传文件，headers和cookies通过set方法设置
+        :param args:p1: uri;p2: 文件的uuid; p3: dict-like其他参数
+        :return: boolean, information
+        """
+        p1 = args[0]
+        p2 = args[1]
+        p3 = args[2]
+        try:
+            url = self.__eval_url(p1)
+            data = self.var_map.handle_var(p3)
+            data = json.loads(data)
+            request_headers = self.http.headers
+            request_cookies = dict_from_cookiejar(self.http.cookies)
+            uids = p2.split(';')
+            files = {}
+            file_streams = []
+            result = False
+            file_index = 1
+            for uid in uids:
+                attach = ApiAttachment.objects.filter(uuid=uid)
+                file_path = os.path.join(settings.API_ATTACHMENT_ROOT, attach[0].path)
+                if attach and os.path.isfile(file_path):
+                    file_stream = open(file_path, 'rb')
+                    file_streams.append(file_stream)
+                    file = (attach[0].file_name, file_stream)
+                    files[f'field{file_index}'] = file
+            if files:
+                self.http.post(url, data=data, files=files)
+                response_headers = self.http.get_response_headers()
+                status_code = self.http.get_response_status_code()
+                result = True
+                self.__res = self.http.get_response_text()
+                self.__debug_info = f'Debug: Url: {url} \n|| Files: {p2}\n|| Data: {p3}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
+            else:
+                self.__res = self.__debug_info = f'File not exists:{p2}'
+            for f in file_streams:
+                # 重复关闭不会报错
+                f.close()
+            return result, self.__debug_info if self.__debug else self.__res
+        except Exception as e:
+            print(e.with_traceback(None))
+            self.__res = f'Fail to upload files: {p1}, {p2}, {p3}; \n|| Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Fail to upload files: {p1}, {p2}, {p3}; \n|| Vars: {self.var_map}. \n|| Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def json_extractor(self, *args, match: int = 1):
@@ -422,7 +473,7 @@ class ApiKeywords:
                         missing_keys.append(key)
                 if missing_keys:
                     not_contains.append(f'missing {missing_keys}')
-            self.__res = f'Assert json contains keys by json_path={p2}:|| expected keys: {keys},|| actual info: {not_contains}||'
+            self.__res = f'Assert json contains keys by json_path={p2}: expected keys: {keys}, actual info: {not_contains}'
             self.__debug_info = f'Debug: Assert json contains keys by json_path={p2}:\n|| expected keys: {keys},\n|| actual missing: {not_contains} \n|| Vars: {self.var_map}. \n||'
             if not_contains:
                 return False, self.__debug_info if self.__debug else self.__res
@@ -458,7 +509,7 @@ class ApiKeywords:
             for v in value:
                 if v not in p1:
                     not_in.append(v)
-            self.__res = f'Assert json value in {p1} by json_path={p2},|| actual values: {value}||'
+            self.__res = f'Assert json value in {p1} by json_path={p2}, actual values: {value}'
             self.__debug_info = f'Debug: Assert json value in {p1} by json_path={p2},\n|| actual values: {value}\n|| Vars: {self.var_map}. \n||'
             if not_in:
                 return False, self.__debug_info if self.__debug else self.__res

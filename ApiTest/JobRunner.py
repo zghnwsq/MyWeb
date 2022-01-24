@@ -98,7 +98,7 @@ class RunnerThread(threading.Thread):
             if not str(step.step_action).isdigit() and hasattr(api, step.step_action):
                 try:
                     func = getattr(api, step.step_action)
-                    res, info = func(*(step.step_p1, step.step_p2))
+                    res, info = func(*(step.step_p1, step.step_p2, step.step_p3))
                     case_result = case_result and res
                     result = '0' if res else '1'
                     step_res.result = result

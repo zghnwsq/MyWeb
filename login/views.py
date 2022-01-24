@@ -9,6 +9,7 @@ from django.contrib.auth.views import LoginView
 from django.views import generic
 from DataPanel.orm import count_by_group, result_count, count_api_by_group, get_group_total, get_test_total, \
     get_report_total
+from MyWeb import settings
 from Utils.CustomView import ListViewWithMenu
 from Utils.MyMixin import URIPermissionMixin
 from Utils.hightchart import group_count_series
@@ -86,23 +87,19 @@ def get_weather():
             resp_json = json.loads(response.text)
             session.close()
             if 'ok' in resp_json['status']:
-                skycon_dict = {'CLEAR_DAY': '晴', 'CLEAR_NIGHT': '晴', 'PARTLY_CLOUDY_DAY': '多云',
-                               'PARTLY_CLOUDY_NIGHT': '多云', 'CLOUDY': '阴', 'LIGHT_HAZE': '轻度雾霾',
-                               'MODERATE_HAZE': '中度雾霾', 'HEAVY_HAZE': '重度雾霾', 'LIGHT_RAIN': '小雨',
-                               'MODERATE_RAIN': '中雨', 'HEAVY_RAIN': '大雨', 'STORM_RAIN': '暴雨', 'FOG': '雾',
-                               'LIGHT_SNOW': '小雪', 'MODERATE_SNOW': '中雪', 'HEAVY_SNOW': '大雪', 'STORM_SNOW': '暴雪',
-                               'DUST': '浮尘', 'SAND': '沙尘', 'WIND': '大风'}
                 weather['temperature'] = '{:.0f}'.format(resp_json['result']['realtime']['temperature'])
                 weather['humidity'] = '{:.0f}'.format(resp_json['result']['realtime']['humidity'] * 100)
                 weather['pm25'] = resp_json['result']['realtime']['air_quality']['pm25']
                 weather['comfort'] = resp_json['result']['realtime']['life_index']['comfort']['desc']
                 skycon = resp_json['result']['realtime']['skycon'].strip()
-                weather['skycon'] = skycon_dict[skycon] if skycon in skycon_dict.keys() else skycon
+                weather['skycon'] = settings.skycon_dict[skycon] if skycon in settings.skycon_dict.keys() else skycon
+                weather['skycon_icon'] = settings.skycon_icon_dict[
+                    skycon] if skycon in settings.skycon_icon_dict.keys() else ''
                 weather['aqi'] = resp_json['result']['realtime']['air_quality']['aqi']['chn']
                 weather['air_desc'] = resp_json['result']['realtime']['air_quality']['description']['chn']
                 Weather.objects.update(status=resp_json['status'].strip(), temperature=weather['temperature'],
                                        humidity=weather['humidity'], pm25=weather['pm25'], comfort=weather['comfort'],
-                                       skycon=weather['skycon'], aqi=weather['aqi'], air_desc=weather['air_desc'],
+                                       skycon=skycon, aqi=weather['aqi'], air_desc=weather['air_desc'],
                                        create_time=datetime.datetime.now())
             else:
                 weather = None
@@ -117,7 +114,10 @@ def get_weather():
         weather['humidity'] = result.humidity
         weather['pm25'] = result.pm25
         weather['comfort'] = result.comfort
-        weather['skycon'] = result.skycon
+        weather['skycon'] = settings.skycon_dict[
+            result.skycon] if result.skycon in settings.skycon_dict.keys() else result.skycon
+        weather['skycon_icon'] = settings.skycon_icon_dict[
+            result.skycon] if result.skycon in settings.skycon_icon_dict.keys() else ''
         weather['aqi'] = result.aqi
         weather['air_desc'] = result.air_desc
     return weather

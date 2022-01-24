@@ -1,0 +1,170 @@
+@font-face {
+  font-family: "weathericon"; /* Project id  */
+  src: url('weathericon.ttf?t=1642755364047') format('truetype');
+}
+
+.weathericon {
+  font-family: "weathericon" !important;
+  /*font-size: 16px;*/
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-blizzard:before {
+  content: "\e754";
+}
+
+.icon-cloudy:before {
+  content: "\e755";
+  color: #94a7bf;
+}
+
+.icon-dust:before {
+  content: "\e756";
+}
+
+.icon-a-cloudyatnight:before {
+  content: "\e757";
+  color: #92adbf;
+}
+
+.icon-haze:before {
+  content: "\e758";
+  color: #828282;
+}
+
+.icon-a-great-heavysnow:before {
+  content: "\e759";
+}
+
+.icon-fog:before {
+  content: "\e75a";
+  color: #ffffdc;
+}
+
+.icon-a-extraordinaryrainstorm:before {
+  content: "\e75b";
+}
+
+.icon-a-heavyrain:before {
+  content: "\e75c";
+  color: #c9faee;
+}
+
+.icon-a-heavysmog:before {
+  content: "\e75d";
+}
+
+.icon-a-heavyrainstorm:before {
+  content: "\e75e";
+  color: #c9faee;
+}
+
+.icon-a-lightrain:before {
+  content: "\e75f";
+  color: #c9faee;
+}
+
+.icon-a-mediumsnow:before {
+  content: "\e760";
+}
+
+.icon-a-lighthaze:before {
+  content: "\e761";
+  color: #8F8F8F;
+}
+
+.icon-a-heavysnow:before {
+  content: "\e762";
+}
+
+.icon-a-moderatesmog:before {
+  content: "\e763";
+  color: #767676;
+}
+
+.icon-moon:before {
+  content: "\e764";
+  color: #ff7d1c;
+}
+
+.icon-a-moderaterain:before {
+  content: "\e765";
+  color: #c9faee;
+}
+
+.icon-a-nightshowers:before {
+  content: "\e766";
+}
+
+.icon-sandstorm:before {
+  content: "\e767";
+}
+
+.icon-a-sandblowing:before {
+  content: "\e768";
+}
+
+.icon-rainstorm:before {
+  content: "\e769";
+}
+
+.icon-a-slightsnow:before {
+  content: "\e76a";
+}
+
+.icon-sleet_02:before {
+  content: "\e76b";
+}
+
+.icon-sleet_01:before {
+  content: "\e76c";
+}
+
+.icon-a-partlycloudy_01:before {
+  content: "\e76d";
+  color: #92adbf;
+}
+
+.icon-a-snowshowersatnight:before {
+  content: "\e76e";
+}
+
+.icon-a-showerrain:before {
+  content: "\e76f";
+}
+
+.icon-thunder:before {
+  content: "\e770";
+}
+
+.icon-thunderstorm:before {
+  content: "\e771";
+}
+
+.icon-a-Strongduststorm:before {
+  content: "\e772";
+}
+
+.icon-snow:before {
+  content: "\e773";
+}
+
+.icon-sunny:before {
+  content: "\e774";
+  color: #ff7d1c;
+}
+
+.icon-a-partlycloudy:before {
+  content: "\e775";
+}
+
+.icon-a-superblizzard:before {
+  content: "\e776";
+}
+
+.icon-a-snowshowers:before {
+  content: "\e777";
+}
+

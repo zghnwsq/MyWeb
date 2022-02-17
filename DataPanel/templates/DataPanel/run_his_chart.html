@@ -71,15 +71,13 @@
                             points.push([bjt, count]);
                         }
                     }
-                    {#console.log(item);#}
-                    {#console.log(points);#}
                     if (item.name.includes('pass')) {
                         chart.addSeries({
                             name: item.name,
                             color: '#22ed7c',
                             yAxis: 1,
                             type: 'column',
-                            data: points
+                            data: points,
                         });
                     } else if (item.name.includes('fail')) {
                         chart.addSeries({
@@ -87,7 +85,7 @@
                             color: '#f47a75',
                             yAxis: 1,
                             type: 'column',
-                            data: points
+                            data: points,
                         });
                     } else {
                         chart.addSeries({name: item.name, yAxis: 0, type: 'spline', data: points});

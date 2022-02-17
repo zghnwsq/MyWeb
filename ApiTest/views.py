@@ -364,6 +364,8 @@ def edit_case(request):
                     # 事务回滚点
                     save_id = transaction.savepoint()
                     for step in data:
+                        if not isinstance(step, dict):
+                            continue
                         if step:
                             if 'id' in step.keys():
                                 is_exists = ApiCaseStep.objects.filter(id=step['id'])
@@ -408,7 +410,7 @@ def duplicate_case(request):
             # 事务回滚点
             save_id = transaction.savepoint()
             try:
-                count = 0
+                count = param_count = 0
                 for case in cases:
                     target_case = ApiCase.objects.filter(id=case['id'])
                     if target_case:
@@ -428,7 +430,17 @@ def duplicate_case(request):
                                                          title=step['title']))
                             res = ApiCaseStep.objects.bulk_create(steps)
                             count += len(res)
-                info = f'共复写{len(cases)}条用例, {count}行测试步骤.'
+                        api_case_params = ApiCaseParam.objects.filter(case=target_case[0])
+                        if api_case_params:
+                            for param in api_case_params:
+                                copy_param = ApiCaseParam(case=copy_case, p_name=param.p_name)
+                                copy_param.save()
+                                param_values = ApiCaseParamValues.objects.filter(param=param)
+                                if param_values:
+                                    for v in param_values:
+                                        ApiCaseParamValues(param=copy_param, p_value=v.p_value).save()
+                                param_count += 1
+                info = f'共复写{len(cases)}条用例, {count}行测试步骤, {param_count}个参数.'
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 msg = '复写用例失败! ' + e.__str__()
@@ -722,7 +734,8 @@ def get_result(request):
 def get_case_result(request):
     batch_id = request.GET.get('batch', None)
     if batch_id:
-        case_result = ApiCaseResult.objects.filter(batch=batch_id).values('id', 'batch', 'case_title', 'result', 'info',
+        case_result = ApiCaseResult.objects.filter(batch=batch_id).values('id', 'case__group__group', 'case__suite',
+                                                                          'batch', 'case_title', 'result', 'info',
                                                                           'create_time').order_by('id')
         return JsonResponse({"code": 0, "msg": "", "count": len(case_result), "data": list(case_result)})
     else:
@@ -732,6 +745,9 @@ def get_case_result(request):
 @auth_check
 @login_required
 def get_steps_result(request):
+    # select_group_of_step = '''select `group` from api_group where api_group.id=
+    #                             (select `group_id` from api_case where api_case.id=
+    #                             (select `case_id` from api_case_step where api_case_step.id=api_step_result.step_id))'''
     case_result_id = request.GET.get('case_result_id', None)
     if case_result_id:
         step_result = ApiStepResult.objects.filter(case=case_result_id).values('batch', 'case__case_title',

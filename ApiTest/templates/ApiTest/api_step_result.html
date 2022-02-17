@@ -53,9 +53,12 @@
                         let info = '';
                         for (let i in rows) {
                             if (rows.hasOwnProperty(i)) {
-                                let row = rows[i] + '<br>';
+                                let row = rows[i].replaceAll('"', '\'') + '<br>';
                                 info += row;
                             }
+                        }
+                        if(d.info.indexOf("Debug") !== -1){
+                            info += "===============================END==============================="
                         }
                         return info;
                     }

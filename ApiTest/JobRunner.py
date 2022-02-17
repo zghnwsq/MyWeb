@@ -79,6 +79,9 @@ class RunnerThread(threading.Thread):
             # case_res.result = '0' if case_result else '1'
             # case_res.save()
             batch_result = batch_result and case_result
+            # stop run next case after fail
+            if not batch_result and self.stop_after_fail:
+                break
         self.batch.result = '0' if batch_result else '1'
         self.batch.save()
 
@@ -117,12 +120,14 @@ class RunnerThread(threading.Thread):
                 child_case_steps = ApiCaseStep.objects.filter(case_id=case[0].id).order_by('step_order')
                 if child_case_steps:
                     # 增加用例调用起始记录
-                    ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title,
+                    ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title + ' start',
                                   step_action=step.title, result='0', info=f'Start call case: {case[0].title}.',
                                   create_time=datetime.datetime.now()).save()
-                    child_case_result = self.execute_steps(child_case_steps, case_result, api, case_res)
+                    child_case_result = self.execute_steps(child_case_steps, case_result, api, case_res,
+                                                           stop_after_fail=stop_after_fail)
                     case_result = case_result and child_case_result
                     # 调用用例,action改为用例title
+                    step_res.step_title = step_res.step_title + ' end'
                     step_res.step_action = step.title
                     step_res.result = '0' if child_case_result else '1'
                     step_res.info = f'End of case call: {case[0].title}.'
@@ -134,6 +139,7 @@ class RunnerThread(threading.Thread):
                 #               info='No such keyword.', create_time=datetime.datetime.now()).save()
             step_res.create_time = datetime.datetime.now()
             step_res.save()
+            # stop run next step after fail
             if stop_after_fail and step_res.result != '0':
                 break
         return case_result

@@ -50,7 +50,7 @@ class ApiKeywords:
             return True, self.__res
         except Exception as e:
             self.__res = f'Fail to set header: {p1}, {p2}'
-            self.__debug_info = f'Debug: Fail to set header: {p1}, {p2}. \n|| Info: {e.__str__()}'
+            self.__debug_info = f'Debug: Fail to set header: {p1}, {p2}; || Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def del_header(self, *args):
@@ -99,7 +99,7 @@ class ApiKeywords:
             return True, self.__res
         except Exception as e:
             self.__res = f'Fail to set cookie: {p1}, {p2}'
-            self.__debug_info = f'Debug: Fail to set cookie: {p1}, {p2}. \n|| Info: {e.__str__()}'
+            self.__debug_info = f'Debug: Fail to set cookie: {p1}, {p2}; || Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def __eval_url(self, p1):
@@ -140,15 +140,15 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Vars: {self.var_map} \n|| Url Params: {url_params_dict} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
+            self.__debug_info = f'Debug: Url: {url}; || Vars: {self.var_map}; || Url Params: {url_params_dict}; || Request headers: {request_headers}; || Request cookies: {request_cookies}; || Url: {url}; || Response status code: {status_code}; || Respones headers: {response_headers}; || Response data: {self.__res}'
             return True, self.__debug_info if self.__debug else self.__res
         except JSONDecodeError:
             self.__res = f'Url params json.loads解析失败: {p1}, {p2}'
-            self.__debug_info = f'Url params json.loads解析失败: {p1}, {p2}. \n|| Vars: {self.var_map} '
+            self.__debug_info = f'Url params json.loads解析失败: {p1}, {p2}; || Vars: {self.var_map} '
             return False, self.__debug_info if self.__debug else self.__res
         except Exception as e:
             self.__res = f'Fail to get: {p1}, {p2}'
-            self.__debug_info = f'Debug: Fail to get: {p1}, {p2}.  \n|| Vars: {self.var_map} \n|| Info: {e.__str__()}'
+            self.__debug_info = f'Debug: Fail to get: {p1}, {p2}; || Vars: {self.var_map}; || Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def post(self, *args):
@@ -174,11 +174,11 @@ class ApiKeywords:
             response_headers = self.http.get_response_headers()
             status_code = self.http.get_response_status_code()
             self.__res = self.http.get_response_text()
-            self.__debug_info = f'Debug: Url: {url} \n|| Data: {data}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
+            self.__debug_info = f'Debug: Url: {url}; || Data: {data}; Vars: {self.var_map}; || Request headers: {request_headers}; || Request cookies: {request_cookies}; || Url: {url}; || Response status code: {status_code}; || Respones headers: {response_headers}; || Response data: {self.__res} '
             return True, self.__debug_info if self.__debug else self.__res
         except Exception as e:
-            self.__res = f'Fail to post: {p1}, {data}; \n|| Vars: {self.var_map}'
-            self.__debug_info = f'Debug: Fail to post: {p1}, {data}; \n|| Vars: {self.var_map}. \n|| Info: {e.__str__()}'
+            self.__res = f'Fail to post: {p1}, {data}; || Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Fail to post: {p1}, {data}; || Vars: {self.var_map}; || Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def post_upload(self, *args):
@@ -215,7 +215,7 @@ class ApiKeywords:
                 status_code = self.http.get_response_status_code()
                 result = True
                 self.__res = self.http.get_response_text()
-                self.__debug_info = f'Debug: Url: {url} \n|| Files: {p2}\n|| Data: {p3}; Vars: {self.var_map} \n|| Request headers: {request_headers} \n|| Request cookies: {request_cookies} \n|| Url: {url} \n|| Response status code: {status_code} \n|| Respones headers: {response_headers} \n|| Response data: {self.__res} \n'
+                self.__debug_info = f'Debug: Url: {url}; || Files: {p2};|| Data: {p3}; Vars: {self.var_map}; || Request headers: {request_headers}; || Request cookies: {request_cookies}; || Url: {url}; || Response status code: {status_code}; || Respones headers: {response_headers}; || Response data: {self.__res} '
             else:
                 self.__res = self.__debug_info = f'File not exists:{p2}'
             for f in file_streams:
@@ -224,8 +224,8 @@ class ApiKeywords:
             return result, self.__debug_info if self.__debug else self.__res
         except Exception as e:
             print(e.with_traceback(None))
-            self.__res = f'Fail to upload files: {p1}, {p2}, {p3}; \n|| Vars: {self.var_map}'
-            self.__debug_info = f'Debug: Fail to upload files: {p1}, {p2}, {p3}; \n|| Vars: {self.var_map}. \n|| Info: {e.__str__()}'
+            self.__res = f'Fail to upload files: {p1}, {p2}, {p3}; Vars: {self.var_map}'
+            self.__debug_info = f'Debug: Fail to upload files: {p1}, {p2}, {p3}; || Vars: {self.var_map}; || Info: {e.__str__()}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def json_extractor(self, *args, match: int = 1):
@@ -371,11 +371,11 @@ class ApiKeywords:
         p1 = self.var_map.handle_var(p1)
         if p1 in res:
             self.__res = f'Assert result contains: {p1}, True'
-            self.__debug_info = f'Debug: Assert result contains: {p1}, True \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, True; || Vars: {self.var_map}; || Response: {res}'
             return True, self.__debug_info if self.__debug else self.__res
         else:
             self.__res = f'Assert result contains: {p1}, False'
-            self.__debug_info = f'Debug: Assert result contains: {p1}, False \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, False; || Vars: {self.var_map}; || Response: {res}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def assert_res_not_contains(self, *args):
@@ -389,11 +389,11 @@ class ApiKeywords:
         p1 = self.var_map.handle_var(p1)
         if p1 not in res:
             self.__res = f'Assert result not contains: {p1}, True'
-            self.__debug_info = f'Debug: Assert result not contains: {p1}, True \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert result not contains: {p1}, True; || Vars: {self.var_map}; || Response: {res}'
             return True, self.__debug_info if self.__debug else self.__res
         else:
             self.__res = f'Assert result contains: {p1}, False'
-            self.__debug_info = f'Debug: Assert result contains: {p1}, False \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert result contains: {p1}, False; || Vars: {self.var_map}; || Response: {res}'
             return False, self.__debug_info if self.__debug else self.__res
 
     def assert_by_xpath(self, *args):
@@ -413,7 +413,7 @@ class ApiKeywords:
             p1 = self.var_map.handle_var(p1)
             res = self.http.get_response_text()
             self.__res = f'Assert by xpath={p2}: expected: {p1}, actual: {value}'
-            self.__debug_info = f'Debug: Assert by xpath={p2}: expected: {p1}, actual: {value} \n|| Vars: {self.var_map}. \n|| Response: {res}'
+            self.__debug_info = f'Debug: Assert by xpath={p2}: expected: {p1}, actual: {value}; || Vars: {self.var_map}; || Response: {res}'
             if p1.strip() == value.strip():
                 return True, self.__debug_info if self.__debug else self.__res
             else:
@@ -431,15 +431,15 @@ class ApiKeywords:
         p2 = args[1]
         try:
             value = self.http.get_value_by_json_path(p2)[0]
-            if isinstance(value, bool):
-                value = str(value).lower()
+            if isinstance(value, (bool, int, float)):
+                value = str(value)
             elif not value:
                 value = 'Json path match nothing.'
             elif 'Error' in value:
                 return False, value
             p1 = self.var_map.handle_var(p1)
             self.__res = f'Assert by json_path={p2}: expected: {p1}, actual: {value}'
-            self.__debug_info = f'Debug: Assert by json_path={p2}: expected: {p1}, actual: {value} \n|| Vars: {self.var_map}. \n||'
+            self.__debug_info = f'Debug: Assert by json_path={p2}: expected: {p1}, actual: {value}; || Vars: {self.var_map}'
             if p1.strip() == value.strip():
                 return True, self.__debug_info if self.__debug else self.__res
             else:
@@ -473,8 +473,8 @@ class ApiKeywords:
                         missing_keys.append(key)
                 if missing_keys:
                     not_contains.append(f'missing {missing_keys}')
-            self.__res = f'Assert json contains keys by json_path={p2}: expected keys: {keys}, actual info: {not_contains}'
-            self.__debug_info = f'Debug: Assert json contains keys by json_path={p2}:\n|| expected keys: {keys},\n|| actual missing: {not_contains} \n|| Vars: {self.var_map}. \n||'
+            self.__res = f'Assert json contains keys by json_path={p2}: expected keys: {keys}, actual missing: {not_contains}'
+            self.__debug_info = f'Debug: Assert json contains keys by json_path={p2};|| expected keys: {keys};|| actual missing: {not_contains}; || Vars: {self.var_map}'
             if not_contains:
                 return False, self.__debug_info if self.__debug else self.__res
             else:
@@ -507,10 +507,12 @@ class ApiKeywords:
             #     value = [value]
             not_in = []
             for v in value:
+                if isinstance(v, (bool, int, float)):
+                    v = str(v)
                 if v not in p1:
                     not_in.append(v)
             self.__res = f'Assert json value in {p1} by json_path={p2}, actual values: {value}'
-            self.__debug_info = f'Debug: Assert json value in {p1} by json_path={p2},\n|| actual values: {value}\n|| Vars: {self.var_map}. \n||'
+            self.__debug_info = f'Debug: Assert json value in {p1} by json_path={p2};|| actual values: {value};|| Vars: {self.var_map}'
             if not_in:
                 return False, self.__debug_info if self.__debug else self.__res
             else:
@@ -532,12 +534,14 @@ class ApiKeywords:
                 return False, values
             empty = []
             for value in values:
+                # true, false, none
                 if isinstance(value, bool) or value is None:
                     value = str(value).lower()
-                if not value.strip() and value in ('None', 'null', 'Null'):
+                # '', 'none', 'null', 'Null' -> empty
+                if not value.strip() or value in ('none', 'null', 'Null'):
                     empty.append(value)
             self.__res = f'Assert by json_path={p1}: expected not null or empty, actual: "{empty}"'
-            self.__debug_info = f'Debug: Assert by json_path={p1}: expected not null or empty, actual: "{empty}" \n|| Vars: {self.var_map}. \n||'
+            self.__debug_info = f'Debug: Assert by json_path={p1}: expected not null or empty, actual: "{empty}"; || Vars: {self.var_map}'
             if not empty:
                 return True, self.__debug_info if self.__debug else self.__res
             else:
@@ -559,12 +563,14 @@ class ApiKeywords:
                 return False, values
             not_empty = []
             for value in values:
+                # true, false, none
                 if isinstance(value, bool) or value is None:
                     value = str(value).lower()
-                if value.strip() and value not in ('None', 'null', 'Null'):
+                # '', 'none', 'null', 'Null' -> empty; others not empty
+                if value.strip() and value not in ('none', 'null', 'Null'):
                     not_empty.append(value)
-            self.__res = f'Assert by json_path={p1}: expected null or empty, actual not empty: "{not_empty}"'
-            self.__debug_info = f'Debug: Assert by json_path={p1}: expected null or empty, actual not empty: "{not_empty}" \n|| Vars: {self.var_map}. \n||'
+            self.__res = f'Assert by json_path={p1}: expected null or empty, actual: "{not_empty}"'
+            self.__debug_info = f'Debug: Assert by json_path={p1}: expected null or empty, actual: "{not_empty}"; || Vars: {self.var_map}'
             if not_empty:
                 return False, self.__debug_info if self.__debug else self.__res
             else:

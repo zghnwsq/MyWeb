@@ -52,7 +52,6 @@
 </script>
 
 <script>
-
     function setSelectCSS() {
         $(".layui-table-body, .layui-table-box, td[data-field='step_action']>.layui-table-cell").css('overflow', 'visible');
         $("td[data-field='step_action'] .layui-form-select").css({
@@ -234,17 +233,18 @@
             if (layEvent === 'del') {
                 msg.confirm('是否确定删除?', function (index) {
                     let idx = getRowIndex(step_table, obj['tr']);
-                    {#let curr = parseInt($("[lay-id=step_table] .layui-laypage-curr em:last").text());#}
+                    let curr = parseInt($("[lay-id=step_table] .layui-laypage-curr em:last").text());
                     obj.del();
                     table_data.splice(idx, 1);
+                    console.log(table_data);
                     {# bug: 前端分页,第二页删除完，表格空 #}
                     {#if(tb.getData('step_table').length === 0){#}
                     {#    curr = curr - 1;#}
                     {# }#}
-                    {#tb.reload("step_table", {#}
-                    {#    data: table_data,#}
-                    {#    page: {curr: curr}#}
-                    {# });#}
+                    tb.reload("step_table", {
+                        data: table_data,
+                        page: {curr: curr}
+                     });
                     msg.close(index);
                 });
             }
@@ -265,6 +265,7 @@
         fm.on('submit(save_case)', function () {
             {#const steps_csrf = $("div[lay-filter='steps']>input[name='csrfmiddlewaretoken']").val();#}
             {#const case_id = $("#case_id").val();#}
+            console.log(table_data);
             $.ajax({
                 url: "/apitest/case/edit/"
                 , type: "POST"

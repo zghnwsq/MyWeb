@@ -1,12 +1,12 @@
 {% extends "base1.html" %}
 
 {% block content %}
-    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 10px;margin-bottom: 10px;">
         <legend>执行统计</legend>
     </fieldset>
     <div class="layui-form layui-form-pane" lay-filter="search">
     {% csrf_token %}
-        <div class="layui-form-item">
+        <div class="layui-form-item" style="margin-bottom: 0">
             <div class="search">
                 <div class="layui-inline">
                     <label class="layui-form-label ">Group：</label>
@@ -121,7 +121,7 @@
 
             let run_his = table.render({
                     elem: '#run_his'
-                    , height: 'full'
+                    , height: 'full-242'
                     , url: '/datapanel/run_count/get/' {#//数据接口#}
                     , where: {
                         group: group,
@@ -133,7 +133,8 @@
                     }
                     , page: {
                         curr: 1,
-                        limit: 10
+                        limit: 10,
+                        limits: [5, 10, 20, 30, 40, 50, 60, 70, 80, 90]
                     } //开启分页
                     , even: true {#//奇偶行背景 #}
                     , totalRow: true {# 统计行 #}

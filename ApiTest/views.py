@@ -1,5 +1,6 @@
 import datetime
 import json
+import threading
 import time
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -11,14 +12,15 @@ from MyWeb import settings
 from Utils.CustomView import ListViewWithMenu
 from Utils.MyMixin import URIPermissionMixin
 from Utils.Paginator import paginator
+from Utils.ReadExcel import handle_rows_for_api_ds, read_data_by_name
 from Utils.decorators import auth_check
+from . import ApiKeywordsHelper
 from .JobRunner import api_job_run
-from .attachment import save_attachment
+from .attachment import save_case_attachment, save_case_param_file, rm_case_param_file
 from .form import *
 from .models import *
 from Utils.JsonEncoder import DateEncoder
 from django.db import transaction
-
 
 PARENT_MENU = r'接口自动化\\(Codeless\\)'
 
@@ -63,7 +65,8 @@ def update_group(request):
     group_id = req_json.get('group_id', None)
     group = req_json.get('group', '')
     if isinstance(group_id, int) and group:
-        if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
+        if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session[
+            'user_group'] in settings.MANAGER_GROUPS:
             res = ApiGroup.objects.filter(id=group_id).update(group=group)
             msg = f'成功更新{res}条记录.'
         else:
@@ -84,7 +87,8 @@ def del_group(request):
         if len(has_case) > 1:
             msg = f'用例组下存在{len(has_case)}条用例,请删除后重试.'
         else:
-            if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
+            if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session[
+                'user_group'] in settings.MANAGER_GROUPS:
                 res = ApiGroup.objects.filter(id=group_id).update(status='0')
                 msg = f'成功删除{res[0]}条记录.'
             else:
@@ -158,12 +162,14 @@ def edit_group_env(request):
                         continue
                     # id存在更新
                     if 'id' in row.keys() and row['id']:
-                        is_key_exist = ApiGroupEnv.objects.filter(group=group_id, env_key=row['env_key']).exclude(id=row['id'])
+                        is_key_exist = ApiGroupEnv.objects.filter(group=group_id, env_key=row['env_key']).exclude(
+                            id=row['id'])
                         # 重复key校验
                         if is_key_exist:
                             error += 1
                             continue
-                        update += ApiGroupEnv.objects.filter(id=row['id'], group=group_id).update(env_key=row['env_key'], env_value=row['env_value'])
+                        update += ApiGroupEnv.objects.filter(id=row['id'], group=group_id).update(
+                            env_key=row['env_key'], env_value=row['env_value'])
                     # id不存在新增
                     else:
                         is_key_exist = ApiGroupEnv.objects.filter(group=group_id, env_key=row['env_key'])
@@ -249,7 +255,8 @@ def update_case(request):
         if not suite or not title:
             msg = 'ERROR: suite或title不能为空.'
         else:
-            if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
+            if ApiCase.objects.get(id=case_id).author == request.user.id or request.session[
+                'user_group'] in settings.MANAGER_GROUPS:
                 ApiCase.objects.filter(id=case_id).update(suite=suite, title=title)
                 msg = '更新成功.'
             else:
@@ -274,7 +281,8 @@ def del_case(request):
             form = CaseForm(case)
             if form.is_valid():
                 case_id = form.cleaned_data.get('id')
-                if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
+                if ApiCase.objects.get(id=case_id).author == request.user.id or request.session[
+                    'user_group'] in settings.MANAGER_GROUPS:
                     case = ApiCase.objects.filter(id=case_id)
                     if case:
                         # on_delete=models.CASCADE 自动删除关联记录
@@ -335,13 +343,15 @@ def edit_case(request):
                                                                                                    'case', 'title',
                                                                                                    'step_order')
                 keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description').order_by('list_order')
-                cases = ApiCase.objects.exclude(id=case_id).filter(group=case[0].group).order_by('group', 'id').values('id', 'group__group', 'suite', 'title')
+                cases = ApiCase.objects.exclude(id=case_id).filter(group=case[0].group).order_by('group', 'id').values(
+                    'id', 'group__group', 'suite', 'title')
                 case_group = ApiGroup.objects.filter(apicase__id=case_id)
-                attachments = ApiAttachment.objects.filter(group=case_group[0]).values('file_name', 'uuid', 'suffix').order_by('-id')
+                attachments = ApiAttachment.objects.filter(group=case_group[0]).values('file_name', 'uuid',
+                                                                                       'suffix').order_by('-id')
                 return render(request, 'ApiTest/api_case_steps.html',
                               {'case_id': case_id, 'title': case[0].title, 'data': json.dumps(list(steps)),
                                'keywords': json.dumps(list(keywords)), 'cases': json.dumps(list(cases)),
-                               'attachments': list(attachments)})
+                               'attachments': list(attachments), 'helper': ApiKeywordsHelper.HELPER})
             else:
                 msg = 'ERROR: 没有此用例.'
         else:
@@ -371,12 +381,15 @@ def edit_case(request):
                                 is_exists = ApiCaseStep.objects.filter(id=step['id'])
                                 if is_exists:
                                     is_exists.update(step_action=step['step_action'], step_p1=step['step_p1'],
-                                                     step_p2=step['step_p2'], step_p3=step['step_p3'], title=step['title'],
+                                                     step_p2=step['step_p2'], step_p3=step['step_p3'],
+                                                     title=step['title'],
                                                      step_order=index)
                                     updated.append(step['id'])
                             else:
-                                batch.append(ApiCaseStep(case=has_case[0], step_action=step['step_action'], step_p1=step['step_p1'],
-                                                         step_p2=step['step_p2'], step_p3=step['step_p3'], title=step['title'],
+                                batch.append(ApiCaseStep(case=has_case[0], step_action=step['step_action'],
+                                                         step_p1=step['step_p1'],
+                                                         step_p2=step['step_p2'], step_p3=step['step_p3'],
+                                                         title=step['title'],
                                                          step_order=index))
                             index += 1
                     # 删除新增顺序不能变
@@ -424,7 +437,8 @@ def duplicate_case(request):
                         if target_case_step:
                             steps = []
                             for step in target_case_step:
-                                steps.append(ApiCaseStep(case=copy_case, step_action=step['step_action'], step_p1=step['step_p1'],
+                                steps.append(ApiCaseStep(case=copy_case, step_action=step['step_action'],
+                                                         step_p1=step['step_p1'],
                                                          step_p2=step['step_p2'], step_p3=step['step_p3'],
                                                          step_order=step['step_order'],
                                                          title=step['title']))
@@ -433,7 +447,7 @@ def duplicate_case(request):
                         api_case_params = ApiCaseParam.objects.filter(case=target_case[0])
                         if api_case_params:
                             for param in api_case_params:
-                                copy_param = ApiCaseParam(case=copy_case, p_name=param.p_name)
+                                copy_param = ApiCaseParam(case=copy_case, p_name=param.p_name, desc=param.desc)
                                 copy_param.save()
                                 param_values = ApiCaseParamValues.objects.filter(param=param)
                                 if param_values:
@@ -464,7 +478,8 @@ def case_ds_layer(request):
     group = ApiCase.objects.filter(id=case_id).values('group')
     case_in_same_group = ApiCase.objects.exclude(id=case_id).filter(group__in=group).values('id', 'title')
     if case_id:
-        return render(request, 'ApiTest/api_case_ds.html', {'case_id': case_id, 'case_title': case_title, 'data': list(case_in_same_group)})
+        return render(request, 'ApiTest/api_case_ds.html',
+                      {'case_id': case_id, 'case_title': case_title, 'data': list(case_in_same_group)})
     else:
         msg = 'ERROR: 请求内容有误.'
     return JsonResponse({'msg': msg})
@@ -476,7 +491,7 @@ def edit_case_ds(request):
     if request.method == 'GET':
         case_id = request.GET.get('case_id', None)
         if case_id:
-            p_names = ApiCaseParam.objects.filter(case__id=case_id).values('id', 'p_name').annotate(
+            p_names = ApiCaseParam.objects.filter(case__id=case_id).values('id', 'p_name', 'desc').annotate(
                 count=Count('apicaseparamvalues__p_value'))
             return JsonResponse({"code": 0, "msg": "", "count": len(p_names), "data": list(p_names)})
         else:
@@ -492,13 +507,14 @@ def edit_case_ds(request):
             if data:
                 new, update, error = 0, 0, 0
                 for row in data:
-                    if 'p_name' in row.keys() and not row['p_name']:
+                    if not row.get('p_name', None):
                         error += 1
                         continue
                     if 'id' in row.keys():
-                        update += ApiCaseParam.objects.filter(id=row['id']).update(p_name=row['p_name'])
+                        update += ApiCaseParam.objects.filter(id=row['id']).update(p_name=row['p_name'],
+                                                                                   desc=row.get('desc', ''))
                     else:
-                        ApiCaseParam(case=case[0], p_name=row['p_name']).save()
+                        ApiCaseParam(case=case[0], p_name=row['p_name'], desc=row.get('desc', '')).save()
                         new += 1
                 msg = f'保存成功,更新{update}条, 新增{new}条; 跳过错误数据{error}条.'
             elif copy_case_id:
@@ -506,7 +522,7 @@ def edit_case_ds(request):
                 if copy_case_params:
                     # 复制变量名
                     for param in copy_case_params:
-                        new_param = ApiCaseParam(case=case[0], p_name=param.p_name)
+                        new_param = ApiCaseParam(case=case[0], p_name=param.p_name, desc=param.desc)
                         new_param.save()
                         # 复制变量值
                         copy_param_values = ApiCaseParamValues.objects.filter(param_id=param.id)
@@ -520,6 +536,45 @@ def edit_case_ds(request):
         else:
             msg = 'ERROR: 关联用例不存在.'
         return JsonResponse({'msg': msg})
+
+
+def update_case_param(case: ApiCase, data):
+    new, update = 0, 0
+    for row in data:
+        param_model, is_created = ApiCaseParam.objects.update_or_create(case=case, p_name=row['p_name'],
+                                                                        desc=row['desc'])
+        if is_created:
+            new += 1
+        else:
+            update += 1
+        for value in row['values']:
+            ApiCaseParamValues.objects.create(param=param_model, p_value=value)
+    return f'保存成功,更新{update}条, 新增{new}条.'
+
+
+@auth_check
+@login_required
+@require_http_methods(['POST'])
+def upload_case_param(request):
+    form = CaseParamUploadForm(request.POST, request.FILES)
+    if form.is_valid():
+        case_id = form.cleaned_data['case_id']
+        sheetname = form.cleaned_data['sheetname']
+        file = form.cleaned_data['file']
+        case = ApiCase.objects.filter(id=case_id)
+        if case:
+            file_path = save_case_param_file(case_id, file)
+            data = read_data_by_name(file_path, handle_rows_for_api_ds, sheetname)
+            threading.Thread(target=rm_case_param_file, kwargs={'file_path': file_path}).start()
+            if data:
+                msg = update_case_param(case[0], data)
+            else:
+                msg = 'ERROR: 上传数据空.'
+        else:
+            msg = 'ERROR: 关联用例不存在.'
+    else:
+        msg = "ERROR: 提交表单错误!"
+    return JsonResponse({"msg": msg}, json_dumps_params={'ensure_ascii': False})
 
 
 @auth_check
@@ -622,7 +677,9 @@ def get_steps(request):
     #     data_list = paginator(steps, int(page), int(limit))
     # else:
     #     data_list = []
-    return JsonResponse({"code": 0, "msg": "", "count": len(steps), "data": list(steps), "keywords": list(keywords)})
+    return JsonResponse(
+        {"code": 0, "msg": "", "count": len(steps), "data": list(steps), "keywords": list(keywords)}
+    )
 
 
 @auth_check
@@ -634,7 +691,7 @@ def upload_attachment(request):
     if form.is_valid():
         case_id = form.cleaned_data['case_id']
         file = form.cleaned_data['file']
-        msg, saved = save_attachment(case_id, file)
+        msg, saved = save_case_attachment(case_id, file)
     else:
         msg = "ERROR: 提交表单错误!"
     return JsonResponse({"msg": msg, "data": saved}, json_dumps_params={'ensure_ascii': False})
@@ -757,6 +814,7 @@ def get_steps_result(request):
                                                                                # 'step__title',
                                                                                'result', 'info',
                                                                                'create_time').order_by('id')
-        return render(request, 'ApiTest/api_step_result.html', {'steps': json.dumps(list(step_result), cls=DateEncoder)})
+        return render(request, 'ApiTest/api_step_result.html',
+                      {'steps': json.dumps(list(step_result), cls=DateEncoder)})
     else:
         return JsonResponse({"code": 0, "msg": "请求参数不正确!", "count": 0, "data": []})

@@ -116,6 +116,9 @@
                     });
                 }
                 table_data.splice((curr - 1) * limit + idx, 1);
+                table.reload("ds_value_table", {
+                    data: table_data
+                });
                 layer.close(del_value_layer);
             });
         }

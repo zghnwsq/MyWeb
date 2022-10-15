@@ -69,7 +69,7 @@ def handle_result(server, res):
         file_binary = server.get_report_file(res['report']).data
         time_stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         # 解压缩文件夹
-        report_file_path = os.path.join(os.path.join(settings.BASE_DIR, 'Report'), res['test_group'],
+        report_file_path = os.path.join(os.path.join(settings.BASE_DIR, settings.REPORT_DIRECTORY), res['test_group'],
                                         res['test_suite'], time_stamp)
         # zip文件路径
         zip_file_path = report_file_path + '.zip'
@@ -122,7 +122,8 @@ class RunnerThread(threading.Thread):
         # 执行结束，修改任务状态
         status = self.res
         print(f'Status:{status}')
-        exec_model = Execution.objects.filter(Q(status='running') | Q(status=None), method=self.mthd, func__func=self.func)
+        exec_model = Execution.objects.filter(Q(status='running') | Q(status=None), method=self.mthd,
+                                              func__func=self.func)
         for row in exec_model:
             # row.status = status[:255]
             job = JobQueue.objects.filter(executioin=row.id)
@@ -156,5 +157,3 @@ def job_run(func, mthd, ds_range, node, comment, node_model, tester):
         status = 'Thread Error'
     finally:
         return status
-
-

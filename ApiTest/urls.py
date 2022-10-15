@@ -22,6 +22,7 @@ urlpatterns = [
     path('case/attachment/', views.upload_attachment, name='upload_attachment'),
     path('case/ds/', views.case_ds_layer, name='case_ds'),
     path('case/ds/edit/', views.edit_case_ds, name='edit_case_ds'),
+    path('case/ds/upload/', views.upload_case_param, name='upload_case_param'),
     path('case/ds/del/param/', views.del_case_param, name='del_case_ds_param'),
     path('case/ds/value/', views.case_ds_value_layer, name='case_ds_value'),
     path('case/ds/value/edit/', views.edit_case_ds_value, name='edit_case_ds_value'),

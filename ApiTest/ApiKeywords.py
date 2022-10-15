@@ -209,6 +209,7 @@ class ApiKeywords:
                     file_streams.append(file_stream)
                     file = (attach[0].file_name, file_stream)
                     files[f'field{file_index}'] = file
+                    file_index += 1
             if files:
                 self.http.post(url, data=data, files=files)
                 response_headers = self.http.get_response_headers()
@@ -430,17 +431,47 @@ class ApiKeywords:
         p1 = args[0]
         p2 = args[1]
         try:
-            value = self.http.get_value_by_json_path(p2)[0]
-            if isinstance(value, (bool, int, float)):
-                value = str(value)
-            elif not value:
-                value = 'Json path match nothing.'
-            elif 'Error' in value:
+            value = self.http.get_value_by_json_path(p2)
+            if 'Error' in value:
                 return False, value
+            elif len(value) < 1:
+                value = 'Json path match nothing.'
+            elif not isinstance(value[0], str):
+                value = str(value[0])
+            else:
+                value = value[0]
             p1 = self.var_map.handle_var(p1)
             self.__res = f'Assert by json_path={p2}: expected: {p1}, actual: {value}'
             self.__debug_info = f'Debug: Assert by json_path={p2}: expected: {p1}, actual: {value}; || Vars: {self.var_map}'
             if p1.strip() == value.strip():
+                return True, self.__debug_info if self.__debug else self.__res
+            else:
+                return False, self.__debug_info if self.__debug else self.__res
+        except JSONDecodeError as e:
+            return False, e.__str__()
+
+    def assert_json_contains(self, *args):
+        """
+            根据json path断言json响应某一值包含
+        :param args:p1: 期望包含值; p2: jsonpath
+        :return: boolean, information
+        """
+        p1 = args[0]
+        p2 = args[1]
+        try:
+            value = self.http.get_value_by_json_path(p2)
+            if 'Error' in value:
+                return False, value
+            elif len(value) < 1:
+                value = 'Json path match nothing.'
+            elif not isinstance(value[0], str):
+                value = str(value[0])
+            else:
+                value = value[0]
+            p1 = self.var_map.handle_var(p1)
+            self.__res = f'Assert by json_path={p2}: expected contains: {p1}, actual: {value}'
+            self.__debug_info = f'Debug: Assert by json_path={p2}: expected contains: {p1}, actual: {value}; || Vars: {self.var_map}'
+            if p1.strip() in value:
                 return True, self.__debug_info if self.__debug else self.__res
             else:
                 return False, self.__debug_info if self.__debug else self.__res

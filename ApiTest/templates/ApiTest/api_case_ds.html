@@ -2,7 +2,7 @@
     {% csrf_token %}
     <div class="layui-form-item">
         <div class="layui-inline">
-            <label for="copy_ds" class="layui-form-label ">用例:</label>
+            <label for="copy_ds" class="layui-form-label">用例:</label>
             <div class="layui-input-inline">
                 <select name="copy_ds" id="copy_ds">
                     <option value=""></option>
@@ -21,7 +21,15 @@
         </div>
         <div class="layui-inline">
             <div class="layui-input-inline">
-                <button class="layui-btn" id="new_name" lay-filter="new_name">新增字段</button>
+                <input type="text" id="sheetname" placeholder="sheet表名, 默认第一个表"
+                       autocomplete="off"
+                       class="layui-input">
+            </div>
+            <div class="layui-input-inline">
+                {#                <button class="layui-btn" id="new_name" lay-filter="new_name">新增字段</button>#}
+                <button class="layui-btn layui-btn-normal" id="upload_param"><i
+                        class="layui-icon layui-icon-upload-circle"></i>上传Excel
+                </button>
                 <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_name"
                         lay-filter="save_name">保存
                 </button>
@@ -37,13 +45,23 @@
     <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit_value">编辑</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del_name">删除</a>
 </script>
+<script type="text/html" id="dsToolBar">
+    <span style="float: right">
+        <button class="layui-btn  layui-btn-normal layui-btn-sm" id="new_param">新增字段</button>
+        <button class="layui-btn  layui-btn-danger layui-btn-sm" id="del_all">删除全部</button>
+    </span>
+
+</script>
 <script>
-    let form = layui.form;
-    let table = layui.table;
+    let form = layui.form,
+        table = layui.table,
+        upload = layui.upload,
+        $ = layui.$;
     form.render(null, 'ds');
     let case_id = $("#case_id").val();
-    let case_title = $("#case_title").val();
-    let table_data = [];
+    let case_title = $("#case_title").val(),
+        table_data = [];
+    const ds_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();
 
     function reload_ds_data($, case_id) {
         $.ajax({
@@ -68,20 +86,54 @@
             limit: 10
         },
         even: true,
+        toolbar: '#dsToolBar',
+        defaultToolbar: [],
         cols: [[
             {type: 'numbers', title: '序号', fixed: 'left'},
             {field: 'p_name', title: 'Param Name', align: 'center', edit: 'text'},
+            {field: 'desc', title: 'Desc', align: 'center', edit: 'text'},
             {field: 'count', title: 'Count', align: 'center', edit: 'text'},
             {field: '', title: 'Action', align: 'center', toolbar: '#ds_row_tool'},
         ]],
+        done() {
+            $("#new_param").on('click', function () {
+                table_data.push({
+                    'p_name': '',
+                    'desc': '',
+                    'count': 0
+                });
+                {# 将新数据重新载入表格 #}
+                table.reload("ds_table", {
+                    data: table_data
+                });
+            });
+            $("#del_all").on('click', function () {
+                layer.confirm('是否确定删除?', function (del_all_layer) {
+                    $.ajax({
+                        url: "/apitest/case/ds/del/param/"
+                        , type: "POST"
+                        , contentType: 'application/json; charset=utf-8'
+                        , beforeSend: function (xhr) {
+                            xhr.setRequestHeader("X-CSRFToken", ds_csrf);
+                        }
+                        , data: JSON.stringify(table_data)
+                        , success: function (data) {
+                            commonReturnMsg(data);
+                        }
+                    });
+                    reload_ds_data($, case_id);
+                    layer.close(del_all_layer);
+                });
+            })
+        }
     });
     {# 初始化获取 #}
     !function () {
         reload_ds_data($, case_id);
     }();
     form.on('submit(save_name)', function () {
-        const ds_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();
-        const case_id = $("#case_id").val();
+        {#const ds_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();#}
+        {#const case_id = $("#case_id").val();#}
         $.ajax({
             url: "/apitest/case/ds/edit/"
             , type: "POST"
@@ -91,16 +143,7 @@
             }
             , data: JSON.stringify({case_id: case_id, data: table_data})
             , success: function (data) {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (index) {
-                        layer.close(index);
-                    }
-                });
+                commonReturnMsg(data);
                 reload_ds_data($, case_id);
             }
         });
@@ -108,7 +151,7 @@
     table.on('tool(ds_table)', function (obj) {
         let layEvent = obj.event;
         let idx = obj.tr.data('index');
-        const ds_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();
+        {#const ds_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();#}
         let curr = parseInt($("[lay-id=ds_table] .layui-laypage-curr em:last").text());
         let limit = parseInt($("[lay-id=ds_table] .layui-laypage-limits option:selected").val());
         if (layEvent === 'del_name') {
@@ -122,18 +165,9 @@
                         , beforeSend: function (xhr) {
                             xhr.setRequestHeader("X-CSRFToken", ds_csrf);
                         }
-                        , data: JSON.stringify({param_id: obj.data['id']})
+                        , data: JSON.stringify([obj.data])
                         , success: function (data) {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (ret_layer) {
-                                    layer.close(ret_layer);
-                                }
-                            });
+                            commonReturnMsg(data);
                         }
                     });
                 }
@@ -176,43 +210,34 @@
                                 }
                             });
                         } else {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + ret.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (err_layer) {
-                                    layer.close(err_layer);
-                                }
-                            });
+                            commonReturnMsg(ret);
                         }
                     }
                 });
             } else {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + '请先保存参数名.' + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (err_layer) {
-                        layer.close(err_layer);
-                    }
-                });
+                commonReturnMsg('请先保存参数名.');
             }
         }
     });
-
-    $("#new_name").on('click', function () {
-        table_data.push({
-            'p_name': '',
-            'count': 0
-        });
-        {# 将新数据重新载入表格 #}
-        table.reload("ds_table", {
-            data: table_data
-        });
+    upload.render({
+        elem: '#upload_param',
+        url: '/apitest/case/ds/upload/',
+        data: {
+            'case_id': function () {
+                return case_id;
+            },
+            'sheetname': function () {
+                return $("#sheetname").val();
+            }
+        },
+        headers: {'X-CSRFToken': ds_csrf},
+        accept: 'file',
+        exts: 'xls|xlsx',
+        size: 2048,
+        done: function (res) {
+            commonReturnMsg(res);
+            reload_ds_data($, case_id);
+        }
     });
     {# 从其他用例复制 #}
     $("#do_copy").on('click', function () {
@@ -228,16 +253,7 @@
             }
             , data: JSON.stringify({case_id: case_id, copy_case_id: copy_case_id})
             , success: function (data) {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (index) {
-                        layer.close(index);
-                    }
-                });
+                commonReturnMsg(data);
                 reload_ds_data($, case_id);
             }
         });

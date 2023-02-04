@@ -68,24 +68,26 @@ class RunnerThread(threading.Thread):
                     scene_var_map = set_scene_param(param_dict, index, case_var_map)
                     api = ApiKeywords(scene_var_map, debug=self.debug)
                     case_title = api_case[0].title + f'_#{index + 1}' if max_count > 1 else api_case[0].title
-                    case_result = self.execute_case(api_case[0], case_title, api, steps, case_result)
+                    this_case_result = self.execute_case(api_case[0], case_title, api, steps)
+                    case_result = case_result if not case_result else this_case_result
             else:
                 api = ApiKeywords(case_var_map, debug=self.debug)
-                case_result = self.execute_case(api_case[0], api_case[0].title, api, steps, case_result)
+                case_result = self.execute_case(api_case[0], api_case[0].title, api, steps)
             # case_res = ApiCaseResult(batch=self.batch, case=api_case[0], case_title=api_case[0].title,
             #                          create_time=datetime.datetime.now(), result='9')
             # case_res.save()
             # case_result = self.execute_steps(steps, case_result, api, case_res, stop_after_fail=self.stop_after_fail)
             # case_res.result = '0' if case_result else '1'
             # case_res.save()
-            batch_result = batch_result and case_result
+            batch_result = batch_result if not batch_result else case_result
             # stop run next case after fail
             if not batch_result and self.stop_after_fail:
                 break
         self.batch.result = '0' if batch_result else '1'
         self.batch.save()
 
-    def execute_case(self, api_case_obj, api_case_title, api, steps, case_result):
+    def execute_case(self, api_case_obj, api_case_title, api, steps):
+        case_result = True
         case_res = ApiCaseResult(batch=self.batch, case=api_case_obj, case_title=api_case_title,
                                  create_time=datetime.datetime.now(), result='9')
         case_res.save()
@@ -105,7 +107,7 @@ class RunnerThread(threading.Thread):
                     case_result = case_result and res
                     result = '0' if res else '1'
                     step_res.result = result
-                    step_res.info = info.replace('<', '{').replace('>', '}')[:2047]
+                    step_res.info = info.replace('<', '{').replace('>', '}')[:2043] + ' ...'
                     # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result=result,
                     #               info=info[:2047], create_time=datetime.datetime.now()).save()
                 except Exception as e:

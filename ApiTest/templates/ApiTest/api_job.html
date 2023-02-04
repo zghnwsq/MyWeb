@@ -1,4 +1,8 @@
-{% extends "base1.html" %}
+{% extends "base.html" %}
+{% load static %}
+{% block statics %}
+    <script src="{% static 'CommonLayer.js' %}"></script>
+{% endblock %}
 {% block content %}
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>API测试任务</legend>
@@ -147,16 +151,7 @@
                 const csrf = $("#csrf").val();
                 {#console.log(cases);#}
                 if(cases.length < 1){
-                    layer.open({
-                        content: '<div style="padding: 20px 2em;">请选择用例!</div>'
-                        , type: 1
-                        , title: '提示'
-                        , time: 5000
-                        , btn: '确定'
-                        , yes: function (index) {
-                            layer.close(index);
-                        }
-                    });
+                    commonReturnMsg('请选择用例!');
                 }else {
                     $.ajax({
                         url: "/apitest/job/exec/"
@@ -167,16 +162,7 @@
                         }
                         , data: JSON.stringify({cases: cases, debug: debug_switch, stop_after_fail: stop_after_fail})
                         , success: function (data) {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (index) {
-                                    layer.close(index);
-                                }
-                            });
+                            commonReturnMsg(data);
                             {#active['reload'].call(this);#}
                         }
                     });

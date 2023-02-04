@@ -76,16 +76,7 @@
             }
             , data: JSON.stringify({group_id: group_id, data: table_data})
             , success: function (data) {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (index) {
-                        layer.close(index);
-                    }
-                });
+                commonReturnMsg(data);
                 reload_data($, group_id, table);
             }
         });
@@ -109,16 +100,7 @@
                     }
                     , data: JSON.stringify({env_id: obj.data['id']})
                     , success: function (data) {
-                        layer.open({
-                            content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                            , type: 1
-                            , title: '提示'
-                            , time: 5000
-                            , btn: '确定'
-                            , yes: function (i) {
-                                layer.close(i);
-                            }
-                        });
+                        commonReturnMsg(data);
                         {#console.log(table.cache['env_table']);  //table数据缓存#}
                         {#table_data = table.cache['env_table'];#}
                         table_data.splice((curr - 1) * limit + idx, 1);

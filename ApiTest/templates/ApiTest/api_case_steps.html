@@ -29,7 +29,7 @@
         </div>
         <div class="layui-inline" style="float: right">
             <div class="layui-input-inline">
-                <button class="layui-btn" id="new_step" lay-filter="new_step">新增步骤</button>
+                <button class="layui-btn layui-btn-normal" id="new_step" lay-filter="new_step">新增步骤</button>
                 <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_case"
                         lay-filter="save_case">保存
                 </button>
@@ -39,27 +39,42 @@
 </div>
 <table id="step_table" lay-filter="step_table">
     {#    <input style="display: none" id="csrf" value={{ csrf_token }}>#}
-    <input style="display: none" id="case_id" value={{ case_id }}>
+    <input style="display: none" id="case_id" value="{{ case_id }}"/>
 </table>
+<style>
+    span.keyword {
+        font-weight: bold;
+        font-size: 12px;
+        margin: 10px;
+    }
+
+    span.param {
+        font-style: italic;
+        font-size: 12px;
+        margin: 10px;
+    }
+</style>
 <script type="text/html" id="stepsToolBar">
     <div>
         行拖拽: <input type="checkbox" lay-skin="switch" lay-filter="rowDragSwitch" lay-text="启用|暂停" checked>
         <i style="margin-left: 2em; color: red; font-size: small">*切换分页前请保存</i>
+        <i class="helpicon icon-help" style="font-size: 28px; float: right"></i>
     </div>
 </script>
 <script type="text/html" id="row_tool">
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
 </script>
-
 <script>
     function setSelectCSS() {
         $(".layui-table-body, .layui-table-box, td[data-field='step_action']>.layui-table-cell").css('overflow', 'visible');
         $("td[data-field='step_action'] .layui-form-select").css({
-            'margin-top': '-10px',
+            'margin-top': '-6px',
             'margin-left': '-16px',
             'margin-right': '-15px'
         });
     }
+
+    let helper_info = "{{ helper | safe }}";
 
     layui.use(['form', 'table', 'soulTable', 'layer', 'upload'], function () {
         layui.soulTable.config({
@@ -92,8 +107,8 @@
             done: function (res) {
                 console.log(res);
                 if (res.hasOwnProperty("data") && res.data !== "") {
-                    let text = res.data.file_name + '.' + res.data.suffix,
-                        value = res.data.uuid;
+                    let text = res.data['file_name'] + '.' + res.data.suffix,
+                        value = res.data['uuid'];
                     $('#attachments').append(new Option(text, value));
                     fm.render('select', 'steps');
                 }
@@ -109,7 +124,6 @@
                 });
             }
         });
-
         let table_data = [];
         let keywords = [];
         let cases = [];
@@ -122,11 +136,6 @@
         {% if data %}
             table_data = {{ data | safe }};
         {% endif %}
-        {#for(let index in table_data){#}
-        {#    if (!table_data.hasOwnProperty(index)) continue;#}
-        {#    table_data[index]['keywords'] = keywords;#}
-        {# } #}
-
         function reload_data($, case_id, tb) {
             let new_data;
             let options;
@@ -154,26 +163,16 @@
             elem: '#step_table',
             id: 'step_table',
             data: table_data,
-            {#limit: 100,#}
-            {#url: '/apitest/case/steps/',#}
             page: {
                 curr: 1,
                 limit: 10
             },
-            {#where: {'case_id': {{case_id}} },#}
             even: true,
-            {#overflow: 'tips',#}
             toolbar: '#stepsToolBar',
-            rowDrag: {/*trigger: 'row',*/ done: function (obj) {
-                    {#// 完成时（松开时）触发,如果拖动前和拖动后无变化，则不会触发此方法#}
-                    {#console.log(obj.row); // 当前行数据#}
-                    {#console.log(obj.cache); // 改动后全表数据,会被分页截断#}
-                    {#console.log(obj.oldIndex); // 原来的数据索引#}
-                    {#console.log(obj.newIndex); // 改动后数据索引#}
+            rowDrag: {/*trigger: 'row',*/ done: function (obj) { {#// 完成时（松开时）触发,如果拖动前和拖动后无变化，则不会触发此方法#}
                     let curr = step_table['config']['page']['curr'];
                     let limit = step_table['config']['page']['limit'];
                     table_data.splice((curr - 1) * limit, limit, ...obj.cache);
-                    {#table_data = step_table['config']['data'];#}
                 }
             },
             cols: [[
@@ -182,19 +181,18 @@
                 {field: 'title', title: 'Title', align: 'center', edit: 'text', width: 200},
                 {#{field: 'step_action', title: 'Action', align: 'center', edit: 'text'},#}
                 {
-                    field: 'step_action', title: 'Action', align: 'left', width: 200,templet(d) {
+                    field: 'step_action', title: 'Action', align: 'left', width: 200, templet(d) {
                         const beg = '<select name="step_action" lay-filter="step_action" id="step_action" required lay-verify="required">\n' +
                             '<option value="none">---</option>\n';
                         const end = '</select>';
                         let options = ''
-                        {#let keywords = d.keywords;#}
-                        {#let cases = d.cases;#}
                         for (let index in keywords) {
                             if (!keywords.hasOwnProperty(index)) continue;
+                            let description = keywords[index]['description'].replace(' ', '&nbsp;');
                             if (keywords[index]['keyword'] === d.step_action) {
-                                options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
+                                options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + description + '</option>';
                             } else {
-                                options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
+                                options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + description + '</option>';
                             }
                         }
                         for (let index in cases) {
@@ -221,7 +219,6 @@
         });
 
         function getRowIndex(tb, row) {
-            {# row: tr object #}
             let curr = parseInt($("[lay-id=step_table] .layui-laypage-curr em:last").text());
             let limit = parseInt($("[lay-id=step_table] .layui-laypage-limits option:selected").val());
             let idx = row.data('index');
@@ -236,15 +233,10 @@
                     let curr = parseInt($("[lay-id=step_table] .layui-laypage-curr em:last").text());
                     obj.del();
                     table_data.splice(idx, 1);
-                    console.log(table_data);
-                    {# bug: 前端分页,第二页删除完，表格空 #}
-                    {#if(tb.getData('step_table').length === 0){#}
-                    {#    curr = curr - 1;#}
-                    {# }#}
                     tb.reload("step_table", {
                         data: table_data,
                         page: {curr: curr}
-                     });
+                    });
                     msg.close(index);
                 });
             }
@@ -257,15 +249,11 @@
             {#tableData[trElem.data('index')][elem.attr('name')] = data.value;#}
             let idx = getRowIndex(step_table, trElem)
             table_data[idx][elem.attr('name')] = data.value;
-            console.log(table_data);
         });
         fm.on('switch(rowDragSwitch)', function (data) {
             soulTable.suspend('step_table', 'rowDrag', !data.elem.checked)
         });
         fm.on('submit(save_case)', function () {
-            {#const steps_csrf = $("div[lay-filter='steps']>input[name='csrfmiddlewaretoken']").val();#}
-            {#const case_id = $("#case_id").val();#}
-            console.log(table_data);
             $.ajax({
                 url: "/apitest/case/edit/"
                 , type: "POST"
@@ -285,8 +273,8 @@
                             msg.close(index);
                         }
                     });
-                    {# 重载表格 #}
                     reload_data($, case_id, tb);
+                    {# 重载表格 #}
                 }
             });
         });
@@ -300,10 +288,10 @@
                 'title': '',
                 'keywords': keywords
             });
-            {# 将新数据重新载入表格 #}
             tb.reload("step_table", {
                 data: table_data
             });
+            {# 将新数据重新载入表格 #}
         });
         $("#copy_uuid").on('click', function () {
             const uuid = $('#attachments').val();
@@ -311,14 +299,26 @@
             input.setAttribute('readonly', 'readonly');
             input.setAttribute('value', uuid);
             document.body.appendChild(input);
-            {# sarafi #}
             input.setSelectionRange(0, input.value.length);
+            {# sarafi #}
             input.select();
             if (document.execCommand('copy')) {
                 document.execCommand('copy');
-             }
+            }
             document.body.removeChild(input);
-        })
+        });
+        let tips;
+        $('i.icon-help').on({
+            mouseenter: function () {
+                if (!tips) {
+                    tips = msg.msg(helper_info, {
+                        time: 0, btn: ['关闭'], offset: 'r', end: function () {
+                            tips = null;
+                        }
+                    });
+                }
+            },
+        });
     });
 </script>
 

@@ -75,12 +75,17 @@ def get_report(request):
     runhis_id = request.GET.get('id', None)
     run_his = RunHis.objects.filter(id=runhis_id)
     if run_his:
-        # HtmlTestReport
+        # HtmlTestReport: template loader模板渲染
+        # run_his[0].report: test_group\test_suite\timestamp\xxxxx.html
+        # template path 'test_group\test_suite\timestamp\xxxxx.html'
         if '.html' in run_his[0].report:
-            return render(request, run_his[0].report, {})
-        # Pytest html report
+            return render(request, run_his[0].report.replace('\\', os.sep), {})
+        # Pytest html report 静态文件服务
+        # run_his[0].report: test_group\test_suite\timestamp\
+        # 'ip:port/static/Report/test_group/test_suite/timestamp/index.html'
         else:
-            return HttpResponseRedirect('/static/' + run_his[0].report.replace('\\', '/') + '/index.html')
+            report_dir = '/static/Report/'
+            return HttpResponseRedirect(report_dir + run_his[0].report.replace('\\', '/') + '/index.html')
     else:
         report = '<h2>Can not get the report.</h2>'
         return render(request, 'autotest/report.html', {'report': report})

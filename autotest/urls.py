@@ -1,7 +1,5 @@
 from django.urls import path
-from MyWeb import settings
 from . import views
-from .APScheduler import start_scheduler
 
 app_name = 'autotest'
 urlpatterns = [
@@ -23,8 +21,4 @@ urlpatterns = [
     path('datasource/download/', views.download_ds, name='download_ds'),
     path('datasource/preview/', views.DataSourcePreviewV.as_view(), name='ds_preview'),
 ]
-
-# 随项目启动运行
-if settings.APSCHEDULER == 'on':
-    start_scheduler()
 

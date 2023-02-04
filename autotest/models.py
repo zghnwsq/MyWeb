@@ -49,6 +49,9 @@ class Node(models.Model):
     tag = models.CharField(max_length=64)
     status = models.CharField(max_length=16, default='on')
 
+    def __str__(self):
+        return self.ip_port
+
 
 class RegisterFunction(models.Model):
     id = models.AutoField(unique=True, primary_key=True)

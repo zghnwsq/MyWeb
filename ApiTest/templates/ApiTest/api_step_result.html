@@ -1,78 +1,79 @@
 <table id="step_result_table" lay-filter="step_result_table"></table>
 <script>
-    layui.use(['table', 'soulTable'], function () {
-        let tb = layui.table;
-        let table_data = [];
-        layui.soulTable.config({
-            fixTotal: false,
-            drag: false,
-            rowDrag: false,
-            overflow: true,
-        });
-        let soulTable = layui.soulTable;
-        {% if steps %}
-            table_data = {{ steps | safe }};
-        {% endif %}
-        let step_result_table = tb.render({
-            elem: '#step_result_table',
-            id: 'step_result_table',
-            data: table_data,
-            page: true,
-            even: true,
-            defaultToolbar: ['filter', 'print', 'exports'],
-            toolbar: true,
-            {#overflow: {#}
-            {#    hoverTime: 300,#}
-            {#    color: 'black',#}
-            {#    bgColor: 'white',#}
-            {#    'type': 'tips',#}
-            {#    'maxWidth': 500,#}
-            {# },#}
-            cols: [[
-                {type: 'numbers', title: '序号', fixed: 'left'},
-                {#{field: 'case__case__title', title: 'Case Title', align: 'center'},#}
-                {field: 'step_title', title: 'Step Title', width:'15%', align: 'center'},
-                {
-                    field: 'step_action', title: 'Step Action', width: '15%', align: 'center', templet(d) {
-                        return d.step_action.toUpperCase();
-                    }
-                },
-                {
-                    field: 'result', title: 'Result', align: 'center', width:'8%', sort: true, templet(d) {
-                        if (d.result === '0') {
-                            return '<span style="color: green">通过</span>';
-                        } else if (d.result === '1') {
-                            return '<span style="color: red">失败</span>';
-                        } else {
-                            return '<span style="color: brown">N/A</span>';
-                        }
-                    }
-                },
-                {field: 'info', title: 'Info', align: 'left', minWidth: 500,  templet(d) {
-                        let rows = d.info.split('||');
-                        let info = '';
-                        for (let i in rows) {
-                            if (rows.hasOwnProperty(i)) {
-                                let row = rows[i].replaceAll('"', '\'') + '<br>';
-                                info += row;
-                            }
-                        }
-                        if(d.info.indexOf("Debug") !== -1){
-                            info += "===============================END==============================="
-                        }
-                        return info;
-                    }
-                },
-                {
-                    field: 'create_time', title: 'Create Time', width: 170, align: 'center', sort: true, templet(d) {
-                        return d.create_time.replace('T', ' ');
+    let tb = layui.table;
+    let table_data = [];
+    {% if steps %}
+        table_data = {{ steps | safe }};
+    {% endif %}
+    let step_result_table = tb.render({
+        elem: '#step_result_table',
+        id: 'step_result_table',
+        data: table_data,
+        page: true,
+        even: true,
+        defaultToolbar: ['filter', 'print', 'exports'],
+        toolbar: true,
+        cols: [[
+            {type: 'numbers', title: '序号', fixed: 'left'},
+            {#{field: 'case__case__title', title: 'Case Title', align: 'center'},#}
+            {field: 'step_title', title: 'Step Title', width: '15%', align: 'center'},
+            {
+                field: 'step_action', title: 'Step Action', width: '15%', align: 'center', templet(d) {
+                    return d.step_action.toUpperCase();
+                }
+            },
+            {
+                field: 'result', title: 'Result', align: 'center', width: '8%', sort: true, templet(d) {
+                    if (d.result === '0') {
+                        return '<span style="color: green">通过</span>';
+                    } else if (d.result === '1') {
+                        return '<span style="color: red">失败</span>';
+                    } else {
+                        return '<span style="color: brown">N/A</span>';
                     }
                 }
-            ]],
-            done: function () {
-                soulTable.render(this);
+            },
+            {
+                field: 'info', title: 'Info', align: 'left', minWidth: 500, templet(d) {
+                    let rows = d.info.split('||');
+                    let info = '';
+                    for (let i in rows) {
+                        if (rows.hasOwnProperty(i)) {
+                            let row = rows[i].replaceAll('"', '\'') + '<br>';
+                            info += row;
+                        }
+                    }
+                    if (d.info.indexOf("Debug") !== -1) {
+                        info += "===============================END==============================="
+                    }
+                    return info;
+                }
+            },
+            {
+                field: 'create_time', title: 'Create Time', width: 170, align: 'center', sort: true, templet(d) {
+                    return d.create_time.replace('T', ' ');
+                }
             }
+        ]],
+    });
+    tb.on('row(step_result_table)', function (obj) {
+        let data = obj.data;
+        let rows = data['info'].split('||');
+        let info = '';
+        for (let i in rows) {
+            if (rows.hasOwnProperty(i)) {
+                let row = rows[i].replaceAll('"', '\'') + '<br>';
+                info += row;
+            }
+        }
+        if (data['info'].indexOf("Debug") !== -1) {
+            info += "===============================END==============================="
+        }
+        layer.alert(info, {
+            title: 'Info:',
+            area: '650px'
         });
-
+        //标注选中样式
+        obj.tr.addClass('layui-table-click').siblings().removeClass('layui-table-click');
     });
 </script>

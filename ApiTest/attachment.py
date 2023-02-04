@@ -12,7 +12,7 @@ from ApiTest.models import ApiGroup, ApiCase, ApiAttachment
 from MyWeb import settings
 
 
-def save_attachment(case_id, file):
+def save_case_attachment(case_id, file):
     case = ApiCase.objects.filter(id=case_id)
     if len(case) > 0:
         group = ApiGroup.objects.filter(id=case[0].group.id)
@@ -35,3 +35,25 @@ def save_attachment(case_id, file):
         return '附件上传成功', {'uuid': uid, 'file_name': file_name, 'suffix': suffix}
     else:
         return '用例不存在'
+
+
+def save_case_param_file(case_id, file):
+    now = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime())
+    uid = str(uuid.uuid5(uuid.NAMESPACE_DNS, f'{str(case_id)}{now}')).replace('-', '')
+    suffix = file.name.split('.')[1]
+    directory = os.path.join(settings.API_ATTACHMENT_ROOT, f'{case_id}')
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    file_path = os.path.join(directory, f'{uid}.{suffix}')
+    storage = FileSystemStorage(location=directory)
+    with storage.open(f'{uid}.{suffix}', 'wb') as dest:
+        for chunk in file.chunks():
+            dest.write(chunk)
+    return file_path
+
+
+def rm_case_param_file(file_path=None):
+    if file_path and os.path.isfile(file_path):
+        os.remove(file_path)
+        os.rmdir(os.path.dirname(file_path))
+

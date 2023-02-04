@@ -113,6 +113,7 @@ class ApiCaseParam(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     case = models.ForeignKey(ApiCase, blank=False, on_delete=models.CASCADE)
     p_name = models.CharField(max_length=256, blank=False)
+    desc = models.CharField(max_length=256, blank=True, null=True)
 
     class Meta:
         db_table = 'api_case_param'
@@ -137,3 +138,7 @@ class ApiAttachment(models.Model):
 
     class Meta:
         db_table = 'api_attachment'
+
+
+
+

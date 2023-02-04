@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 {% block statics %}
-        <link rel="stylesheet" href=" {% static 'helpicon.css' %} ">
+    <link rel="stylesheet" href=" {% static 'helpicon.css' %} ">
+    <script src="{% static 'CommonLayer.js' %}"></script>
 {% endblock %}
 {% block content %}
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -154,16 +155,7 @@
                                 , data: JSON.stringify({cases: cases})
                                 , success: function (data) {
                                     layer.close(loading);
-                                    layer.open({
-                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                        , type: 1
-                                        , title: '提示'
-                                        , time: 5000
-                                        , btn: '确定'
-                                        , yes: function (idx) {
-                                            layer.close(idx);
-                                        }
-                                    });
+                                    commonReturnMsg(data);
                                     active['reload'].call(this);
                                 }
                             });
@@ -202,16 +194,7 @@
                             }
                             , data: JSON.stringify({id: data.id, suite: data.suite, title: data.title})
                             , success: function (data) {
-                                layer.open({
-                                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                    , type: 1
-                                    , title: '提示'
-                                    , time: 5000
-                                    , btn: '确定'
-                                    , yes: function (index) {
-                                        layer.close(index);
-                                    }
-                                });
+                                commonReturnMsg(data);
                                 active['reload'].call(this);
                             }
                         });
@@ -227,50 +210,43 @@
                             , data: {case_id: data.id}
                             , success: function (ret) {
                                 if (ret.indexOf('ERROR') === -1) {
-                                    let step_layer = layer.open({
-                                        type: 1
-                                        , title: ['编辑测试步骤: ' + data.title, 'font-size:18px;']
-                                        , content: ret
-                                        , area: ['1200px', '650px']
-                                        , maxmin: true
-                                        , resizing: function (layero) {
-                                            {# 监听窗口拉伸 #}
-                                            table.resize('step_table');
-                                        }
-                                        , full: function (layero) {
-                                            {# 监听窗口最大化 #}
-                                            table.resize('step_table');
-                                        }
-                                        , restore: function (layero) {
-                                            {# 监听窗口还原 #}
-                                            table.resize('step_table');
-                                        }
-                                        , btn: ['保存', '关闭']
-                                        , yes: function (index) {
-                                            {#  触发页面内提交  #}
-                                            $("#save_case").click();
-                                        }
-                                        , btn2: function () {
-                                            confirmAgain(layer, active, this);
-                                            return false;
-                                        }
-                                        , cancel: function () {
-                                            confirmAgain(layer, active, this);
-                                            return false;
-                                        }
+                                    {# 关闭所有页面层 #}
+                                    layer.closeAll('page', function () {
+                                        let step_layer = layer.open({
+                                            type: 1
+                                            , title: ['编辑测试步骤: ' + data.title, 'font-size:18px;']
+                                            , content: ret
+                                            , area: ['1200px', '650px']
+                                            , maxmin: true
+                                            , resizing: function (layero) {
+                                                {# 监听窗口拉伸 #}
+                                                table.resize('step_table');
+                                            }
+                                            , full: function (layero) {
+                                                {# 监听窗口最大化 #}
+                                                table.resize('step_table');
+                                            }
+                                            , restore: function (layero) {
+                                                {# 监听窗口还原 #}
+                                                table.resize('step_table');
+                                            }
+                                            , btn: ['保存', '关闭']
+                                            , yes: function (index) {
+                                                {#  触发页面内提交  #}
+                                                $("#save_case").click();
+                                            }
+                                            , btn2: function () {
+                                                confirmAgain(layer, active, this);
+                                                return false;
+                                            }
+                                            , cancel: function () {
+                                                confirmAgain(layer, active, this);
+                                                return false;
+                                            }
+                                        });
                                     });
-                                    layer.full(step_layer);
                                 } else {
-                                    layer.open({
-                                        content: '<div style="padding: 20px 2em;">' + ret.msg + '</div>'
-                                        , type: 1
-                                        , title: '提示'
-                                        , time: 5000
-                                        , btn: '确定'
-                                        , yes: function (index) {
-                                            layer.close(index);
-                                        }
-                                    });
+                                    commonReturnMsg(ret);
                                 }
                             }
                         });
@@ -307,16 +283,7 @@
                                         }
                                     });
                                 } else {
-                                    layer.open({
-                                        content: '<div style="padding: 20px 2em;">' + ret.msg + '</div>'
-                                        , type: 1
-                                        , title: '提示'
-                                        , time: 5000
-                                        , btn: '确定'
-                                        , yes: function (err_layer) {
-                                            layer.close(err_layer);
-                                        }
-                                    });
+                                    commonReturnMsg(ret);
                                 }
                             }
                         });
@@ -349,16 +316,7 @@
                                 , contentType: 'application/json; charset=utf-8'
                                 , data: JSON.stringify({group: group, suite: case_suite, title: title})
                                 , success: function (data, textStatus) {
-                                    layer.open({
-                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                        , type: 1
-                                        , title: '提示'
-                                        , time: 5000
-                                        , btn: '确定'
-                                        , yes: function (index, layero) {
-                                            layer.close(index);
-                                        }
-                                    });
+                                    commonReturnMsg(data);
                                     {# 如果成功则关闭新建任务层 #}
                                     if (data.msg.indexOf('成功') !== -1) {
                                         layer.close(new_layer);
@@ -381,16 +339,7 @@
                 let cases = checkStatus.data;
                 const csrf = $("#csrf").val();
                 if (cases.length < 1) {
-                    layer.open({
-                        content: '<div style="padding: 20px 2em;">请选择用例!</div>'
-                        , type: 1
-                        , title: '提示'
-                        , time: 5000
-                        , btn: '确定'
-                        , yes: function (index) {
-                            layer.close(index);
-                        }
-                    });
+                    commonReturnMsg('请选择用例!');
                 } else {
                     let loading = layer.load(1);
                     $.ajax({
@@ -403,16 +352,7 @@
                         , data: JSON.stringify({cases: cases})
                         , success: function (data) {
                             layer.close(loading);
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (index) {
-                                    layer.close(index);
-                                }
-                            });
+                            commonReturnMsg(data);
                             active['reload'].call(this);
                         }
                     });
@@ -423,18 +363,8 @@
                 let checkStatus = table.checkStatus('case_table');
                 let cases = checkStatus.data;
                 const csrf = $("#csrf").val();
-                console.log(cases);
                 if (cases.length < 1) {
-                    layer.open({
-                        content: '<div style="padding: 20px 2em;">请选择用例!</div>'
-                        , type: 1
-                        , title: '提示'
-                        , time: 5000
-                        , btn: '确定'
-                        , yes: function (index) {
-                            layer.close(index);
-                        }
-                    });
+                    commonReturnMsg('请选择用例!');
                 } else {
                     active['del_cases'].call(this, csrf, cases);
                 }

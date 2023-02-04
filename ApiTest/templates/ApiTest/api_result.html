@@ -1,4 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
+{% block statics %}
+    <script src="{% static 'CommonLayer.js' %}"></script>
+{% endblock %}
 {% block content %}
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>API测试结果</legend>
@@ -133,6 +137,7 @@
                             url: '/apitest/result/case/',
                             where: {batch: row.id},
                             page: false,
+                            rowDrag: false,
                             cols: [[
                                 {type: 'numbers', title: 'No', align: 'center'},
                                 {field: 'case__group__group', title: 'Group', align: 'center', minWidth: 120},
@@ -191,16 +196,7 @@
                                                         }
                                                     });
                                                 } else {
-                                                    layer.open({
-                                                        content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                                        , type: 1
-                                                        , title: '提示'
-                                                        , time: 5000
-                                                        , btn: '确定'
-                                                        , yes: function (index) {
-                                                            layer.close(index);
-                                                        }
-                                                    });
+                                                    commonReturnMsg(data);
                                                 }
 
                                             }
@@ -271,7 +267,7 @@
                 })
             });
 
-        });
+          });
     </script>
 {% endblock %}
 

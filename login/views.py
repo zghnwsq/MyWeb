@@ -73,43 +73,9 @@ class LoginV(LoginView):
 
 
 def get_weather():
-    edge = datetime.datetime.now() - datetime.timedelta(minutes=30)
-    need_refresh = len(Weather.objects.filter(status='ok', create_time__gte=edge)) <= 0
     weather = {}
-    if need_refresh:
-        weather_api_key = Sys_Config.objects.get(dict_key='WEATHER_API_KEY').dict_value
-        city_location = Sys_Config.objects.get(dict_key='CITY_LOCATION').dict_value
-        weather_api_url = Sys_Config.objects.get(dict_key='WEATHER_API_URL').dict_value
-        session = requests.session()
-        url = f'{weather_api_url}/{weather_api_key}/{city_location}/realtime'
-        try:
-            response = session.get(url)
-            resp_json = json.loads(response.text)
-            session.close()
-            if 'ok' in resp_json['status']:
-                weather['temperature'] = '{:.0f}'.format(resp_json['result']['realtime']['temperature'])
-                weather['humidity'] = '{:.0f}'.format(resp_json['result']['realtime']['humidity'] * 100)
-                weather['pm25'] = resp_json['result']['realtime']['air_quality']['pm25']
-                weather['comfort'] = resp_json['result']['realtime']['life_index']['comfort']['desc']
-                skycon = resp_json['result']['realtime']['skycon'].strip()
-                weather['skycon'] = settings.skycon_dict[skycon] if skycon in settings.skycon_dict.keys() else skycon
-                weather['skycon_icon'] = settings.skycon_icon_dict[
-                    skycon] if skycon in settings.skycon_icon_dict.keys() else ''
-                weather['aqi'] = resp_json['result']['realtime']['air_quality']['aqi']['chn']
-                weather['air_desc'] = resp_json['result']['realtime']['air_quality']['description']['chn']
-                Weather.objects.update(status=resp_json['status'].strip(), temperature=weather['temperature'],
-                                       humidity=weather['humidity'], pm25=weather['pm25'], comfort=weather['comfort'],
-                                       skycon=skycon, aqi=weather['aqi'], air_desc=weather['air_desc'],
-                                       create_time=datetime.datetime.now())
-            else:
-                weather = None
-                Weather.objects.update(status=resp_json['status'].strip())
-        except requests.exceptions.RequestException:
-            session.close()
-            Weather.objects.update(status='ng')
-            weather = None
-    else:
-        result = Weather.objects.get(status='ok')
+    result = Weather.objects.get(status='ok')
+    if result:
         weather['temperature'] = result.temperature
         weather['humidity'] = result.humidity
         weather['pm25'] = result.pm25

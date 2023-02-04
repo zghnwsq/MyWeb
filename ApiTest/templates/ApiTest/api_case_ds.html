@@ -33,6 +33,8 @@
                 <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_name"
                         lay-filter="save_name">保存
                 </button>
+            </div>
+        </div>
     </div>
 </div>
 <table id="ds_table" lay-filter="ds_table">
@@ -44,12 +46,17 @@
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del_name">删除</a>
 </script>
 <script type="text/html" id="dsToolBar">
-    <button class="layui-btn layui-btn-sm" id="new_name" style="float: right">新增字段</button>
+    <span style="float: right">
+        <button class="layui-btn  layui-btn-normal layui-btn-sm" id="new_param">新增字段</button>
+        <button class="layui-btn  layui-btn-danger layui-btn-sm" id="del_all">删除全部</button>
+    </span>
+
 </script>
 <script>
     let form = layui.form,
         table = layui.table,
-        upload = layui.upload;
+        upload = layui.upload,
+        $ = layui.$;
     form.render(null, 'ds');
     let case_id = $("#case_id").val();
     let case_title = $("#case_title").val(),
@@ -88,6 +95,37 @@
             {field: 'count', title: 'Count', align: 'center', edit: 'text'},
             {field: '', title: 'Action', align: 'center', toolbar: '#ds_row_tool'},
         ]],
+        done() {
+            $("#new_param").on('click', function () {
+                table_data.push({
+                    'p_name': '',
+                    'desc': '',
+                    'count': 0
+                });
+                {# 将新数据重新载入表格 #}
+                table.reload("ds_table", {
+                    data: table_data
+                });
+            });
+            $("#del_all").on('click', function () {
+                layer.confirm('是否确定删除?', function (del_all_layer) {
+                    $.ajax({
+                        url: "/apitest/case/ds/del/param/"
+                        , type: "POST"
+                        , contentType: 'application/json; charset=utf-8'
+                        , beforeSend: function (xhr) {
+                            xhr.setRequestHeader("X-CSRFToken", ds_csrf);
+                        }
+                        , data: JSON.stringify(table_data)
+                        , success: function (data) {
+                            commonReturnMsg(data);
+                        }
+                    });
+                    reload_ds_data($, case_id);
+                    layer.close(del_all_layer);
+                });
+            })
+        }
     });
     {# 初始化获取 #}
     !function () {
@@ -105,16 +143,7 @@
             }
             , data: JSON.stringify({case_id: case_id, data: table_data})
             , success: function (data) {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (index) {
-                        layer.close(index);
-                    }
-                });
+                commonReturnMsg(data);
                 reload_ds_data($, case_id);
             }
         });
@@ -136,18 +165,9 @@
                         , beforeSend: function (xhr) {
                             xhr.setRequestHeader("X-CSRFToken", ds_csrf);
                         }
-                        , data: JSON.stringify({param_id: obj.data['id']})
+                        , data: JSON.stringify([obj.data])
                         , success: function (data) {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (ret_layer) {
-                                    layer.close(ret_layer);
-                                }
-                            });
+                            commonReturnMsg(data);
                         }
                     });
                 }
@@ -190,43 +210,14 @@
                                 }
                             });
                         } else {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + ret.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (err_layer) {
-                                    layer.close(err_layer);
-                                }
-                            });
+                            commonReturnMsg(ret);
                         }
                     }
                 });
             } else {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + '请先保存参数名.' + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (err_layer) {
-                        layer.close(err_layer);
-                    }
-                });
+                commonReturnMsg('请先保存参数名.');
             }
         }
-    });
-
-    $("#new_name").on('click', function () {
-        table_data.push({
-            'p_name': '',
-            'count': 0
-        });
-        {# 将新数据重新载入表格 #}
-        table.reload("ds_table", {
-            data: table_data
-        });
     });
     upload.render({
         elem: '#upload_param',
@@ -244,16 +235,7 @@
         exts: 'xls|xlsx',
         size: 2048,
         done: function (res) {
-            layer.open({
-                content: '<div style="padding: 20px 100px;">' + res.msg + '</div>'
-                , type: 1
-                , title: '提示'
-                , time: 5000
-                , btn: '确定'
-                , yes: function (index) {
-                    layer.close(index);
-                }
-            });
+            commonReturnMsg(res);
             reload_ds_data($, case_id);
         }
     });
@@ -271,16 +253,7 @@
             }
             , data: JSON.stringify({case_id: case_id, copy_case_id: copy_case_id})
             , success: function (data) {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (index) {
-                        layer.close(index);
-                    }
-                });
+                commonReturnMsg(data);
                 reload_ds_data($, case_id);
             }
         });

@@ -29,7 +29,7 @@
         </div>
         <div class="layui-inline" style="float: right">
             <div class="layui-input-inline">
-                <button class="layui-btn" id="new_step" lay-filter="new_step">新增步骤</button>
+                <button class="layui-btn layui-btn-normal" id="new_step" lay-filter="new_step">新增步骤</button>
                 <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_case"
                         lay-filter="save_case">保存
                 </button>
@@ -39,7 +39,7 @@
 </div>
 <table id="step_table" lay-filter="step_table">
     {#    <input style="display: none" id="csrf" value={{ csrf_token }}>#}
-    <input style="display: none" id="case_id" value="{{ case_id }}" />
+    <input style="display: none" id="case_id" value="{{ case_id }}"/>
 </table>
 <style>
     span.keyword {
@@ -47,6 +47,7 @@
         font-size: 12px;
         margin: 10px;
     }
+
     span.param {
         font-style: italic;
         font-size: 12px;
@@ -67,11 +68,13 @@
     function setSelectCSS() {
         $(".layui-table-body, .layui-table-box, td[data-field='step_action']>.layui-table-cell").css('overflow', 'visible');
         $("td[data-field='step_action'] .layui-form-select").css({
-            'margin-top': '-10px',
+            'margin-top': '-6px',
             'margin-left': '-16px',
             'margin-right': '-15px'
         });
     }
+
+    let helper_info = "{{ helper | safe }}";
 
     layui.use(['form', 'table', 'soulTable', 'layer', 'upload'], function () {
         layui.soulTable.config({
@@ -104,8 +107,8 @@
             done: function (res) {
                 console.log(res);
                 if (res.hasOwnProperty("data") && res.data !== "") {
-                    let text = res.data.file_name + '.' + res.data.suffix,
-                        value = res.data.uuid;
+                    let text = res.data['file_name'] + '.' + res.data.suffix,
+                        value = res.data['uuid'];
                     $('#attachments').append(new Option(text, value));
                     fm.render('select', 'steps');
                 }
@@ -155,6 +158,7 @@
                 }
             });
         }
+
         let step_table = tb.render({
             elem: '#step_table',
             id: 'step_table',
@@ -184,10 +188,11 @@
                         let options = ''
                         for (let index in keywords) {
                             if (!keywords.hasOwnProperty(index)) continue;
+                            let description = keywords[index]['description'].replace(' ', '&nbsp;');
                             if (keywords[index]['keyword'] === d.step_action) {
-                                options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
+                                options += '<option selected="selected" value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + description + '</option>';
                             } else {
-                                options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + keywords[index]['description'] + '</option>';
+                                options += '<option value="' + keywords[index]['keyword'] + '">' + keywords[index]['keyword'].toUpperCase() + '&nbsp;---&nbsp;' + description + '</option>';
                             }
                         }
                         for (let index in cases) {
@@ -212,12 +217,14 @@
                 setSelectCSS();
             }
         });
+
         function getRowIndex(tb, row) {
             let curr = parseInt($("[lay-id=step_table] .layui-laypage-curr em:last").text());
             let limit = parseInt($("[lay-id=step_table] .layui-laypage-limits option:selected").val());
             let idx = row.data('index');
             return (curr - 1) * limit + idx;
         }
+
         tb.on('tool(step_table)', function (obj) {
             let layEvent = obj.event;
             if (layEvent === 'del') {
@@ -242,7 +249,6 @@
             {#tableData[trElem.data('index')][elem.attr('name')] = data.value;#}
             let idx = getRowIndex(step_table, trElem)
             table_data[idx][elem.attr('name')] = data.value;
-            console.log(table_data);
         });
         fm.on('switch(rowDragSwitch)', function (data) {
             soulTable.suspend('step_table', 'rowDrag', !data.elem.checked)
@@ -304,15 +310,14 @@
         let tips;
         $('i.icon-help').on({
             mouseenter: function () {
-                {#let that = this;#}
-                {#tips = msg.tips("{{ helper | safe }}", that, {tips: [2, '#3595CC'], area: '500px', time: 0});#}
-                if(!tips) {
-                    tips = msg.msg("{{ helper | safe }}", {time: 0, btn: ['关闭'], offset: 'r'});
+                if (!tips) {
+                    tips = msg.msg(helper_info, {
+                        time: 0, btn: ['关闭'], offset: 'r', end: function () {
+                            tips = null;
+                        }
+                    });
                 }
             },
-            {#mouseleave: function () {#}
-                {#msg.close(tips);#}
-            {# } #}
         });
     });
 </script>

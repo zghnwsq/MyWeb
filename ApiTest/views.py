@@ -255,8 +255,7 @@ def update_case(request):
         if not suite or not title:
             msg = 'ERROR: suite或title不能为空.'
         else:
-            if ApiCase.objects.get(id=case_id).author == request.user.id or request.session[
-                'user_group'] in settings.MANAGER_GROUPS:
+            if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
                 ApiCase.objects.filter(id=case_id).update(suite=suite, title=title)
                 msg = '更新成功.'
             else:
@@ -582,14 +581,12 @@ def upload_case_param(request):
 @require_http_methods(['POST'])
 def del_case_param(request):
     req_json = json.loads(request.body)
-    param_id = req_json.get('param_id', None)
-    if param_id:
-        is_exists = ApiCaseParam.objects.filter(id=param_id)
-        if is_exists:
-            is_exists.delete()
-            msg = '删除成功.'
-        else:
-            msg = 'ERROR: 用例参数不存在.'
+    if isinstance(req_json, list):
+        for item in req_json:
+            param_id = item.get('id', None)
+            if param_id:
+                ApiCaseParam.objects.filter(id=param_id).delete()
+        msg = '删除成功.'
     else:
         msg = 'ERROR: 请求内容有误.'
     return JsonResponse({'msg': msg})
@@ -649,14 +646,12 @@ def edit_case_ds_value(request):
 @require_http_methods(['POST'])
 def del_case_ds_value(request):
     req_json = json.loads(request.body)
-    value_id = req_json.get('value_id', None)
-    if value_id:
-        is_exists = ApiCaseParamValues.objects.filter(id=value_id)
-        if is_exists:
-            is_exists.delete()
-            msg = '删除成功.'
-        else:
-            msg = '参数值不存在.'
+    if isinstance(req_json, list):
+        for item in req_json:
+            value_id = item.get('id', None)
+            if value_id:
+                ApiCaseParamValues.objects.filter(id=value_id).delete()
+        msg = '删除成功.'
     else:
         msg = 'ERROR: 请求内容有误.'
     return JsonResponse({'msg': msg})

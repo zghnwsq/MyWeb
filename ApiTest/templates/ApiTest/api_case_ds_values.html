@@ -2,11 +2,18 @@
     {% csrf_token %}
     <div class="layui-form-item">
         <div class="layui-row">
-            <div class="layui-col-md3 layui-col-md-offset9">
-                <button class="layui-btn" id="new_value" lay-filter="new_value">新增值</button>
-                <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_value"
-                        lay-filter="save_value">保存
-                </button>
+            <div class="layui-col-md3 layui-col-md-offset6">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn layui-btn-sm" id="new_value" lay-filter="new_value">新增值</button>
+                        <button class="layui-btn layui-btn-danger layui-btn-sm" id="batch_del_value" lay-filter="batch_del_value">
+                            批量删除
+                        </button>
+                        <button lay-submit style="display: none" class="layui-btn layui-btn-normal" id="save_value"
+                                lay-filter="save_value">保存
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -23,6 +30,7 @@
     form.render(null, 'ds_value');
     let param_id = $("#param_id").val();
     let table_data = [];
+    const ds_value_csrf = $("div[lay-filter='ds_value']>input[name='csrfmiddlewaretoken']").val();
 
     function reload_value_data($, param_id) {
         $.ajax({
@@ -48,6 +56,7 @@
         },
         even: true,
         cols: [[
+            {type: 'checkbox', fixed: 'left'},
             {type: 'numbers', title: '序号', fixed: 'left'},
             {field: 'p_value', title: 'Param Value', align: 'center', edit: 'text'},
             {field: '', title: 'Action', align: 'center', width: '20%', toolbar: '#value_row_tool'},
@@ -58,7 +67,7 @@
         reload_value_data($, param_id);
     }();
     form.on('submit(save_value)', function () {
-        const ds_value_csrf = $("div[lay-filter='ds_value']>input[name='csrfmiddlewaretoken']").val();
+        {#const ds_value_csrf = $("div[lay-filter='ds_value']>input[name='csrfmiddlewaretoken']").val();#}
         const param_id = $("#param_id").val();
         $.ajax({
             url: "/apitest/case/ds/value/edit/"
@@ -69,24 +78,36 @@
             }
             , data: JSON.stringify({param_id: param_id, data: table_data})
             , success: function (data) {
-                layer.open({
-                    content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                    , type: 1
-                    , title: '提示'
-                    , time: 5000
-                    , btn: '确定'
-                    , yes: function (save_layer) {
-                        layer.close(save_layer);
-                    }
-                });
+                commonReturnMsg(data);
                 reload_value_data($, param_id);
             }
+        });
+    });
+    $("#batch_del_value").on('click', function () {
+        let checkStatus = table.checkStatus('ds_value_table');
+        let values = checkStatus.data;
+        layer.confirm('是否确定删除?', function (del_values_layer) {
+            $.ajax({
+                url: "/apitest/case/ds/del/value/"
+                , type: "POST"
+                , contentType: 'application/json; charset=utf-8'
+                , beforeSend: function (xhr) {
+                    xhr.setRequestHeader("X-CSRFToken", ds_value_csrf);
+                }
+                , data: JSON.stringify(values)
+                , success: function (data) {
+                    commonReturnMsg(data);
+                }
+            }).then(function () {
+                reload_value_data($, param_id);
+            });
+            layer.close(del_values_layer);
         });
     });
     table.on('tool(ds_value_table)', function (obj) {
         let layEvent = obj.event;
         let idx = obj.tr.data('index');
-        const ds_value_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();
+        {#const ds_value_csrf = $("div[lay-filter='ds']>input[name='csrfmiddlewaretoken']").val();#}
         let curr = parseInt($("[lay-id=ds_value_table] .layui-laypage-curr em:last").text());
         let limit = parseInt($("[lay-id=ds_value_table] .layui-laypage-limits option:selected").val());
         if (layEvent === 'del_value') {
@@ -100,18 +121,9 @@
                         , beforeSend: function (xhr) {
                             xhr.setRequestHeader("X-CSRFToken", ds_value_csrf);
                         }
-                        , data: JSON.stringify({value_id: obj.data['id']})
+                        , data: JSON.stringify([obj.data])
                         , success: function (data) {
-                            layer.open({
-                                content: '<div style="padding: 20px 2em;">' + data.msg + '</div>'
-                                , type: 1
-                                , title: '提示'
-                                , time: 5000
-                                , btn: '确定'
-                                , yes: function (ret_layer) {
-                                    layer.close(ret_layer);
-                                }
-                            });
+                            commonReturnMsg(data);
                         }
                     });
                 }

@@ -49,7 +49,10 @@ ASSERT_JSON_CONTAINS = '<span class=\'keyword\'>ASSERT_JSON_CONTAINS</span>|' \
                        '<span class=\'param\'>$.data.msg</span><br/>'
 ASSERT_JSON_CONTAINS_KEYS = '<span class=\'keyword\'>ASSERT_JSON_CONTAINS_KEYS</span>|' \
                             '<span class=\'param\'>id;card_no;info</span>|' \
-                            '<span class=\'param\'>$.data.results</span><br/>'
+                            '<span class=\'param\'>$.data.results[*]</span><br/>' \
+                            '<span class=\'keyword\'>ASSERT_JSON_CONTAINS_KEYS</span>|' \
+                            '<span class=\'param\'>code;msg</span>|' \
+                            '<span class=\'param\'>$.data</span><br/>'
 ASSERT_JSON_VALUE_IN = '<span class=\'keyword\'>ASSERT_JSON_VALUE_IN</span>|' \
                        '<span class=\'param\'>open;running</span>|' \
                        '<span class=\'param\'>$.data.status</span><br/>' \

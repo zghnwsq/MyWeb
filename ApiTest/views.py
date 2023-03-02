@@ -65,8 +65,7 @@ def update_group(request):
     group_id = req_json.get('group_id', None)
     group = req_json.get('group', '')
     if isinstance(group_id, int) and group:
-        if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session[
-            'user_group'] in settings.MANAGER_GROUPS:
+        if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
             res = ApiGroup.objects.filter(id=group_id).update(group=group)
             msg = f'成功更新{res}条记录.'
         else:
@@ -87,8 +86,7 @@ def del_group(request):
         if len(has_case) > 1:
             msg = f'用例组下存在{len(has_case)}条用例,请删除后重试.'
         else:
-            if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session[
-                'user_group'] in settings.MANAGER_GROUPS:
+            if ApiGroup.objects.get(id=group_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
                 res = ApiGroup.objects.filter(id=group_id).update(status='0')
                 msg = f'成功删除{res[0]}条记录.'
             else:
@@ -280,8 +278,7 @@ def del_case(request):
             form = CaseForm(case)
             if form.is_valid():
                 case_id = form.cleaned_data.get('id')
-                if ApiCase.objects.get(id=case_id).author == request.user.id or request.session[
-                    'user_group'] in settings.MANAGER_GROUPS:
+                if ApiCase.objects.get(id=case_id).author == request.user.id or request.session['user_group'] in settings.MANAGER_GROUPS:
                     case = ApiCase.objects.filter(id=case_id)
                     if case:
                         # on_delete=models.CASCADE 自动删除关联记录

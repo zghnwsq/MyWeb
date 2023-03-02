@@ -6,6 +6,7 @@ from ApiTest.ApiKeywords import ApiKeywords
 from ApiTest.VarMap import VarMap
 from ApiTest.models import ApiCase, ApiCaseStep, ApiTestBatch, ApiCaseResult, ApiStepResult, ApiGroupEnv
 from ApiTest.models import ApiCaseParam, ApiCaseParamValues
+from Utils.Constant import ResultCode
 
 
 def set_scene_param(param_dict, index, case_var_map):
@@ -83,7 +84,7 @@ class RunnerThread(threading.Thread):
             # stop run next case after fail
             if not batch_result and self.stop_after_fail:
                 break
-        self.batch.result = '0' if batch_result else '1'
+        self.batch.result = ResultCode.PASS if batch_result else ResultCode.FAIL
         self.batch.save()
 
     def execute_case(self, api_case_obj, api_case_title, api, steps):
@@ -92,7 +93,7 @@ class RunnerThread(threading.Thread):
                                  create_time=datetime.datetime.now(), result='9')
         case_res.save()
         case_result = self.execute_steps(steps, case_result, api, case_res, stop_after_fail=self.stop_after_fail)
-        case_res.result = '0' if case_result else '1'
+        case_res.result = ResultCode.PASS if case_result else ResultCode.FAIL
         case_res.save()
         return case_result
 
@@ -105,7 +106,7 @@ class RunnerThread(threading.Thread):
                     func = getattr(api, step.step_action)
                     res, info = func(*(step.step_p1, step.step_p2, step.step_p3))
                     case_result = case_result and res
-                    result = '0' if res else '1'
+                    result = ResultCode.PASS if res else ResultCode.FAIL
                     step_res.result = result
                     step_res.info = info.replace('<', '{').replace('>', '}')[:2043] + ' ...'
                     # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result=result,
@@ -113,7 +114,7 @@ class RunnerThread(threading.Thread):
                 except Exception as e:
                     error = e.__str__()[:2047] if len(e.__str__()) > 2048 else e.__str__()
                     case_result = False
-                    step_res.result = '1'
+                    step_res.result = ResultCode.FAIL
                     step_res.info = error
                     # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result='1',
                     #               info=error, create_time=datetime.datetime.now()).save()
@@ -123,7 +124,8 @@ class RunnerThread(threading.Thread):
                 if child_case_steps:
                     # 增加用例调用起始记录
                     ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title + ' start',
-                                  step_action=step.title, result='0', info=f'Start call case: {case[0].title}.',
+                                  step_action=step.title, result=ResultCode.PASS,
+                                  info=f'Start call case: {case[0].title}.',
                                   create_time=datetime.datetime.now()).save()
                     child_case_result = self.execute_steps(child_case_steps, case_result, api, case_res,
                                                            stop_after_fail=stop_after_fail)
@@ -131,18 +133,18 @@ class RunnerThread(threading.Thread):
                     # 调用用例,action改为用例title
                     step_res.step_title = step_res.step_title + ' end'
                     step_res.step_action = step.title
-                    step_res.result = '0' if child_case_result else '1'
+                    step_res.result = ResultCode.PASS if child_case_result else ResultCode.FAIL
                     step_res.info = f'End of case call: {case[0].title}.'
             else:
                 case_result = False
-                step_res.result = '1'
+                step_res.result = ResultCode.FAIL
                 step_res.info = 'No such keyword.'
                 # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result='1',
                 #               info='No such keyword.', create_time=datetime.datetime.now()).save()
             step_res.create_time = datetime.datetime.now()
             step_res.save()
             # stop run next step after fail
-            if stop_after_fail and step_res.result != '0':
+            if stop_after_fail and step_res.result != ResultCode.PASS:
                 break
         return case_result
 

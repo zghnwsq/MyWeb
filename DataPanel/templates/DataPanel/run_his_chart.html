@@ -34,12 +34,6 @@
                     <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>
                     <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>
                 </div>
-                {#                <div class="layui-row layui-input-block">#}
-                {#                    <div class="layui-col-md3 layui-col-md-offset9">#}
-                {#                        <button type="reset" class="layui-btn layui-inline" id="reset">重置</button>#}
-                {#                        <button class="layui-btn layui-inline" id="search" data-type="reload">搜索</button>#}
-                {#                    </div>#}
-                {#                </div>#}
             </div>
         </div>
     </div>
@@ -192,7 +186,8 @@
             let summarySeri = [succ, fail, error];
             let summary = Highcharts.chart('summary', {
                 chart: {
-                    type: 'area'
+                    type: 'area',
+                    spacing: [20, 20, 15, 10]
                 },
                 title: {
                     text: '自动化执行概览'
@@ -253,8 +248,7 @@
 
             let chart = Highcharts.chart('chart', {
                 chart: {
-                    {#type: 'spline'#}
-                    {#zoomType: 'xy'#}
+                    spacing: [20, 20, 15, 10]
                 },
                 title: {
                     text: '用例组执行情况'

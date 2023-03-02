@@ -1,4 +1,6 @@
 # coding=utf-8
+from Utils.Constant import ResultCode
+
 
 def group_count_and_result_series(run_his):
     series = []
@@ -6,8 +8,8 @@ def group_count_and_result_series(run_his):
     for name in names:
         list_of_group = run_his.filter(group=name['group']).order_by('time')
         datas, pass_datas, fail_datas = {}, {}, {}
-        pass_of_group = list_of_group.filter(result='0')
-        fail_of_group = list_of_group.exclude(result='0').exclude(result='3')
+        pass_of_group = list_of_group.filter(result=ResultCode.PASS)
+        fail_of_group = list_of_group.exclude(result=ResultCode.PASS).exclude(result=ResultCode.ERROR)
         for data_of_group in list_of_group:
             datas[data_of_group['time']] = data_of_group['count']
         series.append({'name': name['group'], 'data': datas})

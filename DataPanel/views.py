@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from ApiTest.models import ApiGroup, ApiCase
 from DataPanel.orm import get_suite_total, filter_api_run_his, count_by_group, count_api_by_group, count_by_result, \
     count_api_by_result
+from Utils.Constant import ResultCode
 from Utils.CustomView import ListViewWithMenu
 from Utils.MyMixin import URIPermissionMixin
 from Utils.Paginator import paginator
@@ -89,10 +90,11 @@ def get_run_count(request):
         else:
             executed_ratio = 'error'
         pass_count = len(
-            run_his.filter(group=line['group'], suite=line['suite']).filter(res='0').values('case').distinct())
+            run_his.filter(group=line['group'], suite=line['suite']).filter(res=ResultCode.PASS).values(
+                'case').distinct())
         pass_count += len(
             api_run_his.filter(case__group__group=line['group'],
-                               case__suite=line['suite'], res='0').values(
+                               case__suite=line['suite'], res=ResultCode.PASS).values(
                 'case_title').distinct()
         )
         if line['count'] > 0 and pass_count <= line['count']:

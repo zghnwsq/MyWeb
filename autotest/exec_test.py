@@ -7,6 +7,7 @@ from xmlrpc.client import ServerProxy, Binary
 from django.db.models import Q
 import Utils.zip as zip_util
 from MyWeb import settings
+from Utils.Constant import ResultCode
 from autotest.models import RunHis, Execution, JobQueue, DataSource
 
 
@@ -69,7 +70,7 @@ def handle_result(server, res):
         file_binary = server.get_report_file(res['report']).data
         time_stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         # 解压缩文件夹
-        report_file_path = os.path.join(os.path.join(settings.BASE_DIR, settings.REPORT_DIRECTORY), res['test_group'],
+        report_file_path = os.path.join(os.path.join(settings.BASE_DIR, settings.REPORT_DIRECTORY), res['group_name'],
                                         res['test_suite'], time_stamp)
         # zip文件路径
         zip_file_path = report_file_path + '.zip'
@@ -80,16 +81,21 @@ def handle_result(server, res):
         # 解压缩zip到文件夹
         zip_util.unzip_file(zip_file_path, report_file_path)
         # 写入数据库的相对路径
-        op_path = os.path.join(res['test_group'], res['test_suite'], time_stamp, file_name)
+        op_path = os.path.join(res['group_name'], res['test_suite'], time_stamp, file_name)
         # 写入MyWeb数据库
         his = []
         if len(res['result']) > 0:
-            for res in res['result']:
+            for case_res in res['result']:
                 # print(res)
-                his.append(RunHis(group=res['group'], suite=res['suite'], case=res['case'], title=res['title'],
-                                  tester=res['tester'], description=res['desc'], comment=res['comment'], report=op_path,
-                                  result=res['result'], create_time=res['finish_time']))
+                his.append(RunHis(group=res['group_name'], suite=res['test_suite'], case=case_res['case'],
+                                  title=case_res['title'], tester=res['tester'], description=res['description'],
+                                  comment=res['comment'], report=op_path, result=case_res['result'],
+                                  create_time=case_res['finish_time']))
             RunHis.objects.bulk_create(his, batch_size=50)
+        else:
+            RunHis(group=res['group_name'], suite=res['test_suite'], case=res['title'], title=res['title'],
+                   tester=res['tester'], description=res['description'], comment=res['comment'], report=op_path,
+                   result=ResultCode.FAIL, create_time=res['finish_time']).save()
         return 'finished'
 
 

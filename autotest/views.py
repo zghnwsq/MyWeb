@@ -357,7 +357,7 @@ def update_suite_cases_count(request):
                 else:
                     req = request.body
                     req_json = json.loads(req)
-                    test_group = req_json.get('test_group', '')
+                    test_group = req_json.get('group_name', '')
                     test_suite = req_json.get('test_suite', '')
                     case_count = req_json.get('case_count', '')
                     if not isinstance(case_count, int):

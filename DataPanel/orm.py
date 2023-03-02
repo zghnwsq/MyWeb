@@ -1,8 +1,9 @@
 import datetime
 import logging
-from ApiTest.models import ApiCase, ApiCaseResult, ApiGroup
+from ApiTest.models import ApiCaseResult, ApiGroup
+from Utils.Constant import ResultCode
 from autotest.models import SuiteCount, RunHis
-from django.db.models import Count, CharField, F, Q, Case, When, Sum
+from django.db.models import Count, CharField, F, Q, Sum
 from django.db.models.functions import TruncDate, Cast
 from autotest.orm import filter_run_his
 from Utils.RawSql import dict_fetch_all, raw_sql_fetch_one
@@ -132,9 +133,10 @@ def count_api_by_result(group=None, beg=None, end=None):
     # 过滤掉case删除后，case_id为null的记录
     run_his = filter_api_run_his(group=group, beg=beg, end=end).filter(case_id__isnull=False)
     run_his_extra = run_his.annotate(time=Cast(TruncDate('create_time'), output_field=CharField()))
-    run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result='0')),
-                                                              fail=Count('result', Q(result='1')),
-                                                              error=Count('result', ~Q(result='0') & ~Q(result='1')))
+    run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result=ResultCode.PASS)),
+                                                              fail=Count('result', Q(result=ResultCode.FAIL)),
+                                                              error=Count('result', ~Q(result=ResultCode.PASS) & ~Q(
+                                                                  result=ResultCode.FAIL)))
     logger.info(run_his.query)
     return run_his
 
@@ -150,9 +152,10 @@ def count_by_group(group=None, beg=None, end=None):
 def result_count(group=None, beg=None, end=None):
     run_his = filter_run_his(group=group, beg=beg, end=end)
     api_run_his = filter_api_run_his(group=group, beg=beg, end=end)
-    pass_count = len(run_his.filter(result='0')) + len(api_run_his.filter(result='0'))
-    fail_count = len(run_his.filter(result='1')) + len(api_run_his.filter(result='1'))
-    error_count = len(run_his.filter(result='2')) + len(api_run_his.exclude(result='0').exclude(result='1'))
+    pass_count = len(run_his.filter(result=ResultCode.PASS)) + len(api_run_his.filter(result=ResultCode.PASS))
+    fail_count = len(run_his.filter(result=ResultCode.FAIL)) + len(api_run_his.filter(result=ResultCode.FAIL))
+    error_count = len(run_his.filter(result=ResultCode.ERROR)) + len(
+        api_run_his.exclude(result=ResultCode.PASS).exclude(result=ResultCode.FAIL))
     total = pass_count + fail_count + error_count
     if total > 0:
         pass_pec = pass_count / total
@@ -181,9 +184,9 @@ def count_by_result(group=None, beg=None, end=None):
     # res_text=通过,增加succ数据
     # res_text=失败,增加fail
     # res_text=错误,增加error
-    run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result='0')),
-                                                              fail=Count('result', Q(result='1')),
-                                                              error=Count('result', Q(result='2')))
+    run_his = run_his_extra.values('result', 'time').annotate(succ=Count('result', Q(result=ResultCode.PASS)),
+                                                              fail=Count('result', Q(result=ResultCode.FAIL)),
+                                                              error=Count('result', Q(result=ResultCode.ERROR)))
     logger.info(run_his.query)
     return run_his
 

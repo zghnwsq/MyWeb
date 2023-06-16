@@ -7,18 +7,16 @@
             <div class="layui-input-inline">
                 <select name="new_func" id="new_func" lay-verify="required" lay-filter="new_func">
                     <option value="">请选择注册测试类</option>
-                    {% if func %}
-                        {% for opt in func %}
-                            <option value="{{ opt.func }}">{{ opt.group }} - {{ opt.suite }}: {{ opt.func }}</option>
-                        {% endfor %}
-                    {% endif %}
                 </select>
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label" style="min-width: 40%">Method：</label>
             <div class="layui-input-inline">
-                <input class="layui-input" name="new_method" id="new_method" autocomplete="off">
+{#                <input class="layui-input" name="new_method" id="new_method" autocomplete="off">#}
+                <select name="new_method" id="new_method" lay-verify="required" lay-filter="new_method">
+                    <option value="">请选择测试方法</option>
+                </select>
             </div>
         </div>
         <div class="layui-form-item">
@@ -39,6 +37,34 @@
     {#弹出层需要重新渲染#}
     layui.use('form', function () {
         let fm = layui.form;
+        let funcs = [];
+        {% if func %}
+            let methods, methods_opt;
+            {% for opt in func %}
+                methods = '{{opt.tests}}';
+                methods_opt = methods.split(',');
+                funcs.push({'func': '{{ opt.func }}', 'group': '{{ opt.group }}', 'suite': '{{ opt.suite }}', 'methods':methods_opt});
+                $('#new_func').append($('<option value="{{ opt.func }}"></option>').text('{{ opt.group }} - {{ opt.suite }}: {{ opt.func }}'));
+            {% endfor %}
+        {% endif %}
         fm.render(null, 'new_job');
+
+        fm.on('select(new_func)', function (data) {
+            let selected_func = data.value;
+            let new_method =  $("#new_method");
+            $("#new_method option").remove();
+            new_method.append($('<option value="">请选择测试方法</option>')).append($('<option value="all">all</option>'));
+            for(let i in funcs){
+                if(selected_func && selected_func === funcs[i]['func']){
+                    let mthds = funcs[i]['methods'];
+                    for (let j in mthds) {
+                        new_method.append($('<option value="' + mthds[j] + '"></option>').text(mthds[j]));
+                    }
+                    break;
+                }
+            }
+            fm.render(new_method);
+        });
+
     });
 </script>

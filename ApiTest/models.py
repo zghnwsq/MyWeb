@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 class ApiGroup(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
     group = models.CharField(max_length=64, blank=False)
-    author = models.ForeignKey(User, blank=False, on_delete=models.DO_NOTHING)
+    author = models.ForeignKey(User, blank=False, on_delete=models.DO_NOTHING, db_constraint=False)
     status = models.CharField(max_length=1)
 
     def __str__(self):
@@ -18,7 +18,7 @@ class ApiGroup(models.Model):
 
 class ApiGroupEnv(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE)
+    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE, db_constraint=False)
     env_key = models.CharField(max_length=256, null=False, blank=False)
     env_value = models.CharField(max_length=256, blank=True)
 
@@ -31,10 +31,10 @@ class ApiGroupEnv(models.Model):
 
 class ApiCase(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE)
+    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE, db_constraint=False)
     suite = models.CharField(max_length=64, blank=False)
     title = models.CharField(max_length=128, blank=False)
-    author = models.ForeignKey(User, null=False, on_delete=models.DO_NOTHING)
+    author = models.ForeignKey(User, null=False, on_delete=models.DO_NOTHING, db_constraint=False)
 
     def __str__(self):
         return self.title
@@ -45,7 +45,7 @@ class ApiCase(models.Model):
 
 class ApiCaseStep(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    case = models.ForeignKey(ApiCase, blank=False, on_delete=models.CASCADE)
+    case = models.ForeignKey(ApiCase, blank=False, on_delete=models.CASCADE, db_constraint=False)
     step_action = models.CharField(max_length=128, null=False)
     step_p1 = models.CharField(max_length=1024, null=True)
     step_p2 = models.CharField(max_length=1024, null=True)
@@ -72,8 +72,8 @@ class ApiTestBatch(models.Model):
 
 class ApiCaseResult(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    batch = models.ForeignKey(ApiTestBatch, blank=False, on_delete=models.CASCADE)
-    case = models.ForeignKey(ApiCase, null=True, on_delete=models.SET_NULL)
+    batch = models.ForeignKey(ApiTestBatch, blank=False, on_delete=models.CASCADE, db_constraint=False)
+    case = models.ForeignKey(ApiCase, null=True, on_delete=models.SET_NULL, db_constraint=False)
     case_title = models.CharField(max_length=128, null=False)
     result = models.CharField(max_length=1, null=True)
     info = models.CharField(max_length=512, null=True)
@@ -85,9 +85,9 @@ class ApiCaseResult(models.Model):
 
 class ApiStepResult(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    batch = models.ForeignKey(ApiTestBatch, blank=False, on_delete=models.CASCADE)
-    case = models.ForeignKey(ApiCaseResult, blank=False, on_delete=models.CASCADE)
-    step = models.ForeignKey(ApiCaseStep, null=True, on_delete=models.SET_NULL)
+    batch = models.ForeignKey(ApiTestBatch, blank=False, on_delete=models.CASCADE, db_constraint=False)
+    case = models.ForeignKey(ApiCaseResult, blank=False, on_delete=models.CASCADE, db_constraint=False)
+    step = models.ForeignKey(ApiCaseStep, null=True, on_delete=models.SET_NULL, db_constraint=False)
     step_title = models.CharField(max_length=128, null=True)
     step_action = models.CharField(max_length=128, null=True)
     result = models.CharField(max_length=1)
@@ -111,7 +111,7 @@ class Keyword(models.Model):
 
 class ApiCaseParam(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    case = models.ForeignKey(ApiCase, blank=False, on_delete=models.CASCADE)
+    case = models.ForeignKey(ApiCase, blank=False, on_delete=models.CASCADE, db_constraint=False)
     p_name = models.CharField(max_length=256, blank=False)
     desc = models.CharField(max_length=256, blank=True, null=True)
 
@@ -121,7 +121,7 @@ class ApiCaseParam(models.Model):
 
 class ApiCaseParamValues(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    param = models.ForeignKey(ApiCaseParam, blank=False, on_delete=models.CASCADE)
+    param = models.ForeignKey(ApiCaseParam, blank=False, on_delete=models.CASCADE, db_constraint=False)
     p_value = models.CharField(max_length=512, blank=True)
 
     class Meta:
@@ -130,7 +130,7 @@ class ApiCaseParamValues(models.Model):
 
 class ApiAttachment(models.Model):
     id = models.AutoField(unique=True, primary_key=True)
-    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE)
+    group = models.ForeignKey(ApiGroup, blank=False, on_delete=models.CASCADE, db_constraint=False)
     file_name = models.CharField(max_length=128, null=False)
     uuid = models.CharField(max_length=64, null=False, unique=True)
     suffix = models.CharField(max_length=16, null=False)

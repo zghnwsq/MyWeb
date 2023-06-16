@@ -1,5 +1,4 @@
 import base64
-import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
@@ -12,11 +11,13 @@ from django.http import JsonResponse, HttpResponseRedirect, FileResponse
 from .datasource import update_datasource
 from .exec_test import *
 from Utils.MyMixin import URIPermissionMixin
-from Utils.decorators import auth_check
-from .form import DataSourceForm, ExecutionForm
+from Utils.decorators import auth_check, json_serializer
+from .form import DataSourceForm
 from .orm import *
 from django.views.decorators.csrf import csrf_exempt
 from SysAdmin.models import Sys_Config
+from .serializers import UpdateRunhisCommentSerializer, ExecutionSerializer, RegsiterNodeSerializer, \
+    UpdateSuiteCaseCountSerializer
 
 PARENT_MENU = r'自动化测试\\(Code\\)'
 
@@ -38,8 +39,8 @@ class RunHisV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         return context
 
 
-@auth_check
 @login_required
+@auth_check
 def get_run_his(request):
     # default get params: page=1 limit=10
     # {
@@ -69,8 +70,8 @@ def get_run_his(request):
     return JsonResponse({"code": 0, "msg": "", "count": count, "data": data_list})
 
 
-@auth_check
 @login_required
+@auth_check
 def get_report(request):
     runhis_id = request.GET.get('id', None)
     run_his = RunHis.objects.filter(id=runhis_id)
@@ -91,16 +92,16 @@ def get_report(request):
         return render(request, 'autotest/report.html', {'report': report})
 
 
-@auth_check
 @login_required
+@auth_check
+@json_serializer(UpdateRunhisCommentSerializer)
 def update_runhis_comment(request):
-    print(request.body)
-    req = json.loads(request.body)
-    run_his = RunHis.objects.filter(group=req.get('group', ''), suite=req.get('suite', ''), case=req.get('case', ''),
-                                    title=req.get('title', ''), report=req.get('report', ''),
-                                    create_time=req.get('create_time', '').replace('T', ' '))
+    # print(request.data)
+    run_his = RunHis.objects.filter(group=request.data['group'], suite=request.data['suite'], case=request.data['case'],
+                                    title=request.data['title'], report=request.data['report'],
+                                    create_time=request.data['create_time'].replace('T', ' '))
     if run_his:
-        run_his.update(comment=req.get('comment', ''))
+        run_his.update(comment=request.data['comment'])
         return JsonResponse({'msg': '备注更新成功!'}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse({'msg': '测试历史记录不存在!'}, json_dumps_params={'ensure_ascii': False})
@@ -113,14 +114,9 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
 
     def get_queryset(self, **kwargs):
         nodes = Node.objects.filter(status='on')
-        # functions = RegisterFunction.objects.all()
         group = RegisterFunction.objects.values('group').distinct()
         suite = RegisterFunction.objects.values('suite').distinct()
         function = RegisterFunction.objects.values('func').distinct()
-        # executions = Execution.objects.all().values('function__group', 'function__suite', 'method', 'ds_range',
-        #                                             'function__function', 'comment', 'result')
-        # csrf
-        # csrf_token = csrf(self.request)
         csrf_token = self.request.COOKIES.get('csrftoken')
         context = {
             'nodes': nodes,
@@ -132,12 +128,11 @@ class ExecutionV(LoginRequiredMixin, URIPermissionMixin, ListViewWithMenu):
         return context
 
 
-@auth_check
 @login_required
+@auth_check
 def get_jobs(request):
     page = request.GET.get('page', '0')
     limit = request.GET.get('limit', '30')
-    # expand = request.GET.get('expand', '')
     jobs = filter_jobs(
         group=request.GET.get('group', None),
         suite=request.GET.get('suite', None),
@@ -151,24 +146,20 @@ def get_jobs(request):
     return JsonResponse({"code": 0, "msg": "", "count": len(jobs), "data": data_list})
 
 
-@auth_check
-@login_required
 @require_http_methods(['POST'])
+@login_required
+@auth_check
+@json_serializer(ExecutionSerializer)
 def exec_job(request):
-    req = json.loads(request.body)
-    form = ExecutionForm(req)
-    if form.is_valid():
-        job_id = form.cleaned_data.get('job_id', '#')
-        func = form.cleaned_data.get('func', '#').strip()
-        mthd = form.cleaned_data.get('mthd', '#').strip()
-        ds_range = form.cleaned_data.get('ds_range', '#').strip()
-        node = form.cleaned_data.get('node', '#').strip()
-        comment = form.cleaned_data.get('comment', '#').strip()
-        tester = request.session['user_name']
-        res = execute_job_asyn(job_id, func, mthd, ds_range, node, comment, tester)
-        return JsonResponse(res)
-    else:
-        return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
+    job_id = request.data['job_id']
+    func = request.data['func'].strip()
+    mthd = request.data['mthd'].strip()
+    ds_range = request.data['ds_range'].strip()
+    node = request.data['node'].strip()
+    comment = request.data['comment'].strip()
+    tester = request.session['user_name']
+    res = execute_job_asyn(job_id, func, mthd, ds_range, node, comment, tester)
+    return JsonResponse(res)
 
 
 def execute_job_asyn(job_id, func, mthd, ds_range, node, comment, tester):
@@ -220,34 +211,30 @@ def execute_job_asyn(job_id, func, mthd, ds_range, node, comment, tester):
         return {"msg": "ERROR: 节点注册方法或任务不存在，或执行节点不可用!"}
 
 
-@auth_check
 @login_required
+@auth_check
 def new_job_html(request):
     """
         新建任务的弹出层html
     """
-    func = RegisterFunction.objects.distinct().values('group', 'suite', 'func').order_by('group', 'suite',
-                                                                                         'func')
+    func = RegisterFunction.objects.distinct().values('group', 'suite', 'func', 'tests').order_by('group', 'suite',
+                                                                                                  'func')
     # print(func)
     return render(request, 'autotest/new_job.html', {'func': func})
 
 
-@auth_check
-@login_required
 @require_http_methods(['POST'])
+@login_required
+@auth_check
+@json_serializer(ExecutionSerializer)
 def save_new_job(request):
     """
         保存新建任务
     """
-    req = json.loads(request.body)
-    form = ExecutionForm(req)
-    if form.is_valid():
-        func = form.cleaned_data.get('func', '#').strip()
-        mthd = form.cleaned_data.get('mthd', '#').strip()
-        ds_range = form.cleaned_data.get('ds_range', '#').strip()
-        comment = form.cleaned_data.get('comment', '#').strip()
-    else:
-        return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
+    func = request.data['func'].strip()
+    mthd = request.data['mthd'].strip()
+    ds_range = request.data['ds_range'].strip()
+    comment = request.data['comment'].strip()
     exec_count = len(Execution.objects.filter(func__func=func, method=mthd))
     get_func = RegisterFunction.objects.filter(func=func)
     if len(get_func) >= 1 and exec_count == 0:
@@ -262,31 +249,28 @@ def save_new_job(request):
         return JsonResponse({"msg": "ERROR: 未知错误!"})
 
 
-@auth_check
-@login_required
 @require_http_methods(['POST'])
+@login_required
+@auth_check
+@json_serializer(ExecutionSerializer)
 def del_job(request):
-    req = json.loads(request.body)
-    form = ExecutionForm(req)
-    if form.is_valid():
-        job_id = form.cleaned_data.get('job_id', '#')
-        func = form.cleaned_data.get('func', '#').strip()
-        execution = Execution.objects.filter(id=job_id, func__func=func)
-        if len(execution) > 0:
-            if len(execution.filter(status='running')) > 0:
-                return JsonResponse({"msg": "ERROR: 任务执行中,不能删除!"})
-            else:
-                for job in execution:
-                    job.delete()
-                return JsonResponse({"msg": "删除成功!"})
+    job_id = request.data['job_id']
+    func = request.data['func'].strip()
+    execution = Execution.objects.filter(id=job_id, func__func=func)
+    if len(execution) > 0:
+        if len(execution.filter(status='running')) > 0:
+            return JsonResponse({"msg": "ERROR: 任务执行中,不能删除!"})
         else:
-            return JsonResponse({"msg": "ERROR: 未知错误!"})
+            for job in execution:
+                job.delete()
+            return JsonResponse({"msg": "删除成功!"})
     else:
-        return JsonResponse({"msg": "ERROR: 节点注册方法和测试方法不能为空!"})
+        return JsonResponse({"msg": "ERROR: 未知错误!"})
 
 
 @require_http_methods(['POST'])
 @csrf_exempt
+@json_serializer(RegsiterNodeSerializer)
 def regsiter_node(request):
     msg = ''
     if 'HTTP_AUTHORIZATION' in request.META:
@@ -299,12 +283,10 @@ def regsiter_node(request):
                 if auth_token != db_token:
                     msg = 'ERROR: token错误!'
                 else:
-                    req = request.body
-                    req_json = json.loads(req)
-                    if req_json['type'] == 'update':
-                        msg = update_node(req_json)
-                    if req_json['type'] == 'node_off':
-                        msg = update_node_off(req_json)
+                    if request.data['type'] == 'update':
+                        msg = update_node(request.data['host_ip'], request.data['tag'], request.data['func'])
+                    if request.data['type'] == 'node_off':
+                        msg = update_node_off(request.data['host_ip'])
         else:
             msg = 'ERROR: HTTP_AUTHORIZATION Invalid'
     else:
@@ -312,37 +294,35 @@ def regsiter_node(request):
     return JsonResponse({"msg": msg})
 
 
-def update_node(req_json):
-    if 'host_ip' in req_json.keys() and 'tag' in req_json.keys() and 'func' in req_json.keys():
-        host_ip = req_json['host_ip'].strip()
-        tag = req_json['tag']
-        func = req_json['func']
-        exist_node = Node.objects.filter(ip_port=host_ip)
-        if exist_node:
-            exist_node.update(status='on', tag=tag)
+def update_node(host_ip, tag, func):
+    host_ip = host_ip.strip()
+    exist_node = Node.objects.filter(ip_port=host_ip)
+    if exist_node:
+        exist_node.update(status='on', tag=tag)
+    else:
+        Node(ip_port=host_ip, tag=tag, status='on').save()
+    for mthd_name in func.keys():
+        is_exists = RegisterFunction.objects.filter(func=mthd_name, node=host_ip)
+        if is_exists:
+            is_exists.update(tests=func[mthd_name])
         else:
-            Node(ip_port=host_ip, tag=tag, status='on').save()
-        for mthd_name in func.keys():
-            is_exists = RegisterFunction.objects.filter(func=mthd_name, node=host_ip)
-            if is_exists:
-                is_exists.update(tests=func[mthd_name])
-            else:
-                split_mthd_name = mthd_name.split('_')
-                group = split_mthd_name[0]
-                suite_name = split_mthd_name[1]
-                RegisterFunction(group=group, suite=suite_name, func=mthd_name, node=host_ip,
-                                 tests=func[mthd_name]).save()
-        return 'OK'
+            split_mthd_name = mthd_name.split('_')
+            group = split_mthd_name[0]
+            suite_name = split_mthd_name[1]
+            RegisterFunction(group=group, suite=suite_name, func=mthd_name, node=host_ip,
+                             tests=func[mthd_name]).save()
+    return 'OK'
 
 
-def update_node_off(req_json):
-    host_ip = req_json['host_ip'].strip()
+def update_node_off(host_ip):
+    host_ip = host_ip.strip()
     Node.objects.filter(ip_port=host_ip).update(status='off')
     return 'OK'
 
 
 @require_http_methods(['POST'])
 @csrf_exempt
+@json_serializer(UpdateSuiteCaseCountSerializer)
 def update_suite_cases_count(request):
     msg = ''
     if 'HTTP_AUTHORIZATION' in request.META:
@@ -355,20 +335,15 @@ def update_suite_cases_count(request):
                 if auth_token != db_token:
                     msg = 'ERROR: token错误!'
                 else:
-                    req = request.body
-                    req_json = json.loads(req)
-                    test_group = req_json.get('group_name', '')
-                    test_suite = req_json.get('test_suite', '')
-                    case_count = req_json.get('case_count', '')
-                    if not isinstance(case_count, int):
-                        msg = 'ERROR: Case_count must be number'
+                    test_group = request.data['group_name']
+                    test_suite = request.data['test_suite']
+                    case_count = request.data['case_count']
+                    exist_row = SuiteCount.objects.filter(group=test_group, suite=test_suite)
+                    if exist_row:
+                        exist_row.update(count=case_count)
                     else:
-                        exist_row = SuiteCount.objects.filter(group=test_group, suite=test_suite)
-                        if exist_row:
-                            exist_row.update(count=int(case_count))
-                        else:
-                            SuiteCount(group=test_group, suite=test_suite, count=int(case_count)).save()
-                        msg = 'OK'
+                        SuiteCount(group=test_group, suite=test_suite, count=case_count).save()
+                    msg = 'OK'
         else:
             msg = 'ERROR: HTTP_AUTHORIZATION Invalid'
     else:
@@ -456,5 +431,3 @@ class DataSourcePreviewV(LoginRequiredMixin, URIPermissionMixin, ListView):
                             break
                 context['yaml'] = yaml
         return context
-
-

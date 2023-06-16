@@ -173,7 +173,6 @@
                         {#, {field: 'mthd', title: 'TestMethod', sort: true, align: 'center'}#}
                         , {
                             field: 'tests', title: 'TestMethod', templet(d) {
-                                console.log(d);
                                 const beg = '<select name="mthd" lay-filter="mthd" id="mthd" required lay-verify="required">\n' +
                                     '<option value="none">---</option>\n';
                                 const end = '</select>';

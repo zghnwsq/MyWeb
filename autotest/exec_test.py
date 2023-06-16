@@ -1,4 +1,5 @@
 # coding: utf-8
+import logging
 import os
 import threading
 import time
@@ -64,9 +65,13 @@ def handle_result(server, res):
     else:
         # 压缩前文件名或文件夹
         if '.html' in res['report']:
-            file_name = res['report'].split(os.sep)[-1]
+            # 不同系统先替换成统一路径分隔符，再分割出文件名
+            file_name = res['report'].replace('\\', os.sep).replace('/', os.sep).split(os.sep)[-1]
         else:
             file_name = ''
+        logger = logging.getLogger('django')
+        logger.warning(f'res report: {res["report"]}')
+        logger.warning(f'file_name: {file_name}')
         file_binary = server.get_report_file(res['report']).data
         time_stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         # 解压缩文件夹
@@ -82,6 +87,7 @@ def handle_result(server, res):
         zip_util.unzip_file(zip_file_path, report_file_path)
         # 写入数据库的相对路径
         op_path = os.path.join(res['group_name'], res['test_suite'], time_stamp, file_name)
+        logger.warning(f'op_path: {op_path}')
         # 写入MyWeb数据库
         his = []
         if len(res['result']) > 0:

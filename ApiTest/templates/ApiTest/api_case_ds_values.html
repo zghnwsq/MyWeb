@@ -94,7 +94,7 @@
                 , beforeSend: function (xhr) {
                     xhr.setRequestHeader("X-CSRFToken", ds_value_csrf);
                 }
-                , data: JSON.stringify(values)
+                , data: JSON.stringify({'values': values})
                 , success: function (data) {
                     commonReturnMsg(data);
                 }
@@ -121,7 +121,7 @@
                         , beforeSend: function (xhr) {
                             xhr.setRequestHeader("X-CSRFToken", ds_value_csrf);
                         }
-                        , data: JSON.stringify([obj.data])
+                        , data: JSON.stringify({'values': [obj.data]})
                         , success: function (data) {
                             commonReturnMsg(data);
                         }

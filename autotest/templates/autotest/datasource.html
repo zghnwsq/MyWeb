@@ -134,7 +134,7 @@
                     form.submit();
                     {#node_table.reload();#}
                 } else if (layEvent === 'preview_ds') {
-                    console.log(data.ds_name)
+                    {#console.log(data.ds_name)#}
                     let url = "/autotest/datasource/preview/"
                     let title = '数据源预览: ' + data.ds_name
                     $.ajax({
@@ -147,7 +147,7 @@
                                 content: data
                                 , type: 1
                                 , title: title
-                                , area: '800px'
+                                , area: '1200px'
                                 , btn: '关闭'
                                 , yes: function () {
                                     layer.closeAll();

@@ -38,7 +38,7 @@ ASSERT_NOT_EQUALS = '<span class=\'keyword\'>ASSERT_NOT_EQUALS</span>|' \
                     '<span class=\'param\'>${msg}</span><br/>'
 ASSERT_RES_CONTAINS = '<span class=\'keyword\'>ASSERT_RES_CONTAINS</span>|<span class=\'param\'>success</span><br/>'
 ASSERT_RES_NOT_CONTAINS = '<span class=\'keyword\'>ASSERT_RES_NOT_CONTAINS</span>|<span class=\'param\'>error</span><br/>'
-ASSERT_BY_XPATH = '<span class=\'keyword\'>DEL_HEADER</span>|' \
+ASSERT_BY_XPATH = '<span class=\'keyword\'>ASSERT_BY_XPATH</span>|' \
                   '<span class=\'param\'>open</span>|' \
                   '<span class=\'param\'>//div[@class=\\"status\\"]</span><br/>'
 ASSERT_BY_JPATH = '<span class=\'keyword\'>ASSERT_BY_JPATH</span>|' \

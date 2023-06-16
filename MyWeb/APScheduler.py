@@ -3,6 +3,7 @@ import json
 import logging
 import socket
 # from typing import Union
+from typing import Union
 from xmlrpc.client import ServerProxy, Transport
 from xmlrpc.client import Error
 import requests
@@ -62,14 +63,16 @@ def scan_node():
             is_alive = s.is_alive()
             if 'alive' in is_alive:
                 status = 'running' if node.status == 'running' else 'on'
-        except TimeoutError:
+        except Union[TimeoutError, socket.timeout, ConnectionRefusedError, OSError, Error]:
             status = 'off'
-        except socket.timeout:
-            status = 'off'
-        except ConnectionRefusedError:
-            status = 'off'
-        except Error:
-            status = 'off'
+        # except socket.timeout:
+        #     status = 'off'
+        # except ConnectionRefusedError:
+        #     status = 'off'
+        # except OSError:
+        #     status = 'off'
+        # except Error:
+        #     status = 'off'
         finally:
             logger.info(f'Scan_node id:{now}, Node {node.ip_port} is {status}')
             if status != 'running':

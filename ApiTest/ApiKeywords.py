@@ -596,8 +596,8 @@ class ApiKeywords:
                 # '', 'none', 'null', 'Null' -> empty
                 if not value.strip() or value in ('none', 'null', 'Null'):
                     empty.append(value)
-            self.__res = f'Assert by json_path={p1}: expected not null or empty, actual: "{empty}"'
-            self.__debug_info = f'【Debug】: Assert by json_path={p1}: expected not null or empty, actual: "{empty}"; ' \
+            self.__res = f'Assert by json_path={p1}: expected not null or empty, actual: "{" ".join(empty)}"'
+            self.__debug_info = f'【Debug】: Assert by json_path={p1}: expected not null or empty, actual: "{" ".join(empty)}"; ' \
                                 f'|| 【Vars】: {self.var_map}'
             if not empty:
                 return True, self.__debug_info if self.__debug else self.__res
@@ -628,8 +628,8 @@ class ApiKeywords:
                 # '', 'none', 'null', 'Null' -> empty; others not empty
                 if value.strip() and value not in ('none', 'null', 'Null'):
                     not_empty.append(value)
-            self.__res = f'Assert by json_path={p1}: expected null or empty, actual: "{not_empty}"'
-            self.__debug_info = f'【Debug】: Assert by json_path={p1}: expected null or empty, actual: "{not_empty}"; ' \
+            self.__res = f'Assert by json_path={p1}: expected null or empty, actual: "{" ".join(not_empty)}"'
+            self.__debug_info = f'【Debug】: Assert by json_path={p1}: expected null or empty, actual: "{" ".join(not_empty)}"; ' \
                                 f'|| 【Vars】: {self.var_map}'
             if not_empty:
                 return False, self.__debug_info if self.__debug else self.__res

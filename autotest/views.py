@@ -217,8 +217,11 @@ def new_job_html(request):
     """
         新建任务的弹出层html
     """
-    func = RegisterFunction.objects.distinct().values('group', 'suite', 'func', 'tests').order_by('group', 'suite',
-                                                                                                  'func')
+    node_on = list(Node.objects.filter(status='on').values_list('ip_port', flat=True))
+    func = RegisterFunction.objects.filter(node__in=node_on).distinct().values('group', 'suite', 'func',
+                                                                               'tests', 'node').order_by('group',
+                                                                                                         'suite',
+                                                                                                         'node', 'func')
     # print(func)
     return render(request, 'autotest/new_job.html', {'func': func})
 

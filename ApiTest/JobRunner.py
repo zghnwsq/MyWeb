@@ -108,7 +108,8 @@ class RunnerThread(threading.Thread):
                     case_result = case_result and res
                     result = ResultCode.PASS if res else ResultCode.FAIL
                     step_res.result = result
-                    step_res.info = info.replace('<', '{').replace('>', '}')[:2043] + ' ...'
+                    info = info.replace('<', '{').replace('>', '}')
+                    step_res.info = info[:2043] + ' ...' if len(info) > 2047 else info
                     # ApiStepResult(batch=self.batch, case=case_res, step=step, step_title=step.title, result=result,
                     #               info=info[:2047], create_time=datetime.datetime.now()).save()
                 except Exception as e:

@@ -79,7 +79,7 @@ class CaseParamSerializer(JsonSerializerForm):
 class EditCaseDsSerializer(JsonSerializerForm):
     case_id = forms.IntegerField(required=True)
     data = ListFormField(required=False, item_form=CaseParamSerializer)
-    copy_case_id = forms.IntegerField(required=True)
+    copy_case_id = forms.IntegerField(required=False)
 
 
 class DeleteCaseParamSerializer(JsonSerializerForm):

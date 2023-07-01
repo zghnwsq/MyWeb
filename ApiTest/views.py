@@ -4,7 +4,8 @@ import threading
 import time
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count
+from django.db.models import Count, F, CharField, Value as V
+from django.db.models.functions import Concat, Replace, Upper
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
@@ -317,7 +318,16 @@ def edit_case(request):
                                                                                                    'step_p2', 'step_p3',
                                                                                                    'case', 'title',
                                                                                                    'step_order')
-                keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description').order_by('list_order')
+                # keywords = Keyword.objects.filter(is_active='1').values('keyword', 'description', 'type').order_by(
+                #     'list_order')
+                keywords = {}
+                types = Keyword.objects.filter(is_active='1').values_list('type', flat=True).distinct()
+                for t in types:
+                    c = Keyword.objects.filter(is_active='1', type=t).values('keyword', 'description').annotate(
+                        title=Concat(Upper(F('keyword')), V('&nbsp;---&nbsp;'), Replace('description', V(' '), V('&nbsp;')),
+                                     output_field=CharField())).order_by(
+                        'list_order')
+                    keywords[t] = {'id': t, 'title': t, 'child': list(c)}
                 cases = ApiCase.objects.exclude(id=case_id).filter(group=case[0].group).order_by('group', 'id').values(
                     'id', 'group__group', 'suite', 'title')
                 case_group = ApiGroup.objects.filter(apicase__id=case_id)
@@ -325,7 +335,7 @@ def edit_case(request):
                                                                                        'suffix').order_by('-id')
                 return render(request, 'ApiTest/api_case_steps.html',
                               {'case_id': case_id, 'title': case[0].title, 'data': json.dumps(list(steps)),
-                               'keywords': json.dumps(list(keywords)), 'cases': json.dumps(list(cases)),
+                               'keywords': json.dumps(keywords), 'cases': json.dumps(list(cases)),
                                'attachments': list(attachments), 'helper': ApiKeywordsHelper.HELPER})
             else:
                 msg = 'ERROR: 没有此用例.'

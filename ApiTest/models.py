@@ -104,6 +104,7 @@ class Keyword(models.Model):
     description = models.CharField(max_length=256, null=True)
     list_order = models.IntegerField(blank=False, default=1)
     is_active = models.CharField(max_length=1, blank=False, default='1')
+    type = models.CharField(max_length=64, blank=False, db_comment='Keyword type')
 
     class Meta:
         db_table = 'api_keyword'
